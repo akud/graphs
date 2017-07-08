@@ -1,0 +1,26 @@
+{
+  "name": "graphs",
+  "version": "0.0.1",
+  "description": "Online graph builder",
+  "scripts": {
+    "build": "browserify --debug main.js | exorcist bundle.map.js > bundle.js && uglifyjs bundle.js --compress --mangle --mangle-props --output bundle.min.js",
+    "test": "mocha --require test/common.js -- ",
+    "test:debug": "mocha --require test/common.js debug",
+    "watch": "watchify main.js -o bundle.js -v"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akud/graphs.git"
+  },
+  "author": "Alex Kudlick",
+  "license": "CC-BY-4.0",
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "14.4.0",
+    "exorcist": "0.4.0",
+    "expect": "^1.20.2",
+    "mocha": "3.4.2",
+    "uglify-js": "3.0.24",
+    "watchify": "3.9.0"
+  }
+}
