@@ -20,6 +20,16 @@ GreulerAdapter.prototype = {
     this.instance.update();
   },
 
+  setNodeColor: function(target, color) {
+    if (target.domElement) {
+      target.domElement.setAttribute('fill', color);
+    } else if (target.id) {
+      //TODO: retrieve dom node for node id
+    } else {
+      LOG.error('Got unexpected target node', target);
+    }
+  },
+
   getClickTarget: function(event) {
     var originalTarget = event.explicitOriginalTarget;
     if (originalTarget && originalTarget.nodeName == 'circle') {
@@ -46,7 +56,7 @@ GreulerAdapter.prototype = {
     return new clicktargets.Node({
       id: nodes[0].id,
       realNode: nodes[0],
-      adapter: this,
+      domElement: event.explicitOriginalTarget,
     });
   }
 };

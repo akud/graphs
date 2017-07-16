@@ -1,9 +1,15 @@
 function ClickTarget(options) {
-  if (options) {
-    this.id = options.id;
-    this.adapter = options.adapter;
-  }
+  Object.assign(this, options);
 }
+
+ClickTarget.prototype = {
+  isNode: function() {
+    return false;
+  },
+  isEdge: function() {
+    return false;
+  },
+};
 
 function Node(options) {
   ClickTarget.apply(this, arguments);
@@ -13,7 +19,7 @@ function Node(options) {
 }
 
 Node.prototype = Object.assign(new ClickTarget(), {
-
+  isNode: function() { return true; },
 });
 
 
@@ -22,7 +28,7 @@ function Edge() {
 }
 
 Edge.prototype = Object.assign(new ClickTarget(), {
-
+  isEdge: function() { return true; },
 });
 
 function None() {
