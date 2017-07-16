@@ -13,6 +13,7 @@ Graph.prototype = Object.assign(new Component(), {
     targetElement.addEventListener('click', this.handleClick.bind(this));
   },
   handleClick: function(event) {
+    console.log({x: event.clientX, y: event.clientY });
     if (this.nodes.length < 5) {
       var node = {
         id: this.nodes.length,

@@ -43,3 +43,15 @@ global.MockDomNode.prototype = {
     }
   },
 };
+
+expect.extend({
+  toBeA: function(clazz) {
+    expect.assert(
+      this.actual instanceof clazz,
+      'expected %s to be a %s',
+      this.actual,
+      clazz
+    );
+    return this;
+  },
+});

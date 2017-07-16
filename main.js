@@ -2,6 +2,8 @@ var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
 var Graph = require('./src/Graph');
 
-var graph = new Graph(new GreulerAdapter(greuler));
 
-graph.attachTo(document.getElementById('main-graph'));
+global.adapter = new GreulerAdapter(greuler);
+global.graph = new Graph(adapter);
+
+global.graph.attachTo(document.getElementById('main-graph'));
