@@ -1,7 +1,5 @@
 var clicktargets = require('./clicktargets');;
-var Logger = require('./Logger');
-
-var LOG = new Logger();
+var LOG = require('./Logger');
 
 
 function GreulerAdapter(greuler) {

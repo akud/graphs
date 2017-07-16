@@ -21,4 +21,4 @@ Logger.prototype = {
 };
 
 
-module.exports = Logger;
+module.exports = new Logger();
