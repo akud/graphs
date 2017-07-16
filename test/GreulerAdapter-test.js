@@ -70,16 +70,14 @@ describe('GreulerAdapter', function() {
       var target = adapter.getClickTarget(event);
       expect(target).toBeA(clicktargets.Node);
 
-      expect(graph.getNodesByFn).toHaveBeenCalled();
-      var filter = graph.getNodesByFn.calls[0].arguments[0];
-
-      expect(filter({ x: 125, y: 130, width: 20, height: 20 })).toBe(true);
-      expect(filter({ x: 110, y: 120, width: 20, height: 20 })).toBe(true);
-      expect(filter({ x: 105, y: 110, width: 20, height: 20 })).toBe(true);
-
-      expect(filter({ x: 100, y: 100, width: 20, height: 20 })).toBe(false);
-      expect(filter({ x: 100, y: 115, width: 20, height: 20 })).toBe(false);
-      expect(filter({ x: 110, y: 100, width: 20, height: 20 })).toBe(false);
+      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(
+        { input: { x: 125, y: 130, width: 20, height: 20 }, output: true },
+        { input: { x: 110, y: 120, width: 20, height: 20 }, output: true },
+        { input: { x: 105, y: 110, width: 20, height: 20 }, output: true },
+        { input: { x: 100, y: 100, width: 20, height: 20 }, output: false },
+        { input: { x: 100, y: 115, width: 20, height: 20 }, output: false },
+        { input: { x: 110, y: 100, width: 20, height: 20 }, output: false }
+      );
     });
   });
 });

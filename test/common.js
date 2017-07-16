@@ -54,4 +54,36 @@ expect.extend({
     );
     return this;
   },
+  toHaveBeenCalledWithFunctionThatReturns: function() {
+    this.toHaveBeenCalled();
+    var fn = this.actual.calls[0].arguments[0];
+    expect.assert(
+      typeof fn === 'function',
+      'expected %s to be a function',
+      fn
+    );
+    Array.prototype.forEach.call(arguments, function(testCase) {
+      var result;
+      if (typeof testCase === 'object' &&
+          testCase.hasOwnProperty('input')  &&
+          testCase.hasOwnProperty('output')) {
+
+          result = fn(testCase.input);
+          expect.assert(
+            result == testCase.output,
+            'expected %s to result in %s',
+            testCase.input,
+            testCase.output
+          );
+      } else {
+        result = fn();
+        expect.assert(
+          result == testCase,
+          'expected %s',
+          testCase
+        );
+      }
+    });
+    return this;
+  },
 });
