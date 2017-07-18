@@ -1,5 +1,6 @@
 var Component = require('./Component');
 var colors = require('./colors');
+var LOG = require('./Logger');
 
 var COLOR_ORDER = [
   colors.INDIGO,
@@ -38,6 +39,10 @@ Graph.prototype = Object.assign(new Component(), {
     } else {
       this._createNode();
     }
+  },
+
+  handleDrag: function(event) {
+    LOG.debug('drag', event);
   },
 
   _createNode: function() {
