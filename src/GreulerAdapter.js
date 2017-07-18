@@ -8,10 +8,19 @@ function GreulerAdapter(greuler) {
 
 
 GreulerAdapter.prototype = {
-  initialize: function(targetNode) {
-    this.instance = this.greuler({
+  initialize: function(targetNode, options) {
+    options = options || {};
+    var greulerOptions = {
       target: '#' + targetNode.id,
-    }).update();
+    };
+    if (options.width) {
+      greulerOptions.width = options.width;
+    }
+    if (options.height) {
+      greulerOptions.height = options.height;
+    }
+
+    this.instance = this.greuler(greulerOptions).update();
     this.graph = this.instance.graph;
   },
 

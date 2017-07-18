@@ -11,17 +11,22 @@ var COLOR_ORDER = [
   colors.BLUE,
 ];
 
-function Graph(adapter) {
-  Component.apply(this);
-  this.adapter = adapter;
+function Graph(services, options) {
+  Component.apply(this, arguments);
+  this.adapter = services.adapter;
   this.nodes = [];
   this.colors = {};
+  this.width = (options && options.width) || 750;
+  this.height = (options && options.height) || 750;
 }
 
 
 Graph.prototype = Object.assign(new Component(), {
   attachTo: function(targetElement) {
-    this.adapter.initialize(targetElement);
+    this.adapter.initialize(
+      targetElement,
+      { width: this.width, height: this.height }
+    );
     targetElement.addEventListener('click', this.handleClick.bind(this));
   },
 

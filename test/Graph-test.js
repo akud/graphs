@@ -18,16 +18,28 @@ describe('Graph', function() {
   });
 
   it('does nothing when constructed', function() {
-    new Graph(adapter);
+    new Graph({ adapter: adapter });
     expect(adapter.initialize).toNotHaveBeenCalled();
   });
 
   describe('attachTo', function() {
     var graph;
-    beforeEach(function() { graph = new Graph(adapter); });
+    var width;
+    var height;
+    beforeEach(function() {
+      width = 123;
+      height = 456;
+      graph = new Graph(
+        { adapter: adapter },
+        { width: width, height: height }
+      );
+    });
     it('initializes the graph', function() {
       graph.attachTo(targetElement);
-      expect(adapter.initialize).toHaveBeenCalledWith(targetElement);
+      expect(adapter.initialize).toHaveBeenCalledWith(
+        targetElement,
+        { width: width, height: height }
+      );
       expect(adapter.addNode).toNotHaveBeenCalled();
     });
 
@@ -41,7 +53,7 @@ describe('Graph', function() {
   describe('click', function() {
     var graph;
     beforeEach(function() {
-      graph = new Graph(adapter);
+      graph = new Graph({ adapter: adapter });
       graph.attachTo(targetElement);
     });
 

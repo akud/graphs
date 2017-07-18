@@ -19,13 +19,45 @@ describe('GreulerAdapter', function() {
     expect(greuler).toNotHaveBeenCalled();
   });
 
-  it('initializes the graph on initialize', function() {
-    var adapter = new GreulerAdapter(greuler);
-    var node = new MockDomNode('asdkfwer');
-    adapter.initialize(node);
-    expect(greuler).toHaveBeenCalled();
-    expect(greuler).toHaveBeenCalledWith({ target: '#asdkfwer' });
-    expect(instance.update).toHaveBeenCalled();
+  describe('initialize', function() {
+    var adapter;
+    var node;
+    beforeEach(function() {
+      adapter = new GreulerAdapter(greuler);
+      node = new MockDomNode('asdkfwer');
+    });
+
+    it('initializes the graph', function() {
+      adapter.initialize(node);
+      expect(greuler).toHaveBeenCalledWith({ target: '#asdkfwer' });
+      expect(instance.update).toHaveBeenCalled();
+    });
+
+    it('passes width and height to the graph', function() {
+      adapter.initialize(node, { width: 123, height: 243 });
+      expect(greuler).toHaveBeenCalledWith({
+        target: '#asdkfwer',
+        width: 123,
+        height: 243,
+      });
+    });
+
+    it('passes width to the graph', function() {
+      adapter.initialize(node, { width: 123 });
+      expect(greuler).toHaveBeenCalledWith({
+        target: '#asdkfwer',
+        width: 123,
+      });
+    });
+
+    it('passes height to the graph', function() {
+      adapter.initialize(node, { height: 243 });
+      expect(greuler).toHaveBeenCalledWith({
+        target: '#asdkfwer',
+        height: 243,
+      });
+    });
+
   });
 
   describe('add node', function() {
