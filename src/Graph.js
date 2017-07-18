@@ -22,12 +22,11 @@ function Graph(services, options) {
 
 
 Graph.prototype = Object.assign(new Component(), {
-  attachTo: function(targetElement) {
+  doAttach: function(targetElement) {
     this.adapter.initialize(
       targetElement,
       { width: this.width, height: this.height }
     );
-    targetElement.addEventListener('click', this.handleClick.bind(this));
   },
 
   handleClick: function(event) {
