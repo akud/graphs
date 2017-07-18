@@ -1,5 +1,6 @@
 var Graph = require('../src/Graph');
 var clicktargets = require('../src/clicktargets');
+var colors = require('../src/colors');
 
 
 describe('Graph', function() {
@@ -77,13 +78,13 @@ describe('Graph', function() {
       expect(adapter.getClickTarget).toHaveBeenCalled();
       expect(adapter.addNode).toNotHaveBeenCalled();
       expect(adapter.setNodeColor.calls.length).toBe(7);
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#db190f');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#f76402');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#fbff14');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#28b92b');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#2826b5');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#2980B9');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, '#8c28b7');
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.RED);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.ORANGE);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.YELLOW);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.GREEN);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.BLUE);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.INDIGO);
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.VIOLET);
     });
 
     it('tracks colors for nodes separately', function() {
@@ -98,11 +99,11 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(target2);
       targetElement.click();
 
-      expect(adapter.setNodeColor.calls[0].arguments).toEqual([target1, '#8c28b7']);
-      expect(adapter.setNodeColor.calls[1].arguments).toEqual([target1, '#db190f']);
-      expect(adapter.setNodeColor.calls[2].arguments).toEqual([target1, '#f76402']);
+      expect(adapter.setNodeColor.calls[0].arguments).toEqual([target1, colors.VIOLET]);
+      expect(adapter.setNodeColor.calls[1].arguments).toEqual([target1, colors.RED]);
+      expect(adapter.setNodeColor.calls[2].arguments).toEqual([target1, colors.ORANGE]);
 
-      expect(adapter.setNodeColor.calls[3].arguments).toEqual([target2, '#8c28b7']);
+      expect(adapter.setNodeColor.calls[3].arguments).toEqual([target2, colors.VIOLET]);
     });
   });
 });
