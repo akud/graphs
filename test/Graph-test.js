@@ -64,15 +64,15 @@ describe('Graph', function() {
 
       expect(adapter.getClickTarget).toHaveBeenCalled();
       expect(adapter.addNode).toHaveBeenCalled();
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 0, label: '', fill: '#2980B9' });
+      expect(adapter.addNode).toHaveBeenCalledWith({ id: 0, label: '', color: '#2980B9' });
 
       targetElement.click();
       targetElement.click();
       targetElement.click();
       expect(adapter.addNode.calls.length).toBe(4);
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 1, label: '', fill: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 2, label: '', fill: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', fill: '#2980B9' });
+      expect(adapter.addNode).toHaveBeenCalledWith({ id: 1, label: '', color: '#2980B9' });
+      expect(adapter.addNode).toHaveBeenCalledWith({ id: 2, label: '', color: '#2980B9' });
+      expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', color: '#2980B9' });
     });
 
     it('passes node size to adapter', function() {
@@ -86,7 +86,7 @@ describe('Graph', function() {
       targetElement.click();
 
       expect(adapter.addNode).toHaveBeenCalledWith(
-        { id: 0, label: '', fill: '#2980B9', size: 56 }
+        { id: 0, label: '', color: '#2980B9', size: 56 }
       );
     });
 

@@ -22,7 +22,7 @@ GreulerAdapter.prototype = {
   addNode: function(node) {
     var node = utils.optional({
       id: node.id,
-      fill: node.fill,
+      fill: node.color,
       label: node.label || '',
       r: node.size,
     }, { force: 'label' });

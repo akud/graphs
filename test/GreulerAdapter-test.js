@@ -85,7 +85,7 @@ describe('GreulerAdapter', function() {
     });
 
     it('passes label and fill color', function() {
-      var node = { id: 34, label: '', fill: '#faddad' };
+      var node = { id: 34, label: '', color: '#faddad' };
       adapter.addNode(node);
       expect(instance.graph.addNode).toHaveBeenCalledWith({
         id: 34,
