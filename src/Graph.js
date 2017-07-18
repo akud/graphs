@@ -20,6 +20,7 @@ function Graph(services, options) {
   this.colors = {};
   this.width = (options && options.width);
   this.height = (options && options.height);
+  this.nodeSize = (options && options.nodeSize);
 }
 
 
@@ -47,11 +48,12 @@ Graph.prototype = Object.assign(new Component(), {
   },
 
   _createNode: function() {
-    var node = {
+    var node = utils.optional({
       id: this.nodes.length,
       fill: COLOR_ORDER[0],
       label: '',
-    };
+      size: this.nodeSize,
+    }, { force: ['id', 'label'] });
     this.nodes.push(node);
     this.adapter.addNode(node);
   },

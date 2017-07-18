@@ -14,11 +14,18 @@ GreulerAdapter.prototype = {
       target: '#' + targetNode.id,
       width: (options && options.width),
       height: (options && options.height),
+      r: (options && options.size),
     })).update();
     this.graph = this.instance.graph;
   },
 
   addNode: function(node) {
+    var node = utils.optional({
+      id: node.id,
+      fill: node.fill,
+      label: node.label || '',
+      r: node.size,
+    }, { force: 'label' });
     var result = this.graph.addNode(node);
     this.instance.update();
   },

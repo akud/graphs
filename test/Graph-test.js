@@ -75,6 +75,21 @@ describe('Graph', function() {
       expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', fill: '#2980B9' });
     });
 
+    it('passes node size to adapter', function() {
+      graph = new Graph(
+        { adapter: adapter },
+        { nodeSize: 56 }
+      );
+      graph.attachTo(targetElement);
+      adapter.getClickTarget.andReturn(clicktargets.NONE);
+
+      targetElement.click();
+
+      expect(adapter.addNode).toHaveBeenCalledWith(
+        { id: 0, label: '', fill: '#2980B9', size: 56 }
+      );
+    });
+
     it('cycles through node colors when clicking on a node', function() {
       var clickTarget = new clicktargets.Node({ id: 1 });
       adapter.getClickTarget.andReturn(clickTarget);

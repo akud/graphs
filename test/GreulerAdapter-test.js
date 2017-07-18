@@ -68,10 +68,30 @@ describe('GreulerAdapter', function() {
     });
 
     it('adds a node and updates this instance', function() {
-      var node = { id: 34 };
+      var node = { id: 34, label: 'asdf' };
       adapter.addNode(node);
       expect(instance.graph.addNode).toHaveBeenCalledWith(node);
       expect(instance.update).toHaveBeenCalled();
+    });
+
+    it('adds passes size as radius', function() {
+      var node = { id: 34, size: 67 };
+      adapter.addNode(node);
+      expect(instance.graph.addNode).toHaveBeenCalledWith({
+        id: 34,
+        r: 67,
+        label: '',
+      });
+    });
+
+    it('passes label and fill color', function() {
+      var node = { id: 34, label: '', fill: '#faddad' };
+      adapter.addNode(node);
+      expect(instance.graph.addNode).toHaveBeenCalledWith({
+        id: 34,
+        label: '',
+        fill: '#faddad',
+      });
     });
   });
 
