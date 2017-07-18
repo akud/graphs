@@ -1,4 +1,5 @@
 var clicktargets = require('./clicktargets');;
+var utils = require('./utils');
 var LOG = require('./Logger');
 
 
@@ -9,18 +10,11 @@ function GreulerAdapter(greuler) {
 
 GreulerAdapter.prototype = {
   initialize: function(targetNode, options) {
-    options = options || {};
-    var greulerOptions = {
+    this.instance = this.greuler(utils.optional({
       target: '#' + targetNode.id,
-    };
-    if (options.width) {
-      greulerOptions.width = options.width;
-    }
-    if (options.height) {
-      greulerOptions.height = options.height;
-    }
-
-    this.instance = this.greuler(greulerOptions).update();
+      width: (options && options.width),
+      height: (options && options.height),
+    })).update();
     this.graph = this.instance.graph;
   },
 

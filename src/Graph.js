@@ -1,5 +1,6 @@
 var Component = require('./Component');
 var colors = require('./colors');
+var utils = require('./utils');
 var LOG = require('./Logger');
 
 var COLOR_ORDER = [
@@ -17,8 +18,8 @@ function Graph(services, options) {
   this.adapter = services.adapter;
   this.nodes = [];
   this.colors = {};
-  this.width = (options && options.width) || 750;
-  this.height = (options && options.height) || 750;
+  this.width = (options && options.width);
+  this.height = (options && options.height);
 }
 
 
@@ -26,7 +27,7 @@ Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
     this.adapter.initialize(
       targetElement,
-      { width: this.width, height: this.height }
+      utils.optional({ width: this.width, height: this.height })
     );
   },
 
