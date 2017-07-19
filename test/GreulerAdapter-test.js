@@ -24,7 +24,7 @@ describe('GreulerAdapter', function() {
     var node;
     beforeEach(function() {
       adapter = new GreulerAdapter(greuler);
-      node = new MockDomNode('asdkfwer');
+      node = new MockDomNode({ id: 'asdkfwer' });
     });
 
     it('initializes the graph', function() {
@@ -170,9 +170,19 @@ describe('GreulerAdapter', function() {
     });
 
     it('matches nodes to dom elements', function() {
-      var mockDomElement1 = new MockDomNode();
-      var mockDomElement2 = new MockDomNode();
-      var mockDomElement3 = new MockDomNode();
+      var circle1 = new MockDomNode();
+      var circle2 = new MockDomNode();
+      var circle3 = new MockDomNode();
+
+      var childNode1 = new MockDomNode({
+        'getElementsByTagName.returnValue': [circle1],
+      });
+      var childNode2 = new MockDomNode({
+        'getElementsByTagName.returnValue': [circle2],
+      });
+      var childNode3 = new MockDomNode({
+        'getElementsByTagName.returnValue': [circle3],
+      });
 
       var node1 = { id: 34, index: 0 };
       var node2 = { id: 45, index: 1 };
@@ -185,11 +195,7 @@ describe('GreulerAdapter', function() {
       instance.nodeGroup = [
         [
           {
-            childNodes: [
-              mockDomElement1,
-              mockDomElement2,
-              mockDomElement3,
-            ],
+            childNodes: [ childNode1, childNode2, childNode3, ],
           }
         ],
       ];
@@ -200,17 +206,17 @@ describe('GreulerAdapter', function() {
         new graphelements.Node({
           id: 34,
           realNode: node1,
-          domElement: mockDomElement1,
+          domElement: circle1,
         }),
         new graphelements.Node({
           id: 45,
           realNode: node2,
-          domElement: mockDomElement2,
+          domElement: circle2,
         }),
         new graphelements.Node({
           id: 98,
           realNode: node3,
-          domElement: mockDomElement3,
+          domElement: circle3,
         }),
       ]);
     });

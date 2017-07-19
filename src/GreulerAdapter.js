@@ -34,7 +34,8 @@ GreulerAdapter.prototype = {
     if (target.domElement) {
       target.domElement.setAttribute('fill', color);
     } else if (target.id) {
-      //TODO: retrieve dom node for node id
+      var node = this.graph.getNode({ id: target.id });
+      this._getDomElement(node).setAttribute('fill', color);
     } else {
       LOG.error('Got unexpected target node', target);
     }
@@ -55,9 +56,15 @@ GreulerAdapter.prototype = {
       return new graphelements.Node({
         id: node.id,
         realNode: node,
-        domElement: this.instance.nodeGroup[0][0].childNodes[node.index],
+        domElement: this._getDomElement(node),
       });
     }).bind(this));
+  },
+
+  _getDomElement: function(node) {
+    return this.instance.nodeGroup[0][0]
+      .childNodes[node.index]
+      .getElementsByTagName('circle')[0];
   },
 
   _getTargetNode: function(event) {

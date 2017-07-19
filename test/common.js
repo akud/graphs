@@ -15,11 +15,20 @@ global.createSpyObjectWith = function() {
   return obj;
 };
 
-global.MockDomNode = function(id) {
-  if (id === undefined) {
+global.MockDomNode = function(options) {
+  options = options || {};
+
+  Object.keys(options).forEach((function(key) {
+    if (key === 'id') {
+      this.id = options[key];
+    } else if (key.endsWith('.returnValue')) {
+      var property = key.split('.')[0];
+      this[property] = createSpy().andReturn(options[key]);
+    }
+  }).bind(this));
+
+  if (!this.id) {
     this.id = 'node-' + Math.floor(Math.random() * 100)
-  } else {
-    this.id = id;
   }
 
   this.listeners = {};
