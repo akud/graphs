@@ -74,6 +74,14 @@ describe('GreulerAdapter', function() {
       expect(instance.update).toHaveBeenCalled();
     });
 
+    it('can add a node with id equal to 0', function() {
+      var node = { id: 0 };
+      adapter.addNode(node);
+      expect(instance.graph.addNode).toHaveBeenCalledWith(
+        { id: 0, label: '' }
+      );
+    });
+
     it('adds passes size as radius', function() {
       var node = { id: 34, size: 67 };
       adapter.addNode(node);

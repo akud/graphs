@@ -25,7 +25,7 @@ GreulerAdapter.prototype = {
       fill: node.color,
       label: node.label || '',
       r: node.size,
-    }, { force: 'label' });
+    }, { force: ['id', 'label'] });
     var result = this.graph.addNode(node);
     this.instance.update();
   },
