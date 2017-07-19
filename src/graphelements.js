@@ -1,5 +1,8 @@
 function GraphElement(options) {
-  Object.assign(this, options);
+  if (options) {
+    this.id = options.id;
+    this.domElement = options.domElement;
+  }
 }
 
 GraphElement.prototype = {
