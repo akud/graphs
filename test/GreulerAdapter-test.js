@@ -1,5 +1,5 @@
 var GreulerAdapter = require('../src/GreulerAdapter');
-var clicktargets = require('../src/clicktargets');
+var graphelements = require('../src/graphelements');
 
 describe('GreulerAdapter', function() {
   var graph;
@@ -112,7 +112,7 @@ describe('GreulerAdapter', function() {
 
     it('returns NONE if no target', function() {
       var event = createSpyObjectWith({ explicitOriginalTarget: null });
-      expect(adapter.getClickTarget(event)).toBe(clicktargets.NONE);
+      expect(adapter.getClickTarget(event)).toBe(graphelements.NONE);
     });
 
     it('compares node position to click position', function() {
@@ -128,7 +128,7 @@ describe('GreulerAdapter', function() {
       graph.getNodesByFn.andReturn([realNode]);
 
       var target = adapter.getClickTarget(event);
-      expect(target).toBeA(clicktargets.Node);
+      expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(345);
       expect(target.realNode).toBe(realNode);
       expect(target.domElement).toBe(event.explicitOriginalTarget);
@@ -152,7 +152,7 @@ describe('GreulerAdapter', function() {
     });
 
     it('sets the node fill color', function() {
-      var clickTarget = new clicktargets.Node({
+      var clickTarget = new graphelements.Node({
         id: 23,
         realNode: createSpyObjectWith(),
         domElement: createSpyObjectWith('setAttribute'),

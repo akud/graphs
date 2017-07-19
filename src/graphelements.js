@@ -1,8 +1,8 @@
-function ClickTarget(options) {
+function GraphElement(options) {
   Object.assign(this, options);
 }
 
-ClickTarget.prototype = {
+GraphElement.prototype = {
   isNode: function() {
     return false;
   },
@@ -12,30 +12,30 @@ ClickTarget.prototype = {
 };
 
 function Node(options) {
-  ClickTarget.apply(this, arguments);
+  GraphElement.apply(this, arguments);
   if (options) {
     this.realNode = options.realNode;
   }
 }
 
-Node.prototype = Object.assign(new ClickTarget(), {
+Node.prototype = Object.assign(new GraphElement(), {
   isNode: function() { return true; },
 });
 
 
 function Edge() {
-  ClickTarget.apply(this, arguments);
+  GraphElement.apply(this, arguments);
 }
 
-Edge.prototype = Object.assign(new ClickTarget(), {
+Edge.prototype = Object.assign(new GraphElement(), {
   isEdge: function() { return true; },
 });
 
 function None() {
-  ClickTarget.apply(this, arguments);
+  GraphElement.apply(this, arguments);
 }
 
-None.prototype = Object.assign(new ClickTarget(), {
+None.prototype = Object.assign(new GraphElement(), {
 
 });
 

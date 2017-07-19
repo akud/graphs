@@ -1,4 +1,4 @@
-var clicktargets = require('./clicktargets');;
+var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var LOG = require('./Logger');
 
@@ -27,7 +27,7 @@ GreulerAdapter.prototype = {
       r: node.size,
     }, { force: ['id', 'label'] });
     var result = this.graph.addNode(node);
-    this.instance.update();
+    this.instance = this.instance.update();
   },
 
   setNodeColor: function(target, color) {
@@ -45,7 +45,7 @@ GreulerAdapter.prototype = {
     if (originalTarget && originalTarget.nodeName == 'circle') {
       return this._getTargetNode(event);
     } else {
-      return clicktargets.NONE;
+      return graphelements.NONE;
     }
   },
 
@@ -59,11 +59,11 @@ GreulerAdapter.prototype = {
 
     if (nodes.length === 0) {
       LOG.warn('no nodes at (' + x + ',' + y + ')');
-      return clicktargets.NONE;
+      return graphelements.NONE;
     } else if (nodes.length > 1) {
       LOG.debug('multiple nodes at (' + x + ',' + y + ')', nodes);
     }
-    return new clicktargets.Node({
+    return new graphelements.Node({
       id: nodes[0].id,
       realNode: nodes[0],
       domElement: event.explicitOriginalTarget,

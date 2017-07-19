@@ -1,5 +1,5 @@
 var Graph = require('../src/Graph');
-var clicktargets = require('../src/clicktargets');
+var graphelements = require('../src/graphelements');
 var colors = require('../src/colors');
 
 
@@ -58,7 +58,7 @@ describe('Graph', function() {
     });
 
     it('adds a node to the graph by default', function() {
-      adapter.getClickTarget.andReturn(clicktargets.NONE);
+      adapter.getClickTarget.andReturn(graphelements.NONE);
       expect(adapter.addNode).toNotHaveBeenCalled();
       targetElement.click();
 
@@ -81,7 +81,7 @@ describe('Graph', function() {
         { nodeSize: 56 }
       );
       graph.attachTo(targetElement);
-      adapter.getClickTarget.andReturn(clicktargets.NONE);
+      adapter.getClickTarget.andReturn(graphelements.NONE);
 
       targetElement.click();
 
@@ -91,7 +91,7 @@ describe('Graph', function() {
     });
 
     it('cycles through node colors when clicking on a node', function() {
-      var clickTarget = new clicktargets.Node({ id: 1 });
+      var clickTarget = new graphelements.Node({ id: 1 });
       adapter.getClickTarget.andReturn(clickTarget);
 
       targetElement.click();
@@ -115,8 +115,8 @@ describe('Graph', function() {
     });
 
     it('tracks colors for nodes separately', function() {
-      var target1 = new clicktargets.Node({ id: 1 });
-      var target2 = new clicktargets.Node({ id: 2 });
+      var target1 = new graphelements.Node({ id: 1 });
+      var target2 = new graphelements.Node({ id: 2 });
 
       adapter.getClickTarget.andReturn(target1);
       targetElement.click();
