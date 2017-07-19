@@ -49,6 +49,17 @@ GreulerAdapter.prototype = {
     }
   },
 
+  getNodes: function(filter) {
+    filter = filter || function() { return true; };
+    return this.graph.getNodesByFn(filter).map((function(node) {
+      return new graphelements.Node({
+        id: node.id,
+        realNode: node,
+        domElement: this.instance.nodeGroup[0][0].childNodes[node.index],
+      });
+    }).bind(this));
+  },
+
   _getTargetNode: function(event) {
     var x = event.clientX;
     var y = event.clientY;

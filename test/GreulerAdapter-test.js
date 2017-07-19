@@ -161,4 +161,65 @@ describe('GreulerAdapter', function() {
       expect(clickTarget.domElement.setAttribute).toHaveBeenCalledWith('fill', '#000');
     });
   });
+
+  describe('getNodes', function() {
+    var adapter;
+    beforeEach(function() {
+      adapter = new GreulerAdapter(greuler);
+      adapter.initialize(new MockDomNode());
+    });
+
+    it('matches nodes to dom elements', function() {
+      var mockDomElement1 = new MockDomNode();
+      var mockDomElement2 = new MockDomNode();
+      var mockDomElement3 = new MockDomNode();
+
+      var node1 = { id: 34, index: 0 };
+      var node2 = { id: 45, index: 1 };
+      var node3 = { id: 98, index: 2 };
+      graph.getNodesByFn.andReturn([
+        node1,
+        node2,
+        node3,
+      ]);
+      instance.nodeGroup = [
+        [
+          {
+            childNodes: [
+              mockDomElement1,
+              mockDomElement2,
+              mockDomElement3,
+            ],
+          }
+        ],
+      ];
+
+      var results = adapter.getNodes();
+      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(true);
+      expect(results).toEqual([
+        new graphelements.Node({
+          id: 34,
+          realNode: node1,
+          domElement: mockDomElement1,
+        }),
+        new graphelements.Node({
+          id: 45,
+          realNode: node2,
+          domElement: mockDomElement2,
+        }),
+        new graphelements.Node({
+          id: 98,
+          realNode: node3,
+          domElement: mockDomElement3,
+        }),
+      ]);
+    });
+
+    it('passes filter to greuler', function() {
+      var filter = function() { };
+      graph.getNodesByFn.andReturn([]);
+      adapter.getNodes(filter);
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(filter);
+    });
+  });
 });
