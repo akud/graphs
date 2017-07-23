@@ -3,6 +3,8 @@ global.createSpy = expect.createSpy
 global.spyOn = expect.spyOn
 global.isSpy = expect.isSpy
 
+var isEqual = require('is-equal');
+
 global.createSpyObjectWith = function() {
   var obj = {};
   Array.prototype.forEach.call(arguments, function(fnName) {
@@ -53,6 +55,77 @@ global.MockDomNode.prototype = {
   },
 };
 
+global.matchers = {
+  any: function(constructor) {
+    return {
+      match: function(arg) {
+        return {
+          matches: (constructor && arg.constructor === constructor) || true,
+          expected: 'anything',
+          actual: arg,
+        };
+      },
+      _isMatcher: true,
+    };
+  },
+
+  equals: function(expected) {
+    return {
+      match: function(arg) {
+        return {
+          matches: isEqual(expected, arg),
+          expected: expected,
+          actual: arg,
+        };
+      },
+      _isMatcher: true,
+    };
+  },
+
+  functionThatReturns: function() {
+    var testCases = Array.prototype.slice.call(arguments);
+    return {
+      match: function(fn) {
+        if (typeof fn === 'function') {
+          var results = testCases.map(function(testCase) {
+            var output;
+            if (typeof testCase === 'object' &&
+                testCase.hasOwnProperty('input')  &&
+                testCase.hasOwnProperty('output')) {
+
+                output = fn(testCase.input);
+                return {
+                  matches: isEqual(testCase.output, output),
+                  expected: 'fn(' + testCase.input + ') -> ' + output,
+                  actual: 'fn('+ testCase.input + ') -> ' + output,
+                };
+            } else {
+              result = fn();
+              return {
+                matches: isEqual(testCase, result),
+                expected: 'fn() -> ' + testCase,
+                actual: 'fn() -> ' + output,
+              };
+            }
+          });
+          return {
+            matches: results.every(function(r) { return r.matches; }),
+            expected: results.map(function(r) { return r.expected; }),
+            actual: results.map(function(r) { return r.actual; }),
+          };
+        } else {
+          return {
+            matches: false,
+            expected: 'function',
+            actual: fn,
+          };
+        }
+      },
+      _isMatcher: true,
+    };
+  },
+};
+
 expect.extend({
   toBeA: function(clazz) {
     expect.assert(
@@ -63,36 +136,36 @@ expect.extend({
     );
     return this;
   },
-  toHaveBeenCalledWithFunctionThatReturns: function() {
-    this.toHaveBeenCalled();
-    var fn = this.actual.calls[0].arguments[0];
-    expect.assert(
-      typeof fn === 'function',
-      'expected %s to be a function',
-      fn
-    );
-    Array.prototype.forEach.call(arguments, function(testCase) {
-      var result;
-      if (typeof testCase === 'object' &&
-          testCase.hasOwnProperty('input')  &&
-          testCase.hasOwnProperty('output')) {
 
-          result = fn(testCase.input);
-          expect.assert(
-            result == testCase.output,
-            'expected %s to result in %s',
-            testCase.input,
-            testCase.output
-          );
+  toHaveBeenCalledWith: function() {
+    this.toHaveBeenCalled();
+    var expected = Array.prototype.map.call(arguments, function(e) {
+      if (e && e._isMatcher) {
+        return e;
       } else {
-        result = fn();
-        expect.assert(
-          result == testCase,
-          'expected %s',
-          testCase
-        );
+        return global.matchers.equals(e);
       }
     });
+    var matches = this.actual.calls.map(function(call) {
+      return expected.map(function(e, i) { return e.match(call.arguments[i]); });
+    });
+
+    try {
+      expect.assert(
+        matches.some(function(row) { return row.every(function(m) { return m.matches; }) }),
+        'expected to be called with %s',
+        expected
+      );
+    } catch(error) {
+      error.expected = matches.map(function(row) {
+        return row.map(function(m) { return m.expected; });
+      });
+      error.actual = matches.map(function(row) {
+        return row.map(function(m) { return m.actual; });
+      });
+      error.showDiff = true;
+      throw error;
+    }
     return this;
   },
 });

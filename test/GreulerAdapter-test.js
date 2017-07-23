@@ -147,14 +147,14 @@ describe('GreulerAdapter', function() {
       expect(target.realNode).toBe(realNode);
       expect(target.domElement).toBe(domElements[2]);
 
-      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
         { input: { x: 125, y: 130, width: 20, height: 20 }, output: true },
         { input: { x: 110, y: 120, width: 20, height: 20 }, output: true },
         { input: { x: 105, y: 110, width: 20, height: 20 }, output: true },
         { input: { x: 100, y: 100, width: 20, height: 20 }, output: false },
         { input: { x: 100, y: 115, width: 20, height: 20 }, output: false },
         { input: { x: 110, y: 100, width: 20, height: 20 }, output: false }
-      );
+      ));
     });
 
     it('adds a fuzz factor to node bounding box', function() {
@@ -173,7 +173,7 @@ describe('GreulerAdapter', function() {
       expect(target.domElement).toBe(domElements[1]);
 
       //click at (50, 100)
-      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
         //top left
         { input: { x: 52, y: 102, width: 20, height: 20 }, output: true },
         { input: { x: 55, y: 102, width: 20, height: 20 }, output: false },
@@ -193,7 +193,7 @@ describe('GreulerAdapter', function() {
         { input: { x: 52, y: 78, width: 20, height: 20 }, output: true },
         { input: { x: 55, y: 78, width: 20, height: 20 }, output: false },
         { input: { x: 52, y: 75, width: 20, height: 20 }, output: false }
-      );
+      ));
     });
 
     it('chooses the closest node', function() {
@@ -271,7 +271,7 @@ describe('GreulerAdapter', function() {
       ];
 
       var results = adapter.getNodes();
-      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(true);
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(true));
       expect(results).toEqual([
         new graphelements.Node({
           id: 34,
