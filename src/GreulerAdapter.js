@@ -2,6 +2,8 @@ var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var LOG = require('./Logger');
 
+var NODE_AREA_FUZZ_FACTOR = 0.1;
+
 
 function GreulerAdapter(greuler) {
   this.greuler = greuler;
@@ -42,12 +44,7 @@ GreulerAdapter.prototype = {
   },
 
   getClickTarget: function(event) {
-    var originalTarget = event.explicitOriginalTarget;
-    if (originalTarget && originalTarget.nodeName == 'circle') {
-      return this._getTargetNode(event);
-    } else {
-      return graphelements.NONE;
-    }
+    return this._getTargetNode(event) || graphelements.NONE;
   },
 
   getNodes: function(filter) {
@@ -70,24 +67,31 @@ GreulerAdapter.prototype = {
   _getTargetNode: function(event) {
     var x = event.clientX;
     var y = event.clientY;
-    var nodes = this.graph.getNodesByFn(function(node) {
-      return x >= node.x && x <= node.x + node.width &&
-             y >= node.y && y <= node.y + node.height;
+    var matchingNodes = this.getNodes(function(node) {
+      var leftBound = node.x - (NODE_AREA_FUZZ_FACTOR * node.width);
+      var rightBound = node.x + (( 1+ NODE_AREA_FUZZ_FACTOR) * node.width);
+      var topBound = node.y - (NODE_AREA_FUZZ_FACTOR * node.height);
+      var bottomBound = node.y + ((1 + NODE_AREA_FUZZ_FACTOR) * node.height);
+      return leftBound <= x && x <= rightBound &&
+             topBound <= y && y <= bottomBound;
     });
 
-    if (nodes.length === 0) {
-      LOG.warn('no nodes at (' + x + ',' + y + ')');
-      return graphelements.NONE;
-    } else if (nodes.length > 1) {
-      LOG.debug('multiple nodes at (' + x + ',' + y + ')', nodes);
+    if (matchingNodes && matchingNodes.length) {
+      matchingNodes.sort(function(a, b) {
+        var distanceToA = utils.distance(center(a.realNode), [x, y]);
+        var distanceToB = utils.distance(center(b.realNode), [x, y]);
+        return distanceToA - distanceToB;
+      });
+      return matchingNodes[0];
+    } else {
+      return undefined;
     }
-    return new graphelements.Node({
-      id: nodes[0].id,
-      realNode: nodes[0],
-      domElement: event.explicitOriginalTarget,
-    });
   }
 };
 
+
+function center(node) {
+    return [node.x + (node.width / 2), node.y + (node.height / 2)];
+}
 
 module.exports = GreulerAdapter;

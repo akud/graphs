@@ -50,4 +50,11 @@ describe('utils', function() {
       });
     });
   });
+
+  describe('distance', function() {
+    it('computes the cartesian distance', function() {
+      expect(utils.distance([0, 1], [1, 0])).toEqual(Math.sqrt(2));
+      expect(utils.distance([4, 7], [2, 9])).toEqual(2 * Math.sqrt(2));
+    });
+  });
 });

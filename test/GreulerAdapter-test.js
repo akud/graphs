@@ -105,24 +105,38 @@ describe('GreulerAdapter', function() {
 
   describe('getClickTarget', function() {
     var adapter;
+    var domElements;
+
     beforeEach(function() {
       adapter = new GreulerAdapter(greuler);
       adapter.initialize(new MockDomNode());
+      domElements = [
+        new MockDomNode(),
+        new MockDomNode(),
+        new MockDomNode(),
+      ];
+      instance.nodeGroup = [
+        [
+          {
+            childNodes: domElements.map(function(d) {
+              return new MockDomNode({ 'getElementsByTagName.returnValue': [ d ] });
+            }),
+          }
+        ],
+      ];
     });
 
     it('returns NONE if no target', function() {
       var event = createSpyObjectWith({ explicitOriginalTarget: null });
+      graph.getNodesByFn.andReturn([]);
       expect(adapter.getClickTarget(event)).toBe(graphelements.NONE);
     });
 
     it('compares node position to click position', function() {
-      var realNode = {id: 345}
+      var realNode = { id: 345, index: 2 }
       var event = createSpyObjectWith({
         clientX: 125,
         clientY: 130,
-        explicitOriginalTarget: createSpyObjectWith({
-          nodeName: 'circle',
-        }),
       });
 
       graph.getNodesByFn.andReturn([realNode]);
@@ -131,7 +145,7 @@ describe('GreulerAdapter', function() {
       expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(345);
       expect(target.realNode).toBe(realNode);
-      expect(target.domElement).toBe(event.explicitOriginalTarget);
+      expect(target.domElement).toBe(domElements[2]);
 
       expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(
         { input: { x: 125, y: 130, width: 20, height: 20 }, output: true },
@@ -141,6 +155,62 @@ describe('GreulerAdapter', function() {
         { input: { x: 100, y: 115, width: 20, height: 20 }, output: false },
         { input: { x: 110, y: 100, width: 20, height: 20 }, output: false }
       );
+    });
+
+    it('adds a fuzz factor to node bounding box', function() {
+      var realNode = { id: 345, index: 1 }
+      var event = createSpyObjectWith({
+        clientX: 50,
+        clientY: 100,
+      });
+
+      graph.getNodesByFn.andReturn([realNode]);
+
+      var target = adapter.getClickTarget(event);
+      expect(target).toBeA(graphelements.Node);
+      expect(target.id).toBe(345);
+      expect(target.realNode).toBe(realNode);
+      expect(target.domElement).toBe(domElements[1]);
+
+      //click at (50, 100)
+      expect(graph.getNodesByFn).toHaveBeenCalledWithFunctionThatReturns(
+        //top left
+        { input: { x: 52, y: 102, width: 20, height: 20 }, output: true },
+        { input: { x: 55, y: 102, width: 20, height: 20 }, output: false },
+        { input: { x: 52, y: 105, width: 20, height: 20 }, output: false },
+
+        //top right
+        { input: { x: 28, y: 102, width: 20, height: 20 }, output: true },
+        { input: { x: 25, y: 102, width: 20, height: 20 }, output: false },
+        { input: { x: 28, y: 105, width: 20, height: 20 }, output: false },
+
+        //bottom right
+        { input: { x: 28, y: 78, width: 20, height: 20 }, output: true },
+        { input: { x: 25, y: 78, width: 20, height: 20 }, output: false },
+        { input: { x: 28, y: 75, width: 20, height: 20 }, output: false },
+
+        //bottom left
+        { input: { x: 52, y: 78, width: 20, height: 20 }, output: true },
+        { input: { x: 55, y: 78, width: 20, height: 20 }, output: false },
+        { input: { x: 52, y: 75, width: 20, height: 20 }, output: false }
+      );
+    });
+
+    it('chooses the closest node', function() {
+      var event = createSpyObjectWith({
+        clientX: 50,
+        clientY: 100,
+      });
+
+      graph.getNodesByFn.andReturn([
+        { id: 1, index: 0, x: 60, y: 110, width: 10, height: 10, },
+        { id: 2, index: 1, x: 55, y: 95, width: 10, height: 10, },
+      ]);
+
+      var target = adapter.getClickTarget(event);
+      expect(target).toBeA(graphelements.Node);
+      expect(target.id).toBe(2);
+      expect(target.domElement).toBe(domElements[1]);
     });
   });
 
