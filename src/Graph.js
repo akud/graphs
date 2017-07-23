@@ -21,6 +21,7 @@ function Graph(services, options) {
   this.width = (options && options.width);
   this.height = (options && options.height);
   this.nodeSize = (options && options.nodeSize);
+  this.nodeAreaFuzzFactor = (options && options.nodeAreaFuzzFactor);
 }
 
 
@@ -33,7 +34,9 @@ Graph.prototype = Object.assign(new Component(), {
   },
 
   handleClick: function(event) {
-    var clickTarget = this.adapter.getClickTarget(event);
+    var clickTarget = this.adapter.getClickTarget(
+      event, this.nodeAreaFuzzFactor
+    );
     if (clickTarget.isNode()) {
       var colorIndex = this._getNextColorIndex(clickTarget.id);
       this.adapter.setNodeColor(clickTarget, COLOR_ORDER[colorIndex]);

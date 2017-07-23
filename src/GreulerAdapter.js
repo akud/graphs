@@ -2,8 +2,6 @@ var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var LOG = require('./Logger');
 
-var NODE_AREA_FUZZ_FACTOR = 0.1;
-
 
 function GreulerAdapter(greuler) {
   this.greuler = greuler;
@@ -43,8 +41,8 @@ GreulerAdapter.prototype = {
     }
   },
 
-  getClickTarget: function(event) {
-    return this._getTargetNode(event) || graphelements.NONE;
+  getClickTarget: function(event, nodeAreaFuzzFactor) {
+    return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
   getNodes: function(filter) {
@@ -64,14 +62,15 @@ GreulerAdapter.prototype = {
       .getElementsByTagName('circle')[0];
   },
 
-  _getTargetNode: function(event) {
+  _getTargetNode: function(event, nodeAreaFuzzFactor) {
+    nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
     var x = event.clientX;
     var y = event.clientY;
     var matchingNodes = this.getNodes(function(node) {
-      var leftBound = node.x - (NODE_AREA_FUZZ_FACTOR * node.width);
-      var rightBound = node.x + (( 1+ NODE_AREA_FUZZ_FACTOR) * node.width);
-      var topBound = node.y - (NODE_AREA_FUZZ_FACTOR * node.height);
-      var bottomBound = node.y + ((1 + NODE_AREA_FUZZ_FACTOR) * node.height);
+      var leftBound = node.x - (nodeAreaFuzzFactor * node.width);
+      var rightBound = node.x + (( 1+ nodeAreaFuzzFactor) * node.width);
+      var topBound = node.y - (nodeAreaFuzzFactor * node.height);
+      var bottomBound = node.y + ((1 + nodeAreaFuzzFactor) * node.height);
       return leftBound <= x && x <= rightBound &&
              topBound <= y && y <= bottomBound;
     });

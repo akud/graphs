@@ -166,7 +166,7 @@ describe('GreulerAdapter', function() {
 
       graph.getNodesByFn.andReturn([realNode]);
 
-      var target = adapter.getClickTarget(event);
+      var target = adapter.getClickTarget(event, 0.1);
       expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(345);
       expect(target.realNode).toBe(realNode);

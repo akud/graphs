@@ -20,6 +20,7 @@ global.graph = new Graph(
     width: width,
     height: height,
     nodeSize: nodeSize,
+    nodeAreaFuzzFactor: 0.1,
   });
 
 global.graph.attachTo(document.getElementById('main-graph'));
