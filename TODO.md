@@ -16,3 +16,5 @@
 
 5. git tool for creating a todo
 
+
+6. automate build on commit to master
