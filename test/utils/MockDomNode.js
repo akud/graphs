@@ -36,9 +36,9 @@ MockDomNode.prototype = {
   },
 
   click: function(event) {
-    this.trigger('mousedown');
-    this.trigger('click');
-    this.trigger('mouseup');
+    this.trigger('mousedown', event);
+    this.trigger('click', event);
+    this.trigger('mouseup', event);
   },
 };
 
