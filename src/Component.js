@@ -6,39 +6,37 @@
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(services, options) {
-  this.setTimeout = (services && services.setTimeout) || global.setTimeout;
-  this.holdTime = (options && options.holdtime) || 250;
+  this.setTimeout = (services && services.setTimeout) || global.setTimeout.bind(global);
+  this.holdTime = (options && options.holdTime) || 250;
 }
 
 Component.prototype = {
-  handleClick: null,
-  handleClickAndHold: null,
+  handleClick: function() {},
+  handleClickAndHold: function() {},
 
-  isMouseDown: false,
+  mouseDownCount: 0,
+  mouseUpCount: 0,
 
   attachTo: function(targetElement) {
+    targetElement.addEventListener('click', (function(event) {
+      this.handleClick(event);
+    }).bind(this));
 
-    if(typeof this.handleClick === 'function') {
-      targetElement.addEventListener('click', (function(event) {
-        this.handleClick(event);
-      }).bind(this));
-    }
+    targetElement.addEventListener('mouseup', (function(event) {
+      this.mouseUpCount++;
+    }).bind(this));
 
-    if(typeof this.handleClickAndHold === 'function') {
+    targetElement.addEventListener('mousedown', (function(event) {
+      this.mouseDownCount++;
+      var originalCount = this.mouseDownCount;
 
-      targetElement.addEventListener('mouseup', (function(event) {
-        this.isMouseDown = false;
-      }).bind(this));
-
-      targetElement.addEventListener('mousedown', (function(event) {
-        this.isMouseDown = true;
-        this.setTimeout((function() {
-          if (this.isMouseDown) {
-            this.handleClickAndHold(event);
-          }
-        }).bind(this), this.holdTime);
-      }).bind(this));
-    }
+      this.setTimeout((function() {
+        if (this.mouseDownCount === originalCount &&
+            this.mouseUpCount === this.mouseDownCount - 1) {
+          this.handleClickAndHold(event);
+        }
+      }).bind(this), this.holdTime);
+    }).bind(this));
 
     this.doAttach(targetElement);
   },
