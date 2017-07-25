@@ -1,5 +1,6 @@
 var expect = require('expect');
 var isEqual = require('is-equal');
+var matchers = require('./matchers');
 
 expect.extend({
   toBeA: function(clazz) {
@@ -18,7 +19,7 @@ expect.extend({
       if (e && e._isMatcher) {
         return e;
       } else {
-        return global.matchers.equals(e);
+        return matchers.equals(e);
       }
     });
     var matches = this.actual.calls.map(function(call) {
@@ -28,8 +29,7 @@ expect.extend({
     try {
       expect.assert(
         matches.some(function(row) { return row.every(function(m) { return m.matches; }) }),
-        'expected to be called with %s',
-        expected
+        'expected to have been called with: '
       );
     } catch(error) {
       error.expected = matches.map(function(row) {
