@@ -1,6 +1,7 @@
 var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
 var Graph = require('./src/Graph');
+var Animator = require('./src/Animator');
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -15,12 +16,14 @@ global.adapter = new GreulerAdapter(greuler);
 global.graph = new Graph(
   {
     adapter: adapter,
+    animator: new Animator(),
   },
   {
     width: width,
     height: height,
     nodeSize: nodeSize,
     nodeAreaFuzzFactor: 0.1,
+    editModeAlternateInterval: 250,
   });
 
 global.graph.attachTo(document.getElementById('main-graph'));

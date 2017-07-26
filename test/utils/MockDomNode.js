@@ -3,12 +3,16 @@ var createSpy = require('expect').createSpy;
 function MockDomNode(options) {
   options = options || {};
 
+  this.attributes = {};
+
   Object.keys(options).forEach((function(key) {
     if (key === 'id') {
       this.id = options[key];
     } else if (key.endsWith('.returnValue')) {
       var property = key.split('.')[0];
       this[property] = createSpy().andReturn(options[key]);
+    } else {
+      this.attributes[key] = options[key];
     }
   }).bind(this));
 
@@ -40,6 +44,16 @@ MockDomNode.prototype = {
     this.trigger('click', event);
     this.trigger('mouseup', event);
   },
+
+  clickAndHold: function(timer, amount) {
+    this.trigger('mousedown');
+    timer.step(amount || 100);
+    this.trigger('mouseup');
+  },
+
+  getAttribute: function(key) {
+    return this.attributes[key];
+  }
 };
 
 module.exports = MockDomNode;

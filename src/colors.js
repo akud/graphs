@@ -6,4 +6,5 @@ module.exports = {
   BLUE: '#2826b5',
   INDIGO: '#2980B9',
   VIOLET: '#8c28b7',
+  NEON: '#00FF00',
 };

@@ -30,6 +30,11 @@ GreulerAdapter.prototype = {
     this.instance = this.instance.update();
   },
 
+  addEdge: function(node1, node2) {
+    var result = this.graph.addEdge(node1.id, node2.id);
+    this.instance = this.instance.update();
+  },
+
   setNodeColor: function(target, color) {
     if (target.domElement) {
       target.domElement.setAttribute('fill', color);
@@ -48,10 +53,12 @@ GreulerAdapter.prototype = {
   getNodes: function(filter) {
     filter = filter || function() { return true; };
     return this.graph.getNodesByFn(filter).map((function(node) {
+      var domElement = this._getDomElement(node);
       return new graphelements.Node({
         id: node.id,
         realNode: node,
-        domElement: this._getDomElement(node),
+        domElement: domElement,
+        color: domElement.getAttribute('fill'),
       });
     }).bind(this));
   },

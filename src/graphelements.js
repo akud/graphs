@@ -18,6 +18,7 @@ function Node(options) {
   GraphElement.apply(this, arguments);
   if (options) {
     this.realNode = options.realNode;
+    this.color = options.color;
   }
 }
 

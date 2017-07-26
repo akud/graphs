@@ -8,7 +8,7 @@ describe('GreulerAdapter', function() {
 
   beforeEach(function() {
     greuler = createSpy();
-    graph = createSpyObjectWith('addNode', 'getNodesByFn');
+    graph = createSpyObjectWith('addNode', 'addEdge', 'getNodesByFn');
     instance = createSpyObjectWith('update', { graph: graph });
     greuler.andReturn(instance);
     instance.update.andReturn(instance);
@@ -100,6 +100,22 @@ describe('GreulerAdapter', function() {
         label: '',
         fill: '#faddad',
       });
+    });
+  });
+
+  describe('addEdge', function() {
+    var adapter;
+    beforeEach(function() {
+      adapter = new GreulerAdapter(greuler);
+      adapter.initialize(new MockDomNode());
+    });
+
+    it('adds an edge and updates the instance', function() {
+      var node1 = { id: 78 };
+      var node2 = { id: 91 };
+      adapter.addEdge(node1, node2);
+      expect(instance.graph.addEdge).toHaveBeenCalledWith(78, 91);
+      expect(instance.update).toHaveBeenCalled();
     });
   });
 
@@ -240,9 +256,9 @@ describe('GreulerAdapter', function() {
     });
 
     it('matches nodes to dom elements', function() {
-      var circle1 = new MockDomNode();
-      var circle2 = new MockDomNode();
-      var circle3 = new MockDomNode();
+      var circle1 = new MockDomNode({ fill: '#FF0000' });
+      var circle2 = new MockDomNode({ fill: '#00FF00' });
+      var circle3 = new MockDomNode({ fill: '#0000FF' });
 
       var childNode1 = new MockDomNode({
         'getElementsByTagName.returnValue': [circle1],
@@ -277,16 +293,19 @@ describe('GreulerAdapter', function() {
           id: 34,
           realNode: node1,
           domElement: circle1,
+          color: '#FF0000',
         }),
         new graphelements.Node({
           id: 45,
           realNode: node2,
           domElement: circle2,
+          color: '#00FF00',
         }),
         new graphelements.Node({
           id: 98,
           realNode: node3,
           domElement: circle3,
+          color: '#0000FF',
         }),
       ]);
     });

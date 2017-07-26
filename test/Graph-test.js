@@ -1,24 +1,53 @@
 var Graph = require('../src/Graph');
 var graphelements = require('../src/graphelements');
 var colors = require('../src/colors');
+var MockTimer = require('./utils/MockTimer');
 
 
 describe('Graph', function() {
   var adapter;
   var targetElement;
+  var animator;
+  var alternatingAnimation;
+  var timer;
 
   beforeEach(function() {
+    timer = new MockTimer();
     adapter = createSpyObjectWith(
-      'initialize',
+      'addEdge',
       'addNode',
       'getClickTarget',
+      'getNodes',
+      'initialize',
       'setNodeColor'
     );
+    alternatingAnimation = createSpyObjectWith(
+      'play',
+      {
+        'every.returnValue': 'this',
+        'asLongAs.returnValue': 'this',
+        'withThis.returnValue': 'this',
+      }
+    );
+    animator = createSpyObjectWith({
+      'alternate.returnValue': alternatingAnimation,
+    });
     targetElement = new MockDomNode();
   });
 
+  function newGraph(options) {
+    return new Graph(
+      {
+        adapter: adapter,
+        animator: animator,
+        setTimeout: timer.getSetTimeoutFn(),
+      },
+      Object.assign({ editModeAlternateInterval: 100, holdTime: 100 }, options)
+    );
+  }
+
   it('does nothing when constructed', function() {
-    new Graph({ adapter: adapter });
+    newGraph();
     expect(adapter.initialize).toNotHaveBeenCalled();
   });
 
@@ -29,8 +58,7 @@ describe('Graph', function() {
     beforeEach(function() {
       width = 123;
       height = 456;
-      graph = new Graph(
-        { adapter: adapter },
+      graph = newGraph(
         { width: width, height: height }
       );
     });
@@ -53,7 +81,7 @@ describe('Graph', function() {
   describe('click', function() {
     var graph;
     beforeEach(function() {
-      graph = new Graph({ adapter: adapter });
+      graph = newGraph();
       graph.attachTo(targetElement);
     });
 
@@ -76,8 +104,7 @@ describe('Graph', function() {
     });
 
     it('passes node size to adapter', function() {
-      graph = new Graph(
-        { adapter: adapter },
+      graph = newGraph(
         { nodeSize: 56 }
       );
       graph.attachTo(targetElement);
@@ -131,6 +158,200 @@ describe('Graph', function() {
       expect(adapter.setNodeColor.calls[2].arguments).toEqual([target1, colors.ORANGE]);
 
       expect(adapter.setNodeColor.calls[3].arguments).toEqual([target2, colors.VIOLET]);
+    });
+  });
+
+  describe('edit mode', function() {
+    var graph;
+    beforeEach(function() {
+      graph = newGraph();
+      graph.attachTo(targetElement);
+    });
+
+    it('is triggered on click and hold on a graph node', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node());
+      targetElement.trigger('mousedown');
+      timer.step(50);
+      expect(animator.alternate).toNotHaveBeenCalled();
+      timer.step(50);
+      expect(animator.alternate).toHaveBeenCalled();
+    });
+
+    it('is not triggered by click and hold on other graph elements', function() {
+      adapter.getClickTarget.andReturn(graphelements.NONE);
+      targetElement.clickAndHold(timer, 100);
+      expect(animator.alternate).toNotHaveBeenCalled();
+    });
+
+    it('alternates the color of other nodes', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node({
+        id: 23,
+      }));
+      var otherNodes = [
+        new graphelements.Node({
+          id: 67,
+          color: '#678901',
+        }),
+        new graphelements.Node({
+          id: 23,
+          color: '#123456',
+        }),
+      ];
+      adapter.getNodes.andReturn(otherNodes);
+
+      targetElement.clickAndHold(timer, 100);
+
+      expect(adapter.getNodes).toHaveBeenCalledWith(matchers.functionThatReturns(
+        { input: { id: 23 }, output: false },
+        { input: { id: 43 }, output: true }
+      ));
+
+      expect(animator.alternate).toHaveBeenCalledWith(
+        matchers.any(Function),
+        matchers.any(Function)
+      );
+
+      expect(alternatingAnimation.every).toHaveBeenCalledWith(graph.editModeAlternateInterval);
+      expect(alternatingAnimation.asLongAs).toHaveBeenCalledWith(matchers.functionThatReturns(true));
+      expect(alternatingAnimation.play).toHaveBeenCalled();
+
+      var setNeon = animator.alternate.calls[0].arguments[0];
+      var setOriginal = animator.alternate.calls[0].arguments[1];
+
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], colors.NEON);
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], colors.NEON);
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
+
+      setNeon();
+
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[0], colors.NEON);
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[1], colors.NEON);
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
+
+      setOriginal();
+
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
+      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
+    });
+
+    it('makes a connection when clicking on another node', function() {
+      var originalNode = createSpyObjectWith({
+        id: 1231,
+        'isNode.returnValue': true,
+      });
+      var otherNode = createSpyObjectWith({
+        id: 567,
+        'isNode.returnValue': true,
+      });
+      adapter.getClickTarget.andReturn(originalNode);
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+
+      adapter.getClickTarget.andReturn(otherNode);
+
+      targetElement.click();
+
+      expect(adapter.addEdge).toHaveBeenCalledWith(originalNode, otherNode);
+      expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('does not make a connection when clicking on the same node', function() {
+      var originalNode = createSpyObjectWith({
+        id: 1231,
+        'isNode.returnValue': true,
+      });
+      adapter.getClickTarget.andReturn(originalNode);
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+      targetElement.click();
+
+      expect(adapter.addEdge).toNotHaveBeenCalled();
+      expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('does not make a connection when clicking elsewhere', function() {
+      var originalNode = createSpyObjectWith({
+        id: 1231,
+        'isNode.returnValue': true,
+      });
+      adapter.getClickTarget.andReturn(originalNode);
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+      adapter.getClickTarget.andReturn(graphelements.NONE);
+      targetElement.click();
+
+      expect(adapter.addEdge).toNotHaveBeenCalled();
+      expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('exits edit mode when clicking elsewhere', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node());
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+
+      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
+
+      expect(asLongAs()).toBe(true);
+
+      targetElement.click();
+
+      expect(asLongAs()).toBe(false);
+    });
+
+    it('sets nodes back to original color when exiting', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node({
+        id: 23,
+      }));
+      var otherNodes = [
+        new graphelements.Node({
+          id: 67,
+          color: '#678901',
+        }),
+        new graphelements.Node({
+          id: 23,
+          color: '#123456',
+        }),
+      ];
+      adapter.getNodes.andReturn(otherNodes);
+
+      targetElement.clickAndHold(timer, 100);
+
+      var setNeon = animator.alternate.calls[0].arguments[0];
+      setNeon();
+
+      adapter.getClickTarget.andReturn(graphelements.NONE);
+      targetElement.click();
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[0], '#678901');
+      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[1], '#123456');
+    });
+
+    it('does not set original color if color was never changed', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node({
+        id: 23,
+      }));
+      var otherNodes = [
+        new graphelements.Node({
+          id: 67,
+          color: '#678901',
+        }),
+        new graphelements.Node({
+          id: 23,
+          color: '#123456',
+        }),
+      ];
+      adapter.getNodes.andReturn(otherNodes);
+
+      targetElement.clickAndHold(timer, 100);
+
+      adapter.getClickTarget.andReturn(graphelements.NONE);
+      targetElement.click();
+      expect(adapter.setNodeColor).toNotHaveBeenCalled();
     });
   });
 });

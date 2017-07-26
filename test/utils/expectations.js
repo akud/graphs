@@ -43,4 +43,18 @@ expect.extend({
     }
     return this;
   },
+
+  toNotHaveBeenCalledWith: function() {
+    try {
+      this.toHaveBeenCalledWith.apply(this, arguments);
+      expect.assert(
+        false,
+        'expected to not be called with %s; calls were %s',
+        arguments,
+        this.actual.calls
+      );
+    } catch (error) {
+      // Ignore
+    }
+  },
 });
