@@ -1,6 +1,6 @@
 1. "edit mode"
   * connnect to other nodes
-    * blink other nodes
+    * -blink other nodes-
   * labels & text on nodes
     * view for longer text?
 
@@ -14,8 +14,7 @@
 
 4. Event tracking
 
-5. git tool for creating a todo
-
+5. -git tool for creating a todo-
 
 6. automate build on commit to master
 
