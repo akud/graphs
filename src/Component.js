@@ -8,14 +8,15 @@
 function Component(services, options) {
   this.setTimeout = (services && services.setTimeout) || global.setTimeout.bind(global);
   this.holdTime = (options && options.holdTime) || 250;
+
+  this.mouseDownCount = 0;
+  this.mouseUpCount = 0;
 }
 
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
 
-  mouseDownCount: 0,
-  mouseUpCount: 0,
 
   attachTo: function(targetElement) {
     targetElement.addEventListener('click', (function(event) {
