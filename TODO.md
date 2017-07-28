@@ -23,3 +23,5 @@
 8. no mousedown on mobile
 
 9. delete nodes and edges
+
+10. copy url to clipboard button
