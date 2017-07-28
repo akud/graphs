@@ -284,10 +284,29 @@ describe('Graph', function() {
     });
 
     it('exits edit mode when clicking elsewhere', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node());
+      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
       adapter.getNodes.andReturn([]);
 
       targetElement.clickAndHold(timer, 100);
+      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
+
+      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
+
+      expect(asLongAs()).toBe(true);
+
+      adapter.getClickTarget.andReturn(graphelements.NONE);
+      targetElement.click();
+
+      expect(asLongAs()).toBe(false);
+    });
+
+    it('exits edit mode when clicking on the same node', function() {
+      var node = new graphelements.Node({ id: 21 });
+      adapter.getClickTarget.andReturn(node);
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
 
       var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
 
@@ -296,6 +315,24 @@ describe('Graph', function() {
       targetElement.click();
 
       expect(asLongAs()).toBe(false);
+    });
+
+
+    it('does not exit edit mode when clicking on another node', function() {
+      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
+      adapter.getNodes.andReturn([]);
+
+      targetElement.clickAndHold(timer, 100);
+
+      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
+      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
+
+      expect(asLongAs()).toBe(true);
+
+      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 23 }));
+      targetElement.click();
+
+      expect(asLongAs()).toBe(true);
     });
 
     it('sets nodes back to original color when exiting', function() {

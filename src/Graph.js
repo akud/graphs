@@ -49,8 +49,9 @@ Graph.prototype = Object.assign(new Component(), {
       if (clickTarget.isNode() &&
           clickTarget.id !== this.currentlyEditedNode.id) {
         this.adapter.addEdge(this.currentlyEditedNode, clickTarget);
+      } else {
+        this._exitEditMode();
       }
-      this._exitEditMode();
     } else {
       if (clickTarget.isNode()) {
         this._setNextColor(clickTarget);
