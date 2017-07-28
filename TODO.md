@@ -21,3 +21,5 @@
 7. -dont trigger click when lifting up mouse from click and hold-
 
 8. no mousedown on mobile
+
+9. delete nodes and edges
