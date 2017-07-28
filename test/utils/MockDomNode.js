@@ -45,10 +45,11 @@ MockDomNode.prototype = {
     this.trigger('mouseup', event);
   },
 
-  clickAndHold: function(timer, amount) {
-    this.trigger('mousedown');
+  clickAndHold: function(timer, amount, mouseDownEvent) {
+    this.trigger('mousedown', mouseDownEvent);
     timer.step(amount || 100);
     this.trigger('mouseup');
+    this.trigger('click');
   },
 
   getAttribute: function(key) {

@@ -26,7 +26,6 @@ describe('Component', function() {
 
     it('sets up event listeners', function() {
       component.attachTo(element);
-      expect(element.addEventListener).toHaveBeenCalledWith('click', matchers.any(Function));
       expect(element.addEventListener).toHaveBeenCalledWith('mousedown', matchers.any(Function));
       expect(element.addEventListener).toHaveBeenCalledWith('mouseup', matchers.any(Function));
     });
@@ -73,8 +72,7 @@ describe('Component', function() {
 
     it('passes the mousedown event', function() {
       var mouseDownEvent = createSpy();
-      element.trigger('mousedown', mouseDownEvent);
-      timer.step(100);
+      element.clickAndHold(timer, 100, mouseDownEvent);
       expect(component.handleClickAndHold).toHaveBeenCalledWith(mouseDownEvent);
     });
 
@@ -96,5 +94,17 @@ describe('Component', function() {
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
     });
 
+    it('only triggers once if mouse comes up and back down again', function() {
+      element.clickAndHold(timer, 50);
+      element.clickAndHold(timer, 100);
+      expect(component.handleClickAndHold).toHaveBeenCalled();
+      expect(component.handleClickAndHold.calls.length).toBe(1);
+    });
+
+    it('does not call the click handler', function() {
+      spyOn(component, 'handleClick');
+      element.clickAndHold(timer, 100);
+      expect(component.handleClick).toNotHaveBeenCalled();
+    });
   });
 });

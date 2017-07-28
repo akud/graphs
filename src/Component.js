@@ -11,6 +11,7 @@ function Component(services, options) {
 
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
+  this.isInClickAndHold = false;
 }
 
 Component.prototype = {
@@ -19,12 +20,13 @@ Component.prototype = {
 
 
   attachTo: function(targetElement) {
-    targetElement.addEventListener('click', (function(event) {
-      this.handleClick(event);
-    }).bind(this));
-
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
+      if (this.isInClickAndHold) {
+        this.isInClickAndHold = false;
+      } else {
+        this.handleClick(event);
+      }
     }).bind(this));
 
     targetElement.addEventListener('mousedown', (function(event) {
@@ -34,6 +36,7 @@ Component.prototype = {
       this.setTimeout((function() {
         if (this.mouseDownCount === originalCount &&
             this.mouseUpCount === this.mouseDownCount - 1) {
+          this.isInClickAndHold = true;
           this.handleClickAndHold(event);
         }
       }).bind(this), this.holdTime);

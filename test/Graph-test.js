@@ -70,12 +70,6 @@ describe('Graph', function() {
       );
       expect(adapter.addNode).toNotHaveBeenCalled();
     });
-
-    it('adds a click listener', function() {
-      graph.attachTo(targetElement);
-      expect(targetElement.addEventListener).toHaveBeenCalled();
-      expect(targetElement.addEventListener.calls[0].arguments[0]).toEqual('click');
-    });
   });
 
   describe('click', function() {
