@@ -114,7 +114,10 @@ describe('GreulerAdapter', function() {
       var node1 = { id: 78 };
       var node2 = { id: 91 };
       adapter.addEdge(node1, node2);
-      expect(instance.graph.addEdge).toHaveBeenCalledWith(78, 91);
+      expect(instance.graph.addEdge).toHaveBeenCalledWith({
+        source: 78,
+        target: 91
+      });
       expect(instance.update).toHaveBeenCalled();
     });
   });

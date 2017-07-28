@@ -31,7 +31,10 @@ GreulerAdapter.prototype = {
   },
 
   addEdge: function(node1, node2) {
-    var result = this.graph.addEdge(node1.id, node2.id);
+    var result = this.graph.addEdge({
+      source: node1.id,
+      target: node2.id
+    });
     this.instance = this.instance.update();
   },
 
