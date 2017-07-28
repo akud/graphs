@@ -91,22 +91,25 @@ module.exports = Animator;
 function Component(services, options) {
   this.setTimeout = (services && services.setTimeout) || global.setTimeout.bind(global);
   this.holdTime = (options && options.holdTime) || 250;
+
+  this.mouseDownCount = 0;
+  this.mouseUpCount = 0;
+  this.isInClickAndHold = false;
 }
 
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
 
-  mouseDownCount: 0,
-  mouseUpCount: 0,
 
   attachTo: function(targetElement) {
-    targetElement.addEventListener('click', (function(event) {
-      this.handleClick(event);
-    }).bind(this));
-
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
+      if (this.isInClickAndHold) {
+        this.isInClickAndHold = false;
+      } else {
+        this.handleClick(event);
+      }
     }).bind(this));
 
     targetElement.addEventListener('mousedown', (function(event) {
@@ -116,6 +119,7 @@ Component.prototype = {
       this.setTimeout((function() {
         if (this.mouseDownCount === originalCount &&
             this.mouseUpCount === this.mouseDownCount - 1) {
+          this.isInClickAndHold = true;
           this.handleClickAndHold(event);
         }
       }).bind(this), this.holdTime);
@@ -325,7 +329,10 @@ GreulerAdapter.prototype = {
   },
 
   addEdge: function(node1, node2) {
-    var result = this.graph.addEdge(node1.id, node2.id);
+    var result = this.graph.addEdge({
+      source: node1.id,
+      target: node2.id
+    });
     this.instance = this.instance.update();
   },
 
