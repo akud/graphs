@@ -4,6 +4,7 @@ var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
 var Graph = require('./src/Graph');
 var Animator = require('./src/Animator');
+var UrlState = require('./src/UrlState');
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -19,6 +20,11 @@ global.graph = new Graph(
   {
     adapter: adapter,
     animator: new Animator(),
+    state: new UrlState({
+      baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
+      setUrl: window.history.replaceState.bind(window.history, {}, ''),
+      urlSearchParams: new URLSearchParams(window.location.search),
+    }),
   },
   {
     width: width,
@@ -32,7 +38,7 @@ global.graph.attachTo(document.getElementById('main-graph'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/Animator":2,"./src/Graph":4,"./src/GreulerAdapter":5}],2:[function(require,module,exports){
+},{"./src/Animator":2,"./src/Graph":4,"./src/GreulerAdapter":5,"./src/UrlState":7}],2:[function(require,module,exports){
 (function (global){
 function Animator(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
@@ -160,7 +166,7 @@ function Graph(services, options) {
   Component.apply(this, arguments);
   this.adapter = (services && services.adapter);
   this.animator = (services && services.animator);
-  this.nodes = [];
+  this.state = (services && services.state);
   this.colors = {};
   this.width = (options && options.width);
   this.height = (options && options.height);
@@ -177,9 +183,22 @@ function Graph(services, options) {
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
     this._checkServices();
+
     this.adapter.initialize(
       targetElement,
-      utils.optional({ width: this.width, height: this.height })
+      utils.optional({
+        width: this.width,
+        height: this.height,
+        nodes: this.state.retrievePersistedNodes().map((function(n) {
+          return utils.optional({
+            id: n.id,
+            color: n.color || COLOR_ORDER[0],
+            label: '',
+            size: this.nodeSize,
+          }, { force: ['id', 'label'] });
+        }).bind(this)),
+        edges: this.state.retrievePersistedEdges(),
+      })
     );
   },
 
@@ -192,8 +211,10 @@ Graph.prototype = Object.assign(new Component(), {
       if (clickTarget.isNode() &&
           clickTarget.id !== this.currentlyEditedNode.id) {
         this.adapter.addEdge(this.currentlyEditedNode, clickTarget);
+        this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
+      } else {
+        this._exitEditMode();
       }
-      this._exitEditMode();
     } else {
       if (clickTarget.isNode()) {
         this._setNextColor(clickTarget);
@@ -216,18 +237,22 @@ Graph.prototype = Object.assign(new Component(), {
 
   _setNextColor: function(node) {
     var colorIndex = this._getNextColorIndex(node.id);
-    this.adapter.setNodeColor(node, COLOR_ORDER[colorIndex]);
+    var newColor = COLOR_ORDER[colorIndex];
+    this.adapter.setNodeColor(node, newColor);
     this.colors[node.id] = colorIndex;
+    this.state.persistNodeColor(node.id, newColor);
   },
 
   _createNode: function() {
+    var nodeId = this.state.persistNode({
+      color: COLOR_ORDER[0],
+    });
     var node = utils.optional({
-      id: this.nodes.length,
+      id: nodeId,
       color: COLOR_ORDER[0],
       label: '',
       size: this.nodeSize,
     }, { force: ['id', 'label'] });
-    this.nodes.push(node);
     this.adapter.addNode(node);
   },
 
@@ -273,6 +298,9 @@ Graph.prototype = Object.assign(new Component(), {
     if (!this.animator) {
       throw new Error('animator is not present');
     }
+    if (!this.animator) {
+      throw new Error('state is not present');
+    }
   },
 
   _setNeon: function() {
@@ -295,7 +323,7 @@ Graph.prototype = Object.assign(new Component(), {
 
 module.exports = Graph;
 
-},{"./Component":3,"./Logger":6,"./colors":7,"./utils":9}],5:[function(require,module,exports){
+},{"./Component":3,"./Logger":6,"./colors":8,"./utils":10}],5:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var LOG = require('./Logger');
@@ -308,23 +336,21 @@ function GreulerAdapter(greuler) {
 
 GreulerAdapter.prototype = {
   initialize: function(targetNode, options) {
+    options = options || {};
     this.instance = this.greuler(utils.optional({
       target: '#' + targetNode.id,
-      width: (options && options.width),
-      height: (options && options.height),
-      r: (options && options.size),
+      width: options.width,
+      height: options.height,
+      data: utils.optional({
+        nodes: (options.nodes && options.nodes.map(this._translateNodeObj)),
+        links: options.edges,
+      }),
     })).update();
     this.graph = this.instance.graph;
   },
 
   addNode: function(node) {
-    node = utils.optional({
-      id: node.id,
-      fill: node.color,
-      label: node.label || '',
-      r: node.size,
-    }, { force: ['id', 'label'] });
-    var result = this.graph.addNode(node);
+    var result = this.graph.addNode(this._translateNodeObj(node));
     this.instance = this.instance.update();
   },
 
@@ -362,6 +388,15 @@ GreulerAdapter.prototype = {
         color: domElement.getAttribute('fill'),
       });
     }).bind(this));
+  },
+
+  _translateNodeObj: function(node) {
+    return utils.optional({
+      id: node.id,
+      fill: node.color,
+      label: node.label || '',
+      r: node.size,
+    }, { force: ['id', 'label'] });
   },
 
   _getDomElement: function(node) {
@@ -403,7 +438,7 @@ function center(node) {
 
 module.exports = GreulerAdapter;
 
-},{"./Logger":6,"./graphelements":8,"./utils":9}],6:[function(require,module,exports){
+},{"./Logger":6,"./graphelements":9,"./utils":10}],6:[function(require,module,exports){
 (function (global){
 function Logger() {
 
@@ -433,6 +468,205 @@ module.exports = new Logger();
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],7:[function(require,module,exports){
+var utils = require('./utils');
+
+NUM_NODES_PARAM = 'n'
+COLOR_PARAM_PREFIX = 'c_';
+EDGE_PARAM_PREFIX = 'e_';
+
+function UrlState(options) {
+  this.baseUrl = (options && options.baseUrl);
+  this.setUrl = (options && options.setUrl);
+  this.urlSearchParams = (options && options.urlSearchParams);
+}
+
+UrlState.prototype = {
+  /**
+   * Perist a node and return its id
+   */
+  persistNode: function(options) {
+    var nodeId = this._getNumNodes();
+    this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
+    this._persistState();
+    if (options && options.color) {
+      this.persistNodeColor(nodeId, options.color);
+    }
+
+    return nodeId;
+  },
+
+  persistNodeColor: function(nodeId, color) {
+    var bit = this._idToBit(nodeId);
+
+    this._getColorKeys().forEach((function(key) {
+      if (this._isColor({ bit: bit, colorKey: key })) {
+        this._removeColor({ bit: bit, colorKey: key });
+      }
+    }).bind(this));
+
+    this._setColor({ bit: bit, color: color });
+    this._persistState();
+  },
+
+  persistEdge: function(sourceId, targetId) {
+    var param = EDGE_PARAM_PREFIX + sourceId;
+    var bitmask;
+    if (this.urlSearchParams.has(param)) {
+      bitmask = this._getBitmaskParam(param) | this._idToBit(targetId);
+    } else {
+      bitmask = this._idToBit(targetId);
+    }
+    this._setBitmaskParam(param, bitmask);
+    this._persistState();
+  },
+
+  retrievePersistedNodes: function() {
+    var nodes = [];
+    if (this.urlSearchParams.has(NUM_NODES_PARAM)) {
+      var colorParams = this._getColorKeys();
+      for (var i = 0 ; i < this.urlSearchParams.get(NUM_NODES_PARAM); i++) {
+        var nodeBit = this._idToBit(i);
+        var nodeColor = colorParams.find((function(param) {
+          return this._isColor({ bit: nodeBit, colorKey: param });
+        }).bind(this));
+        nodes.push(utils.optional({
+          id: i,
+          color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
+        }, { force: 'id' }));
+      }
+    }
+    return nodes;
+  },
+
+  retrievePersistedEdges: function() {
+    return this._getEdgeKeys().map((function(key) {
+      var sourceId = parseInt(key.replace(EDGE_PARAM_PREFIX, ''));
+      var edges = [];
+      var bitmask = this._getBitmaskParam(key);
+      var maxId = bitmask.toString(2).length;
+      for (var targetId = 0; targetId < maxId; targetId++) {
+        var bit = this._idToBit(targetId);
+        if ((bitmask & bit) === bit) {
+          edges.push({ source: sourceId, target: targetId });
+        }
+      }
+      return edges;
+    }).bind(this))
+    .reduce(function(a, b) { return a.concat(b); }, []);
+  },
+
+  getUrl: function() {
+    return this.baseUrl + '?' + this.urlSearchParams.toString();
+  },
+
+  _isColor: function(options) {
+    options = this._normalizeColorOptions(options);
+
+    if (this.urlSearchParams.has(options.colorKey)) {
+      return (this._getBitmaskParam(options.colorKey) & options.bit) === options.bit;
+    } else {
+      return false;
+    }
+  },
+
+  _setColor: function(options) {
+    options = this._normalizeColorOptions(options);
+    var bitmask;
+
+    if (this.urlSearchParams.has(options.colorKey)) {
+      bitmask = this._getBitmaskParam(options.colorKey) | options.bit;
+    } else {
+      bitmask = options.bit;
+    }
+    this._setBitmaskParam(options.colorKey, bitmask);
+  },
+
+  _removeColor: function(options) {
+    options = this._normalizeColorOptions(options);
+    if (!this.urlSearchParams.has(options.colorKey)) {
+      throw Error('Attempted to remove color ' + options.colorKey);
+    }
+    var bitmask = this._getBitmaskParam(options.colorKey) & (~options.bit);
+    if (bitmask === 0) {
+      this.urlSearchParams.delete(options.colorKey);
+    } else {
+      this._setBitmaskParam(options.colorKey, bitmask);
+    }
+  },
+
+  _getBitmaskParam: function(key) {
+    return parseInt(this.urlSearchParams.get(key), 16);
+  },
+
+  _setBitmaskParam: function(key, value) {
+    this.urlSearchParams.set(key, value.toString(16));
+  },
+
+  _idToBit: function(id) {
+    if (id <= 30) {
+      return 1 << id;
+    } else {
+      return Math.pow(2, id);
+    }
+  },
+
+  _normalizeColorOptions: function(options) {
+    if (!options.hasOwnProperty('bit') && !options.hasOwnProperty('nodeId')) {
+      throw Error('bit or nodeId is required');
+    }
+    if (!options.hasOwnProperty('color') && !options.hasOwnProperty('colorKey')) {
+      throw Error('color or colorKey is required');
+    }
+    var bit = options.hasOwnProperty('bit')
+      ? options.bit
+      : this._idToBit(options.nodeId);
+    var colorKey = options.hasOwnProperty('colorKey')
+      ? options.colorKey
+      : options.color.replace('#', COLOR_PARAM_PREFIX);
+    return { bit: bit, colorKey: colorKey };
+  },
+
+  _getColorKeys: function() {
+    return this._getKeys(function(k) {
+      return k.startsWith(COLOR_PARAM_PREFIX);
+    });
+  },
+
+  _getEdgeKeys: function() {
+    return this._getKeys(function(k) {
+      return k.startsWith(EDGE_PARAM_PREFIX);
+    });
+  },
+
+  _getKeys: function(predicate) {
+    var keys = [];
+    var iterator = this.urlSearchParams.keys();
+    var next = iterator.next();
+    while (!next.done) {
+      if (predicate(next.value)) {
+        keys.push(next.value);
+      }
+      next = iterator.next();
+    }
+    return keys;
+  },
+
+  _getNumNodes: function() {
+    if (this.urlSearchParams.has(NUM_NODES_PARAM)) {
+      return parseInt(this.urlSearchParams.get(NUM_NODES_PARAM));
+    } else {
+      return 0;
+    }
+  },
+
+  _persistState: function() {
+    this.setUrl(this.getUrl());
+  },
+};
+
+module.exports = UrlState;
+
+},{"./utils":10}],8:[function(require,module,exports){
 module.exports = {
   RED: '#db190f',
   ORANGE: '#f76402',
@@ -444,7 +678,7 @@ module.exports = {
   NEON: '#00FF00',
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -496,7 +730,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /**
  * Compute the cartesian distance between two vectors
  */
