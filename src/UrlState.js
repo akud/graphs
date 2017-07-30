@@ -136,7 +136,7 @@ UrlState.prototype = {
     if (id <= 30) {
       return 1 << id;
     } else {
-      return 2**id;
+      return Math.pow(2, id);
     }
   },
 
@@ -157,23 +157,28 @@ UrlState.prototype = {
   },
 
   _getColorKeys: function() {
-    var colorKeys = [];
-    for (var key of this.urlSearchParams.keys()) {
-      if (key.startsWith(COLOR_PARAM_PREFIX)) {
-        colorKeys.push(key);
-      }
-    }
-    return colorKeys;
+    return this._getKeys(function(k) {
+      return k.startsWith(COLOR_PARAM_PREFIX);
+    });
   },
 
   _getEdgeKeys: function() {
-    var edgeKeys = [];
-    for (var key of this.urlSearchParams.keys()) {
-      if (key.startsWith(EDGE_PARAM_PREFIX)) {
-        edgeKeys.push(key);
+    return this._getKeys(function(k) {
+      return k.startsWith(EDGE_PARAM_PREFIX);
+    });
+  },
+
+  _getKeys: function(predicate) {
+    var keys = [];
+    var iterator = this.urlSearchParams.keys();
+    var next = iterator.next();
+    while (!next.done) {
+      if (predicate(next.value)) {
+        keys.push(next.value);
       }
+      next = iterator.next();
     }
-    return edgeKeys;
+    return keys;
   },
 
   _getNumNodes: function() {

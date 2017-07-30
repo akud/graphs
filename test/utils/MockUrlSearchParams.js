@@ -24,7 +24,18 @@ function MockUrlSearchParams() {
   }).bind(this));
 
   this.keys = createSpy().andCall((function() {
-    return Object.keys(this.params);
+    var arr = Object.keys(this.params);
+    var index = 0;
+    return {
+      next: function() {
+        var result = {
+          done: index >= arr.length,
+          value: arr[index],
+        };
+        index++;
+        return result;
+      },
+    };
   }).bind(this));
 }
 
