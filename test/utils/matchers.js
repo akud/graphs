@@ -69,4 +69,26 @@ module.exports = {
       _isMatcher: true,
     };
   },
+
+  hexEncodedBinary: function(binaryString) {
+    var expectedHex = parseInt(binaryString, 2).toString(16);
+    return {
+      match: function(str) {
+        try {
+          return {
+            matches: isEqual(expectedHex, str),
+            expected: binaryString,
+            actual: parseInt(str, 16).toString(2),
+          };
+        } catch(err) {
+          return {
+            matches: false,
+            expected: binaryString,
+            actual: str,
+          };
+        }
+      },
+      _isMatcher: true,
+    };
+  },
 };

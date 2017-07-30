@@ -2,6 +2,7 @@ var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
 var Graph = require('./src/Graph');
 var Animator = require('./src/Animator');
+var UrlState = require('./src/UrlState');
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -17,6 +18,11 @@ global.graph = new Graph(
   {
     adapter: adapter,
     animator: new Animator(),
+    state: new UrlState({
+      baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
+      setUrl: window.history.replaceState.bind(window.history, {}, ''),
+      urlSearchParams: new URLSearchParams(window.location.search),
+    }),
   },
   {
     width: width,

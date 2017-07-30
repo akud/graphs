@@ -29,7 +29,7 @@ describe('GreulerAdapter', function() {
 
     it('initializes the graph', function() {
       adapter.initialize(node);
-      expect(greuler).toHaveBeenCalledWith({ target: '#asdkfwer' });
+      expect(greuler).toHaveBeenCalledWith({ target: '#asdkfwer', data: {} });
       expect(instance.update).toHaveBeenCalled();
     });
 
@@ -39,6 +39,7 @@ describe('GreulerAdapter', function() {
         target: '#asdkfwer',
         width: 123,
         height: 243,
+        data: {},
       });
     });
 
@@ -47,6 +48,7 @@ describe('GreulerAdapter', function() {
       expect(greuler).toHaveBeenCalledWith({
         target: '#asdkfwer',
         width: 123,
+        data: {},
       });
     });
 
@@ -55,9 +57,47 @@ describe('GreulerAdapter', function() {
       expect(greuler).toHaveBeenCalledWith({
         target: '#asdkfwer',
         height: 243,
+        data: {},
       });
     });
 
+    it('adds nodes and edges to the graph', function() {
+      adapter.initialize(node, {
+        nodes: [
+          {
+            id: 0,
+            color: '#0000FF',
+            size: 10,
+          },
+          {
+            id: 1,
+            color: '#00FF00',
+            size: 20,
+          },
+        ],
+        edges: [ { source: 0, target: 1 }]
+      });
+      expect(greuler).toHaveBeenCalledWith({
+        target: '#asdkfwer',
+        data: {
+          nodes: [
+            {
+              id: 0,
+              fill: '#0000FF',
+              label: '',
+              r: 10,
+            },
+            {
+              id: 1,
+              fill: '#00FF00',
+              label: '',
+              r: 20,
+            },
+          ],
+          links: [{ source: 0,  target: 1 }],
+        },
+      });
+    });
   });
 
   describe('add node', function() {

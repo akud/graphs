@@ -8,6 +8,7 @@ describe('Graph', function() {
   var adapter;
   var targetElement;
   var animator;
+  var state;
   var alternatingAnimation;
   var timer;
 
@@ -32,6 +33,15 @@ describe('Graph', function() {
     animator = createSpyObjectWith({
       'alternate.returnValue': alternatingAnimation,
     });
+    state = createSpyObjectWith(
+      'persistEdge',
+      'persistNode',
+      'persistNodeColor',
+      {
+        'retrievePersistedEdges.returnValue': [],
+        'retrievePersistedNodes.returnValue': [],
+      }
+    );
     targetElement = new MockDomNode();
   });
 
@@ -41,6 +51,7 @@ describe('Graph', function() {
         adapter: adapter,
         animator: animator,
         setTimeout: timer.getSetTimeoutFn(),
+        state: state,
       },
       Object.assign({ editModeAlternateInterval: 100, holdTime: 100 }, options)
     );
@@ -62,11 +73,61 @@ describe('Graph', function() {
         { width: width, height: height }
       );
     });
+
     it('initializes the graph', function() {
       graph.attachTo(targetElement);
       expect(adapter.initialize).toHaveBeenCalledWith(
         targetElement,
-        { width: width, height: height }
+        {
+          width: width,
+          height: height,
+          nodes: [],
+          edges: [],
+        }
+      );
+      expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('initializes the graph with nodes and edges from state', function() {
+      graph = newGraph({ nodeSize: 10 });
+      state.retrievePersistedNodes.andReturn([
+        { id: 0, color: '#0000FF' },
+        { id: 1, color: '#00FF00' },
+        { id: 2 },
+      ]);
+      state.retrievePersistedEdges.andReturn([
+        { source: 0, target: 1 },
+        { source: 1, target: 2 },
+      ]);
+      graph.attachTo(targetElement);
+      expect(adapter.initialize).toHaveBeenCalledWith(
+        targetElement,
+        {
+          nodes: [
+            {
+              id: 0,
+              color: '#0000FF',
+              label: '',
+              size: 10,
+            },
+            {
+              id: 1,
+              color: '#00FF00',
+              label: '',
+              size: 10,
+            },
+            {
+              id: 2,
+              color: colors.INDIGO,
+              label: '',
+              size: 10,
+            },
+          ],
+          edges: [
+            { source: 0, target: 1 },
+            { source: 1, target: 2 },
+          ],
+        }
       );
       expect(adapter.addNode).toNotHaveBeenCalled();
     });
@@ -80,6 +141,10 @@ describe('Graph', function() {
     });
 
     it('adds a node to the graph by default', function() {
+      var id = 0;
+      state.persistNode.andCall(function() {
+        return id++;
+      });
       adapter.getClickTarget.andReturn(graphelements.NONE);
       expect(adapter.addNode).toNotHaveBeenCalled();
       targetElement.click();
@@ -87,6 +152,7 @@ describe('Graph', function() {
       expect(adapter.getClickTarget).toHaveBeenCalled();
       expect(adapter.addNode).toHaveBeenCalled();
       expect(adapter.addNode).toHaveBeenCalledWith({ id: 0, label: '', color: '#2980B9' });
+      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
 
       targetElement.click();
       targetElement.click();
@@ -95,6 +161,11 @@ describe('Graph', function() {
       expect(adapter.addNode).toHaveBeenCalledWith({ id: 1, label: '', color: '#2980B9' });
       expect(adapter.addNode).toHaveBeenCalledWith({ id: 2, label: '', color: '#2980B9' });
       expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', color: '#2980B9' });
+
+      expect(state.persistNode.calls.length).toBe(4);
+      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
+      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
+      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
     });
 
     it('passes node size to adapter', function() {
@@ -104,10 +175,12 @@ describe('Graph', function() {
       graph.attachTo(targetElement);
       adapter.getClickTarget.andReturn(graphelements.NONE);
 
+      state.persistNode.andReturn(3);
+
       targetElement.click();
 
       expect(adapter.addNode).toHaveBeenCalledWith(
-        { id: 0, label: '', color: '#2980B9', size: 56 }
+        { id: 3, label: '', color: '#2980B9', size: 56 }
       );
     });
 
@@ -133,6 +206,15 @@ describe('Graph', function() {
       expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.BLUE);
       expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.INDIGO);
       expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.VIOLET);
+
+      expect(state.persistNodeColor.calls.length).toBe(7);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.RED);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.ORANGE);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.YELLOW);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.GREEN);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.BLUE);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.INDIGO);
+      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.VIOLET);
     });
 
     it('tracks colors for nodes separately', function() {
@@ -250,6 +332,7 @@ describe('Graph', function() {
 
       expect(adapter.addEdge).toHaveBeenCalledWith(originalNode, otherNode);
       expect(adapter.addNode).toNotHaveBeenCalled();
+      expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
     });
 
     it('does not make a connection when clicking on the same node', function() {
@@ -265,6 +348,7 @@ describe('Graph', function() {
 
       expect(adapter.addEdge).toNotHaveBeenCalled();
       expect(adapter.addNode).toNotHaveBeenCalled();
+      expect(state.persistEdge).toNotHaveBeenCalled();
     });
 
     it('does not make a connection when clicking elsewhere', function() {

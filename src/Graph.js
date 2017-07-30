@@ -17,7 +17,7 @@ function Graph(services, options) {
   Component.apply(this, arguments);
   this.adapter = (services && services.adapter);
   this.animator = (services && services.animator);
-  this.nodes = [];
+  this.state = (services && services.state);
   this.colors = {};
   this.width = (options && options.width);
   this.height = (options && options.height);
@@ -34,9 +34,22 @@ function Graph(services, options) {
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
     this._checkServices();
+
     this.adapter.initialize(
       targetElement,
-      utils.optional({ width: this.width, height: this.height })
+      utils.optional({
+        width: this.width,
+        height: this.height,
+        nodes: this.state.retrievePersistedNodes().map((function(n) {
+          return utils.optional({
+            id: n.id,
+            color: n.color || COLOR_ORDER[0],
+            label: '',
+            size: this.nodeSize,
+          }, { force: ['id', 'label'] });
+        }).bind(this)),
+        edges: this.state.retrievePersistedEdges(),
+      })
     );
   },
 
@@ -49,6 +62,7 @@ Graph.prototype = Object.assign(new Component(), {
       if (clickTarget.isNode() &&
           clickTarget.id !== this.currentlyEditedNode.id) {
         this.adapter.addEdge(this.currentlyEditedNode, clickTarget);
+        this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
       } else {
         this._exitEditMode();
       }
@@ -74,18 +88,22 @@ Graph.prototype = Object.assign(new Component(), {
 
   _setNextColor: function(node) {
     var colorIndex = this._getNextColorIndex(node.id);
-    this.adapter.setNodeColor(node, COLOR_ORDER[colorIndex]);
+    var newColor = COLOR_ORDER[colorIndex];
+    this.adapter.setNodeColor(node, newColor);
     this.colors[node.id] = colorIndex;
+    this.state.persistNodeColor(node.id, newColor);
   },
 
   _createNode: function() {
+    var nodeId = this.state.persistNode({
+      color: COLOR_ORDER[0],
+    });
     var node = utils.optional({
-      id: this.nodes.length,
+      id: nodeId,
       color: COLOR_ORDER[0],
       label: '',
       size: this.nodeSize,
     }, { force: ['id', 'label'] });
-    this.nodes.push(node);
     this.adapter.addNode(node);
   },
 
@@ -130,6 +148,9 @@ Graph.prototype = Object.assign(new Component(), {
     }
     if (!this.animator) {
       throw new Error('animator is not present');
+    }
+    if (!this.animator) {
+      throw new Error('state is not present');
     }
   },
 

@@ -10,23 +10,21 @@ function GreulerAdapter(greuler) {
 
 GreulerAdapter.prototype = {
   initialize: function(targetNode, options) {
+    options = options || {};
     this.instance = this.greuler(utils.optional({
       target: '#' + targetNode.id,
-      width: (options && options.width),
-      height: (options && options.height),
-      r: (options && options.size),
+      width: options.width,
+      height: options.height,
+      data: utils.optional({
+        nodes: (options.nodes && options.nodes.map(this._translateNodeObj)),
+        links: options.edges,
+      }),
     })).update();
     this.graph = this.instance.graph;
   },
 
   addNode: function(node) {
-    node = utils.optional({
-      id: node.id,
-      fill: node.color,
-      label: node.label || '',
-      r: node.size,
-    }, { force: ['id', 'label'] });
-    var result = this.graph.addNode(node);
+    var result = this.graph.addNode(this._translateNodeObj(node));
     this.instance = this.instance.update();
   },
 
@@ -64,6 +62,15 @@ GreulerAdapter.prototype = {
         color: domElement.getAttribute('fill'),
       });
     }).bind(this));
+  },
+
+  _translateNodeObj: function(node) {
+    return utils.optional({
+      id: node.id,
+      fill: node.color,
+      label: node.label || '',
+      r: node.size,
+    }, { force: ['id', 'label'] });
   },
 
   _getDomElement: function(node) {
