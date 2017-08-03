@@ -39,3 +39,5 @@
 16. check if recent click/touch
   * this.recentTouch = true;
   * ActionQueue.defer(if !this.recentClick ...; this.recentTouch = false;);
+
+17. generate list of embed links, display log on page
