@@ -29,3 +29,5 @@
 11. elements on top throw off node area calculation. subtract by instance.root[0][0].getBoundingClientRect()
 
 12. fix error reporting from expectations.toHaveBeenCalledWith
+
+13. screen size - size on mobile
