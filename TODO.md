@@ -35,3 +35,7 @@
 14. screen size -> node size on mobile
 
 15. ActionQueue wrapper around setTimeout
+
+16. check if recent click/touch
+  * this.recentTouch = true;
+  * ActionQueue.defer(if !this.recentClick ...; this.recentTouch = false;);
