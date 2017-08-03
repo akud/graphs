@@ -1,10 +1,10 @@
-1. "edit mode"
+1. -"edit mode"-
   * connnect to other nodes
     * -blink other nodes-
   * labels & text on nodes
     * view for longer text?
 
-2. persist & restore state
+2. -persist & restore state-
   * url params
   * for notes, may need to switch to an actual backend
 
@@ -43,3 +43,5 @@
 17. generate list of embed links, display log on page
 
 18. hide instructions for repeat visitors
+
+19. fix edit mode
