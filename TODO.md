@@ -31,3 +31,5 @@
 12. fix error reporting from expectations.toHaveBeenCalledWith
 
 13. screen size - size on mobile
+
+14. screen size -> node size on mobile
