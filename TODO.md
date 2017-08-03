@@ -41,3 +41,5 @@
   * ActionQueue.defer(if !this.recentClick ...; this.recentTouch = false;);
 
 17. generate list of embed links, display log on page
+
+18. hide instructions for repeat visitors
