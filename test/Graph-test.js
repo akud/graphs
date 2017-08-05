@@ -1,7 +1,7 @@
 var Graph = require('../src/Graph');
 var graphelements = require('../src/graphelements');
 var colors = require('../src/colors');
-var MockTimer = require('./utils/MockTimer');
+var MockActionQueue = require('./utils/MockActionQueue');
 
 
 describe('Graph', function() {
@@ -10,10 +10,10 @@ describe('Graph', function() {
   var animator;
   var state;
   var alternatingAnimation;
-  var timer;
+  var actionQueue;
 
   beforeEach(function() {
-    timer = new MockTimer();
+    actionQueue = new MockActionQueue();
     adapter = createSpyObjectWith(
       'addEdge',
       'addNode',
@@ -50,7 +50,7 @@ describe('Graph', function() {
       {
         adapter: adapter,
         animator: animator,
-        setTimeout: timer.getSetTimeoutFn(),
+        actionQueue: actionQueue,
         state: state,
       },
       Object.assign({ editModeAlternateInterval: 100, holdTime: 100 }, options)
@@ -247,15 +247,15 @@ describe('Graph', function() {
     it('is triggered on click and hold on a graph node', function() {
       adapter.getClickTarget.andReturn(new graphelements.Node());
       targetElement.trigger('mousedown');
-      timer.step(50);
+      actionQueue.step(50);
       expect(animator.alternate).toNotHaveBeenCalled();
-      timer.step(50);
+      actionQueue.step(50);
       expect(animator.alternate).toHaveBeenCalled();
     });
 
     it('is not triggered by click and hold on other graph elements', function() {
       adapter.getClickTarget.andReturn(graphelements.NONE);
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
       expect(animator.alternate).toNotHaveBeenCalled();
     });
 
@@ -275,7 +275,7 @@ describe('Graph', function() {
       ];
       adapter.getNodes.andReturn(otherNodes);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
 
       expect(adapter.getNodes).toHaveBeenCalledWith(matchers.functionThatReturns(
         { input: { id: 23 }, output: false },
@@ -324,7 +324,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(originalNode);
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
 
       adapter.getClickTarget.andReturn(otherNode);
 
@@ -343,7 +343,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(originalNode);
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
       targetElement.click();
 
       expect(adapter.addEdge).toNotHaveBeenCalled();
@@ -359,7 +359,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(originalNode);
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.click();
 
@@ -371,7 +371,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
       expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
 
       var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
@@ -389,7 +389,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(node);
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
       expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
 
       var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
@@ -406,7 +406,7 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
       adapter.getNodes.andReturn([]);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
 
       expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
       var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
@@ -435,7 +435,7 @@ describe('Graph', function() {
       ];
       adapter.getNodes.andReturn(otherNodes);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
 
       var setNeon = animator.alternate.calls[0].arguments[0];
       setNeon();
@@ -462,7 +462,7 @@ describe('Graph', function() {
       ];
       adapter.getNodes.andReturn(otherNodes);
 
-      targetElement.clickAndHold(timer, 100);
+      targetElement.clickAndHold(actionQueue, 100);
 
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.click();

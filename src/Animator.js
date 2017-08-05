@@ -1,15 +1,22 @@
 function Animator(options) {
-  this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
+  this.actionQueue = (options && options.actionQueue);
 }
 
 Animator.prototype = {
   alternate: function() {
-    return new AlternatingAnimation(this, Array.prototype.slice.call(arguments));
+    this._checkDependencies();
+    return new AlternatingAnimation(this.actionQueue, Array.prototype.slice.call(arguments));
+  },
+
+  _checkDependencies: function() {
+    if (!this.actionQueue) {
+      throw Error('ActionQueue is required');
+    }
   },
 };
 
-function AlternatingAnimation(animator, functions) {
-  this.animator = animator;
+function AlternatingAnimation(actionQueue, functions) {
+  this.actionQueue = actionQueue;
   this.functions = functions;
   this.currentIndex = 0;
   this.interval = 100;
@@ -32,7 +39,7 @@ AlternatingAnimation.prototype = {
       if (this.predicate()) {
         this.functions[this.currentIndex]();
         this.currentIndex = (this.currentIndex + 1) % this.functions.length;
-        this.animator.setTimeout(execute, this.interval);
+        this.actionQueue.defer(this.interval, execute);
       }
     }).bind(this);
     execute();

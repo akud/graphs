@@ -6,7 +6,7 @@
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(services, options) {
-  this.setTimeout = (services && services.setTimeout) || global.setTimeout.bind(global);
+  this.actionQueue = (services && services.actionQueue);
   this.holdTime = (options && options.holdTime) || 250;
 
   this.mouseDownCount = 0;
@@ -20,6 +20,7 @@ Component.prototype = {
 
 
   attachTo: function(targetElement) {
+    this._checkServices();
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
       if (this.isInClickAndHold) {
@@ -33,13 +34,13 @@ Component.prototype = {
       this.mouseDownCount++;
       var originalCount = this.mouseDownCount;
 
-      this.setTimeout((function() {
+      this.actionQueue.defer(this.holdTime, (function() {
         if (this.mouseDownCount === originalCount &&
             this.mouseUpCount === this.mouseDownCount - 1) {
           this.isInClickAndHold = true;
           this.handleClickAndHold(event);
         }
-      }).bind(this), this.holdTime);
+      }).bind(this));
     }).bind(this));
 
     this.doAttach(targetElement);
@@ -50,6 +51,12 @@ Component.prototype = {
    */
   doAttach: function(element) {
 
+  },
+
+  _checkServices: function() {
+    if (!this.actionQueue) {
+      throw Error('actionQueue is required');
+    }
   },
 };
 

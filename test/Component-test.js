@@ -1,17 +1,17 @@
 var Component = require('../src/Component');
-var MockTimer = require('./utils/MockTimer');
+var MockActionQueue = require('./utils/MockActionQueue');
 
 
 describe('Component', function() {
 
   var component;
-  var timer;
+  var actionQueue;
   var element;
 
   beforeEach(function() {
-    timer = new MockTimer();
+    actionQueue = new MockActionQueue();
     component = new Component(
-      { setTimeout: timer.getSetTimeoutFn() },
+      { actionQueue: actionQueue },
       { holdTime: 100 }
     );
     element = new MockDomNode();
@@ -59,51 +59,51 @@ describe('Component', function() {
     it('does not trigger if not enough time has passed', function() {
       element.trigger('mousedown');
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
-      timer.step(50);
+      actionQueue.step(50);
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
     });
 
     it('triggers after the component\'s hold time', function() {
       element.trigger('mousedown');
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
-      timer.step(100);
+      actionQueue.step(100);
       expect(component.handleClickAndHold).toHaveBeenCalled();
     });
 
     it('passes the mousedown event', function() {
       var mouseDownEvent = createSpy();
-      element.clickAndHold(timer, 100, mouseDownEvent);
+      element.clickAndHold(actionQueue, 100, mouseDownEvent);
       expect(component.handleClickAndHold).toHaveBeenCalledWith(mouseDownEvent);
     });
 
 
     it('does not trigger if mouse has been lifted up in time', function() {
       element.trigger('mousedown');
-      timer.step(50);
+      actionQueue.step(50);
       element.trigger('mouseup');
-      timer.step(50);
+      actionQueue.step(50);
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
     });
 
     it('does not trigger if mouse has been lifted up and put down', function() {
       element.trigger('mousedown');
-      timer.step(50);
+      actionQueue.step(50);
       element.trigger('mouseup');
       element.trigger('mousedown');
-      timer.step(50);
+      actionQueue.step(50);
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
     });
 
     it('only triggers once if mouse comes up and back down again', function() {
-      element.clickAndHold(timer, 50);
-      element.clickAndHold(timer, 100);
+      element.clickAndHold(actionQueue, 50);
+      element.clickAndHold(actionQueue, 100);
       expect(component.handleClickAndHold).toHaveBeenCalled();
       expect(component.handleClickAndHold.calls.length).toBe(1);
     });
 
     it('does not call the click handler', function() {
       spyOn(component, 'handleClick');
-      element.clickAndHold(timer, 100);
+      element.clickAndHold(actionQueue, 100);
       expect(component.handleClick).toNotHaveBeenCalled();
     });
   });

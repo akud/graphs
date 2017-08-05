@@ -1,12 +1,12 @@
 var Animator = require('../src/Animator');
-var MockTimer = require('./utils/MockTimer');
+var MockActionQueue = require('./utils/MockActionQueue');
 
 describe('Animator', function() {
   var animator;
-  var timer;
+  var actionQueue;
   beforeEach(function() {
-    timer = new MockTimer();
-    animator = new Animator({ setTimeout: timer.getSetTimeoutFn() });
+    actionQueue = new MockActionQueue();
+    animator = new Animator({ actionQueue: actionQueue });
   });
 
   describe('alternate', function() {
@@ -39,27 +39,27 @@ describe('Animator', function() {
       expect(f3).toNotHaveBeenCalled();
 
       f1.reset();
-      timer.step(50);
+      actionQueue.step(50);
 
       expect(f1).toNotHaveBeenCalled();
       expect(f2).toNotHaveBeenCalled();
       expect(f3).toNotHaveBeenCalled();
 
-      timer.step(50);
+      actionQueue.step(50);
 
       expect(f1).toNotHaveBeenCalled();
       expect(f2).toHaveBeenCalled();
       expect(f3).toNotHaveBeenCalled();
 
       f2.reset();
-      timer.step(100);
+      actionQueue.step(100);
 
       expect(f1).toNotHaveBeenCalled();
       expect(f2).toNotHaveBeenCalled();
       expect(f3).toHaveBeenCalled();
 
       f3.reset();
-      timer.step(100);
+      actionQueue.step(100);
 
       expect(f1).toHaveBeenCalled();
       expect(f2).toNotHaveBeenCalled();
@@ -75,17 +75,17 @@ describe('Animator', function() {
       expect(f1).toHaveBeenCalled();
 
       f1.reset();
-      timer.step(100);
+      actionQueue.step(100);
 
       expect(f1).toHaveBeenCalled();
 
       f1.reset();
       predicate.andReturn(false);
-      timer.step(100);
+      actionQueue.step(100);
 
       expect(f1).toNotHaveBeenCalled();
 
-      timer.step(100);
+      actionQueue.step(100);
       expect(f1).toNotHaveBeenCalled();
     });
 
@@ -96,7 +96,7 @@ describe('Animator', function() {
       animator.alternate(f1).every(100).asLongAs(predicate).play();
 
       expect(f1).toNotHaveBeenCalled();
-      timer.step(100);
+      actionQueue.step(100);
       expect(f1).toNotHaveBeenCalled();
     });
   });
