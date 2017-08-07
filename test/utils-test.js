@@ -53,8 +53,8 @@ describe('utils', function() {
 
   describe('distance', function() {
     it('computes the cartesian distance', function() {
-      expect(utils.distance([0, 1], [1, 0])).toEqual(Math.sqrt(2));
-      expect(utils.distance([4, 7], [2, 9])).toEqual(2 * Math.sqrt(2));
+      expect(utils.distance({ x: 0, y: 1 }, { x: 1, y: 0 })).toEqual(Math.sqrt(2));
+      expect(utils.distance({ x: 4, y: 7 }, { x: 2, y: 9 })).toEqual(2 * Math.sqrt(2));
     });
   });
 });

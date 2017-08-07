@@ -1,16 +1,10 @@
 /**
  * Compute the cartesian distance between two vectors
  */
-function distance(vec1, vec2) {
-  if (vec1.length != vec2.length) {
-    throw new Error(vec1.length + ' != ' + vec2.length);
-  }
-  return Math.sqrt(
-    vec1
-      .map(function(x, i) { return x - vec2[i]; })
-      .map(function(x) { return x * x; })
-      .reduce(function(a, b) { return a + b; })
-  );
+function distance(point1, point2) {
+  var x = point1.x - point2.x;
+  var y = point1.y - point2.y;
+  return Math.sqrt(x*x + y*y);
 }
 
 /**

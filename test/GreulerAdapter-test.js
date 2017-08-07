@@ -1,3 +1,4 @@
+var colors = require('../src/colors');
 var GreulerAdapter = require('../src/GreulerAdapter');
 var graphelements = require('../src/graphelements');
 
@@ -5,14 +6,51 @@ describe('GreulerAdapter', function() {
   var graph;
   var greuler;
   var instance;
+  var root;
+  var nodeId = 0;
 
   beforeEach(function() {
     greuler = createSpy();
     graph = createSpyObjectWith('addNode', 'addEdge', 'getNodesByFn');
-    instance = createSpyObjectWith('update', { graph: graph });
+    root = createSpyObjectWith({
+      'getBoundingClientRect.returnValue': {
+        top: 0,
+        left: 0,
+      },
+    });
+    instance = createSpyObjectWith(
+      'update',
+      {
+        graph: graph,
+        root: [[root]],
+      }
+    );
     greuler.andReturn(instance);
     instance.update.andReturn(instance);
   });
+
+  function makeNode(options) {
+    options = options || {};
+    return Object.assign({
+      id: nodeId++,
+      label: '',
+      index: 0,
+      fill: colors.RED,
+      bounds: {
+        x: options.hasOwnProperty('left') ? options.left : 10,
+        X: options.hasOwnProperty('right') ? options.right : 20,
+        y: options.hasOwnProperty('top') ? options.top : 30,
+        Y: options.hasOwnProperty('bottom') ? options.bottom : 40,
+      },
+    }, options);
+  };
+
+  function makeEvent(options) {
+    return createSpyObjectWith(Object.assign({
+      clientX: 0,
+      clientY: 0,
+    }, options));
+  }
 
   it('does nothing when constructed', function() {
     new GreulerAdapter(greuler);
@@ -21,20 +59,20 @@ describe('GreulerAdapter', function() {
 
   describe('initialize', function() {
     var adapter;
-    var node;
+    var element;
     beforeEach(function() {
       adapter = new GreulerAdapter(greuler);
-      node = new MockDomNode({ id: 'asdkfwer' });
+      element = new MockDomNode({ id: 'asdkfwer' });
     });
 
     it('initializes the graph', function() {
-      adapter.initialize(node);
+      adapter.initialize(element);
       expect(greuler).toHaveBeenCalledWith({ target: '#asdkfwer', data: {} });
       expect(instance.update).toHaveBeenCalled();
     });
 
     it('passes width and height to the graph', function() {
-      adapter.initialize(node, { width: 123, height: 243 });
+      adapter.initialize(element, { width: 123, height: 243 });
       expect(greuler).toHaveBeenCalledWith({
         target: '#asdkfwer',
         width: 123,
@@ -44,7 +82,7 @@ describe('GreulerAdapter', function() {
     });
 
     it('passes width to the graph', function() {
-      adapter.initialize(node, { width: 123 });
+      adapter.initialize(element, { width: 123 });
       expect(greuler).toHaveBeenCalledWith({
         target: '#asdkfwer',
         width: 123,
@@ -53,7 +91,7 @@ describe('GreulerAdapter', function() {
     });
 
     it('passes height to the graph', function() {
-      adapter.initialize(node, { height: 243 });
+      adapter.initialize(element, { height: 243 });
       expect(greuler).toHaveBeenCalledWith({
         target: '#asdkfwer',
         height: 243,
@@ -62,7 +100,7 @@ describe('GreulerAdapter', function() {
     });
 
     it('adds nodes and edges to the graph', function() {
-      adapter.initialize(node, {
+      adapter.initialize(element, {
         nodes: [
           {
             id: 0,
@@ -94,7 +132,7 @@ describe('GreulerAdapter', function() {
               r: 20,
             },
           ],
-          links: [{ source: 0,  target: 1 }],
+          links: [{ source: 0, target: 1 }],
         },
       });
     });
@@ -107,39 +145,42 @@ describe('GreulerAdapter', function() {
       adapter.initialize(new MockDomNode());
     });
 
-    it('adds a node and updates this instance', function() {
-      var node = { id: 34, label: 'asdf' };
+    it('adds a node and updates the instance', function() {
+      var node = makeNode({ id: 34, label: 'asdf' });
       adapter.addNode(node);
-      expect(instance.graph.addNode).toHaveBeenCalledWith(node);
+      expect(instance.graph.addNode).toHaveBeenCalledWith(matchers.objectThatHas({
+        id: 34,
+        label: 'asdf',
+      }));
       expect(instance.update).toHaveBeenCalled();
     });
 
     it('can add a node with id equal to 0', function() {
-      var node = { id: 0 };
+      var node = makeNode({ id: 0 });
       adapter.addNode(node);
       expect(instance.graph.addNode).toHaveBeenCalledWith(
-        { id: 0, label: '' }
+        matchers.objectThatHas({ id: 0, label: '' })
       );
     });
 
     it('adds passes size as radius', function() {
-      var node = { id: 34, size: 67 };
+      var node = makeNode({ id: 34, size: 67 });
       adapter.addNode(node);
-      expect(instance.graph.addNode).toHaveBeenCalledWith({
+      expect(instance.graph.addNode).toHaveBeenCalledWith(matchers.objectThatHas({
         id: 34,
         r: 67,
         label: '',
-      });
+      }));
     });
 
     it('passes label and fill color', function() {
-      var node = { id: 34, label: '', color: '#faddad' };
+      var node = makeNode({ id: 34, label: '', color: '#faddad' });
       adapter.addNode(node);
-      expect(instance.graph.addNode).toHaveBeenCalledWith({
+      expect(instance.graph.addNode).toHaveBeenCalledWith(matchers.objectThatHas({
         id: 34,
         label: '',
         fill: '#faddad',
-      });
+      }));
     });
   });
 
@@ -186,14 +227,14 @@ describe('GreulerAdapter', function() {
     });
 
     it('returns NONE if no target', function() {
-      var event = createSpyObjectWith({ explicitOriginalTarget: null });
+      var event = makeEvent({ explicitOriginalTarget: null });
       graph.getNodesByFn.andReturn([]);
       expect(adapter.getClickTarget(event)).toBe(graphelements.NONE);
     });
 
     it('compares node position to click position', function() {
-      var realNode = { id: 345, index: 2 }
-      var event = createSpyObjectWith({
+      var realNode = makeNode({ id: 345, index: 2 })
+      var event = makeEvent({
         clientX: 125,
         clientY: 130,
       });
@@ -207,18 +248,18 @@ describe('GreulerAdapter', function() {
       expect(target.domElement).toBe(domElements[2]);
 
       expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
-        { input: { x: 125, y: 130, width: 20, height: 20 }, output: true },
-        { input: { x: 110, y: 120, width: 20, height: 20 }, output: true },
-        { input: { x: 105, y: 110, width: 20, height: 20 }, output: true },
-        { input: { x: 100, y: 100, width: 20, height: 20 }, output: false },
-        { input: { x: 100, y: 115, width: 20, height: 20 }, output: false },
-        { input: { x: 110, y: 100, width: 20, height: 20 }, output: false }
+        { input: makeNode({ left: 125, right: 125 + 20, top: 130, bottom: 130 + 20 }), output: true },
+        { input: makeNode({ left: 110, right: 110 + 20, top: 120, bottom: 120 + 20 }), output: true },
+        { input: makeNode({ left: 105, right: 105 + 20, top: 110, bottom: 110 + 20 }), output: true },
+        { input: makeNode({ left: 100, right: 100 + 20, top: 100, bottom: 100 + 20 }), output: false },
+        { input: makeNode({ left: 100, right: 100 + 20, top: 115, bottom: 115 + 20 }), output: false },
+        { input: makeNode({ left: 110, right: 110 + 20, top: 100, bottom: 100 + 20 }), output: false }
       ));
     });
 
     it('adds a fuzz factor to node bounding box', function() {
-      var realNode = { id: 345, index: 1 }
-      var event = createSpyObjectWith({
+      var realNode = makeNode({ id: 345, index: 1 })
+      var event = makeEvent({
         clientX: 50,
         clientY: 100,
       });
@@ -234,36 +275,36 @@ describe('GreulerAdapter', function() {
       //click at (50, 100)
       expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
         //top left
-        { input: { x: 52, y: 102, width: 20, height: 20 }, output: true },
-        { input: { x: 55, y: 102, width: 20, height: 20 }, output: false },
-        { input: { x: 52, y: 105, width: 20, height: 20 }, output: false },
+        { input: makeNode({ left: 52, right: 52 + 20, top: 102, bottom: 102 + 20 }), output: true },
+        { input: makeNode({ left: 55, right: 55 + 20, top: 102, bottom: 102 + 20 }), output: false },
+        { input: makeNode({ left: 52, right: 52 + 20, top: 105, bottom: 105 + 20 }), output: false },
 
         //top right
-        { input: { x: 28, y: 102, width: 20, height: 20 }, output: true },
-        { input: { x: 25, y: 102, width: 20, height: 20 }, output: false },
-        { input: { x: 28, y: 105, width: 20, height: 20 }, output: false },
+        { input: makeNode({ left: 28, right: 28 + 20, top: 102, bottom: 102 + 20 }), output: true },
+        { input: makeNode({ left: 25, right: 25 + 20, top: 102, bottom: 102 + 20 }), output: false },
+        { input: makeNode({ left: 28, right: 28 + 20, top: 105, bottom: 105 + 20 }), output: false },
 
         //bottom right
-        { input: { x: 28, y: 78, width: 20, height: 20 }, output: true },
-        { input: { x: 25, y: 78, width: 20, height: 20 }, output: false },
-        { input: { x: 28, y: 75, width: 20, height: 20 }, output: false },
+        { input: makeNode({ left: 28, right: 28 + 20, top: 78, bottom: 78 + 20 }), output: true },
+        { input: makeNode({ left: 25, right: 25 + 20, top: 78, bottom: 78 + 20 }), output: false },
+        { input: makeNode({ left: 28, right: 28 + 20, top: 75, bottom: 75 + 20 }), output: false },
 
         //bottom left
-        { input: { x: 52, y: 78, width: 20, height: 20 }, output: true },
-        { input: { x: 55, y: 78, width: 20, height: 20 }, output: false },
-        { input: { x: 52, y: 75, width: 20, height: 20 }, output: false }
+        { input: makeNode({ left: 52, right: 52 + 20, top: 78, bottom: 78 + 20 }), output: true },
+        { input: makeNode({ left: 55, right: 55 + 20, top: 78, bottom: 78 + 20 }), output: false },
+        { input: makeNode({ left: 52, right: 52 + 20, top: 75, bottom: 75 + 20 }), output: false }
       ));
     });
 
     it('chooses the closest node', function() {
-      var event = createSpyObjectWith({
+      var event = makeEvent({
         clientX: 50,
         clientY: 100,
       });
 
       graph.getNodesByFn.andReturn([
-        { id: 1, index: 0, x: 60, y: 110, width: 10, height: 10, },
-        { id: 2, index: 1, x: 55, y: 95, width: 10, height: 10, },
+        makeNode({ id: 1, index: 0, left: 60, right: 60 + 10, top: 110, bottom: 110 + 10, }),
+        makeNode({ id: 2, index: 1, left: 55, right: 55 + 10, top: 95, bottom: 95 + 10, }),
       ]);
 
       var target = adapter.getClickTarget(event);
@@ -271,6 +312,25 @@ describe('GreulerAdapter', function() {
       expect(target.id).toBe(2);
       expect(target.domElement).toBe(domElements[1]);
     });
+
+    it('translates client coordinates into internal coordinates', function() {
+      root.getBoundingClientRect.andReturn({
+        left: 140,
+        top: 500,
+      });
+      var event = makeEvent({
+        clientX: 190,
+        clientY: 600,
+      });
+
+      graph.getNodesByFn.andReturn([
+        { id: 1, index: 0, x: 50, y: 100, width: 10, height: 10, },
+      ]);
+
+      var target = adapter.getClickTarget(event);
+      expect(target).toBeA(graphelements.Node);
+      expect(target.id).toBe(1);
+   });
   });
 
   describe('setNodeColor', function() {
@@ -313,9 +373,9 @@ describe('GreulerAdapter', function() {
         'getElementsByTagName.returnValue': [circle3],
       });
 
-      var node1 = { id: 34, index: 0 };
-      var node2 = { id: 45, index: 1 };
-      var node3 = { id: 98, index: 2 };
+      var node1 = makeNode({ id: 34, index: 0 });
+      var node2 = makeNode({ id: 45, index: 1 });
+      var node3 = makeNode({ id: 98, index: 2 });
       graph.getNodesByFn.andReturn([
         node1,
         node2,

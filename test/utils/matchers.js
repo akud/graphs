@@ -41,8 +41,8 @@ module.exports = {
                 output = fn(testCase.input);
                 return {
                   matches: isEqual(testCase.output, output),
-                  expected: 'fn(' + testCase.input + ') -> ' + output,
-                  actual: 'fn('+ testCase.input + ') -> ' + output,
+                  expected: 'fn(' + toString(testCase.input) + ') -> ' + output,
+                  actual: 'fn('+ toString(testCase.input) + ') -> ' + output,
                 };
             } else {
               result = fn();
@@ -91,4 +91,42 @@ module.exports = {
       _isMatcher: true,
     };
   },
+
+  objectThatHas: function(expectedProps) {
+    return {
+      match: function(actual) {
+        var matches = Object.keys(expectedProps)
+          .every(function(k) { return expectedProps[k] === actual[k]; })
+        return {
+          matches: matches,
+          expected: expectedProps,
+          actual: actual,
+        };
+      },
+      _isMatcher: true,
+    };
+  },
 };
+
+function toString(obj) {
+  if (obj === undefined) {
+    return 'undefined';
+  } else if (obj === null) {
+    return 'null';
+  } else if (Array.isArray(obj)) {
+    return '[' +
+      obj
+      .map(function(a) { return toString(a); })
+      .reduce(function(a, b) { return a + ', ' + b; }, '') +
+    ']';
+  } else if (typeof obj === 'object') {
+    return '{' +
+      Object.keys(obj)
+      .map(function(k) { return toString(k) + ': ' + toString(obj[k]); })
+      .reduce(function(a, b) { return a + ', ' + b; }, '') +
+    '}';
+  } else {
+    return obj;
+  }
+
+}

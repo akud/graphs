@@ -1,5 +1,6 @@
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
+var BoundingBox = require('./BoundingBox');
 var LOG = require('./Logger');
 
 
@@ -81,33 +82,44 @@ GreulerAdapter.prototype = {
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {
     nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var x = event.clientX;
-    var y = event.clientY;
+    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
+    var point = {
+      x: event.clientX,
+      y: event.clientY,
+    };
     var matchingNodes = this.getNodes(function(node) {
-      var leftBound = node.x - (nodeAreaFuzzFactor * node.width);
-      var rightBound = node.x + (( 1+ nodeAreaFuzzFactor) * node.width);
-      var topBound = node.y - (nodeAreaFuzzFactor * node.height);
-      var bottomBound = node.y + ((1 + nodeAreaFuzzFactor) * node.height);
-      return leftBound <= x && x <= rightBound &&
-             topBound <= y && y <= bottomBound;
+      return new BoundingBox({
+        left: node.bounds.x,
+        right: node.bounds.X,
+        top: node.bounds.y,
+        bottom: node.bounds.Y
+      })
+        .expandBy(nodeAreaFuzzFactor)
+        .translate({ x: graphElementBounds.left, y: graphElementBounds.top })
+        .contains(point);
     });
 
     if (matchingNodes && matchingNodes.length) {
       matchingNodes.sort(function(a, b) {
-        var distanceToA = utils.distance(center(a.realNode), [x, y]);
-        var distanceToB = utils.distance(center(b.realNode), [x, y]);
+        var distanceToA = utils.distance(center(a.realNode), point);
+        var distanceToB = utils.distance(center(b.realNode), point);
         return distanceToA - distanceToB;
       });
       return matchingNodes[0];
     } else {
       return undefined;
     }
-  }
+  },
 };
 
 
 function center(node) {
-    return [node.x + (node.width / 2), node.y + (node.height / 2)];
+  var width = node.bounds.X - node.bounds.x;
+  var height = node.bounds.Y - node.bounds.y;
+  return {
+    x: node.bounds.x + (width / 2),
+    y: node.bounds.y + (height / 2),
+  };
 }
 
 module.exports = GreulerAdapter;
