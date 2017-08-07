@@ -5,6 +5,9 @@ var GreulerAdapter = require('./src/GreulerAdapter');
 var Graph = require('./src/Graph');
 var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
+var ActionQueue = require('./src/ActionQueue');
+
+var actionQueue = new ActionQueue();
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -18,8 +21,9 @@ if (width < 700) {
 global.adapter = new GreulerAdapter(greuler);
 global.graph = new Graph(
   {
+    actionQueue: actionQueue,
     adapter: adapter,
-    animator: new Animator(),
+    animator: new Animator({ actionQueue: actionQueue }),
     state: new UrlState({
       baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
       setUrl: window.history.replaceState.bind(window.history, {}, ''),
@@ -38,20 +42,47 @@ global.graph.attachTo(document.getElementById('main-graph'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/Animator":2,"./src/Graph":4,"./src/GreulerAdapter":5,"./src/UrlState":7}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/UrlState":9}],2:[function(require,module,exports){
 (function (global){
-function Animator(options) {
+function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
+}
+
+ActionQueue.prototype = {
+  defer: function(timeout, fn) {
+    if (arguments.length == 1) {
+      fn = timeout;
+      timeout = 1;
+    }
+    this.setTimeout(fn, timeout);
+  },
+
+};
+
+module.exports = ActionQueue;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],3:[function(require,module,exports){
+function Animator(options) {
+  this.actionQueue = (options && options.actionQueue);
 }
 
 Animator.prototype = {
   alternate: function() {
-    return new AlternatingAnimation(this, Array.prototype.slice.call(arguments));
+    this._checkDependencies();
+    return new AlternatingAnimation(this.actionQueue, Array.prototype.slice.call(arguments));
+  },
+
+  _checkDependencies: function() {
+    if (!this.actionQueue) {
+      throw Error('ActionQueue is required');
+    }
   },
 };
 
-function AlternatingAnimation(animator, functions) {
-  this.animator = animator;
+function AlternatingAnimation(actionQueue, functions) {
+  this.actionQueue = actionQueue;
   this.functions = functions;
   this.currentIndex = 0;
   this.interval = 100;
@@ -74,7 +105,7 @@ AlternatingAnimation.prototype = {
       if (this.predicate()) {
         this.functions[this.currentIndex]();
         this.currentIndex = (this.currentIndex + 1) % this.functions.length;
-        this.animator.setTimeout(execute, this.interval);
+        this.actionQueue.defer(this.interval, execute);
       }
     }).bind(this);
     execute();
@@ -83,10 +114,44 @@ AlternatingAnimation.prototype = {
 
 module.exports = Animator;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],4:[function(require,module,exports){
+function BoundingBox(dimensions) {
+  this.dimensions = dimensions;
+}
 
-},{}],3:[function(require,module,exports){
-(function (global){
+BoundingBox.prototype = {
+
+  expandBy: function(factor) {
+    var width = this.dimensions.right - this.dimensions.left;
+    var height = this.dimensions.bottom - this.dimensions.top;
+    return new BoundingBox({
+      left: this.dimensions.left - width*factor,
+      right: this.dimensions.right + width*factor,
+      top: this.dimensions.top - height*factor,
+      bottom: this.dimensions.bottom + width*factor,
+    });
+  },
+
+  translate: function(vector) {
+    return new BoundingBox({
+      left: this.dimensions.left + vector.x,
+      right: this.dimensions.right + vector.x,
+      top: this.dimensions.top + vector.y,
+      bottom: this.dimensions.bottom + vector.y,
+    });
+  },
+
+  contains: function(point) {
+    return this.dimensions.left <= point.x && point.x <= this.dimensions.right &&
+           this.dimensions.top <= point.y && point.y <= this.dimensions.bottom;
+
+  },
+
+};
+
+module.exports = BoundingBox;
+
+},{}],5:[function(require,module,exports){
 /**
  * Component constructor
  *
@@ -95,7 +160,7 @@ module.exports = Animator;
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(services, options) {
-  this.setTimeout = (services && services.setTimeout) || global.setTimeout.bind(global);
+  this.actionQueue = (services && services.actionQueue);
   this.holdTime = (options && options.holdTime) || 250;
 
   this.mouseDownCount = 0;
@@ -109,6 +174,7 @@ Component.prototype = {
 
 
   attachTo: function(targetElement) {
+    this._checkServices();
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
       if (this.isInClickAndHold) {
@@ -122,13 +188,13 @@ Component.prototype = {
       this.mouseDownCount++;
       var originalCount = this.mouseDownCount;
 
-      this.setTimeout((function() {
+      this.actionQueue.defer(this.holdTime, (function() {
         if (this.mouseDownCount === originalCount &&
             this.mouseUpCount === this.mouseDownCount - 1) {
           this.isInClickAndHold = true;
           this.handleClickAndHold(event);
         }
-      }).bind(this), this.holdTime);
+      }).bind(this));
     }).bind(this));
 
     this.doAttach(targetElement);
@@ -140,13 +206,17 @@ Component.prototype = {
   doAttach: function(element) {
 
   },
+
+  _checkServices: function() {
+    if (!this.actionQueue) {
+      throw Error('actionQueue is required');
+    }
+  },
 };
 
 module.exports = Component;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var Component = require('./Component');
 var colors = require('./colors');
 var utils = require('./utils');
@@ -323,9 +393,10 @@ Graph.prototype = Object.assign(new Component(), {
 
 module.exports = Graph;
 
-},{"./Component":3,"./Logger":6,"./colors":8,"./utils":10}],5:[function(require,module,exports){
+},{"./Component":5,"./Logger":8,"./colors":10,"./utils":12}],7:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
+var BoundingBox = require('./BoundingBox');
 var LOG = require('./Logger');
 
 
@@ -407,38 +478,49 @@ GreulerAdapter.prototype = {
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {
     nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var x = event.clientX;
-    var y = event.clientY;
+    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
+    var point = {
+      x: event.clientX,
+      y: event.clientY,
+    };
     var matchingNodes = this.getNodes(function(node) {
-      var leftBound = node.x - (nodeAreaFuzzFactor * node.width);
-      var rightBound = node.x + (( 1+ nodeAreaFuzzFactor) * node.width);
-      var topBound = node.y - (nodeAreaFuzzFactor * node.height);
-      var bottomBound = node.y + ((1 + nodeAreaFuzzFactor) * node.height);
-      return leftBound <= x && x <= rightBound &&
-             topBound <= y && y <= bottomBound;
+      return new BoundingBox({
+        left: node.bounds.x,
+        right: node.bounds.X,
+        top: node.bounds.y,
+        bottom: node.bounds.Y
+      })
+        .expandBy(nodeAreaFuzzFactor)
+        .translate({ x: graphElementBounds.left, y: graphElementBounds.top })
+        .contains(point);
     });
 
     if (matchingNodes && matchingNodes.length) {
       matchingNodes.sort(function(a, b) {
-        var distanceToA = utils.distance(center(a.realNode), [x, y]);
-        var distanceToB = utils.distance(center(b.realNode), [x, y]);
+        var distanceToA = utils.distance(center(a.realNode), point);
+        var distanceToB = utils.distance(center(b.realNode), point);
         return distanceToA - distanceToB;
       });
       return matchingNodes[0];
     } else {
       return undefined;
     }
-  }
+  },
 };
 
 
 function center(node) {
-    return [node.x + (node.width / 2), node.y + (node.height / 2)];
+  var width = node.bounds.X - node.bounds.x;
+  var height = node.bounds.Y - node.bounds.y;
+  return {
+    x: node.bounds.x + (width / 2),
+    y: node.bounds.y + (height / 2),
+  };
 }
 
 module.exports = GreulerAdapter;
 
-},{"./Logger":6,"./graphelements":9,"./utils":10}],6:[function(require,module,exports){
+},{"./BoundingBox":4,"./Logger":8,"./graphelements":11,"./utils":12}],8:[function(require,module,exports){
 (function (global){
 function Logger() {
 
@@ -446,19 +528,17 @@ function Logger() {
 
 Logger.prototype = {
   debug: function(msg, objs) {
-    this._log.apply(this, ['DEBUG'] + arguments);
+    this._log.apply(this, ['DEBUG'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   warn: function(msg, objs) {
-    this._log.apply(this, ['WARN'] + arguments);
+    this._log.apply(this, ['WARN'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   error: function(msg, objs) {
-    this._log.apply(this, ['ERROR'] + arguments);
+    this._log.apply(this, ['ERROR'].concat(Array.prototype.splice.call(arguments, 0)));
   },
 
-  _log: function(level, msg) {
-    var objs = Array.prototype.splice.call(arguments, 1, arguments.length);
-    global.console.log('[' + level + '] ' + msg);
-    Array.prototype.forEach.call(objs, function(obj) { console.log(obj); });
+  _log: function() {
+    global.console.log.apply(global.console.log, arguments);
   },
 };
 
@@ -467,7 +547,7 @@ module.exports = new Logger();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var utils = require('./utils');
 
 NUM_NODES_PARAM = 'n'
@@ -666,7 +746,7 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"./utils":10}],8:[function(require,module,exports){
+},{"./utils":12}],10:[function(require,module,exports){
 module.exports = {
   RED: '#db190f',
   ORANGE: '#f76402',
@@ -678,7 +758,7 @@ module.exports = {
   NEON: '#00FF00',
 };
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -730,20 +810,14 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /**
  * Compute the cartesian distance between two vectors
  */
-function distance(vec1, vec2) {
-  if (vec1.length != vec2.length) {
-    throw new Error(vec1.length + ' != ' + vec2.length);
-  }
-  return Math.sqrt(
-    vec1
-      .map(function(x, i) { return x - vec2[i]; })
-      .map(function(x) { return x * x; })
-      .reduce(function(a, b) { return a + b; })
-  );
+function distance(point1, point2) {
+  var x = point1.x - point2.x;
+  var y = point1.y - point2.y;
+  return Math.sqrt(x*x + y*y);
 }
 
 /**
