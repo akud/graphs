@@ -4,19 +4,17 @@ function Logger() {
 
 Logger.prototype = {
   debug: function(msg, objs) {
-    this._log.apply(this, ['DEBUG'] + arguments);
+    this._log.apply(this, ['DEBUG'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   warn: function(msg, objs) {
-    this._log.apply(this, ['WARN'] + arguments);
+    this._log.apply(this, ['WARN'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   error: function(msg, objs) {
-    this._log.apply(this, ['ERROR'] + arguments);
+    this._log.apply(this, ['ERROR'].concat(Array.prototype.splice.call(arguments, 0)));
   },
 
-  _log: function(level, msg) {
-    var objs = Array.prototype.splice.call(arguments, 1, arguments.length);
-    global.console.log('[' + level + '] ' + msg);
-    Array.prototype.forEach.call(objs, function(obj) { console.log(obj); });
+  _log: function() {
+    global.console.log.apply(global.console.log, arguments);
   },
 };
 
