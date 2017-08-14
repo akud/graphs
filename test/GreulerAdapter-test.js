@@ -420,4 +420,22 @@ describe('GreulerAdapter', function() {
       expect(graph.getNodesByFn).toHaveBeenCalledWith(filter);
     });
   });
+
+  describe('performInBulk', function() {
+    var adapter;
+    beforeEach(function() {
+      adapter = new GreulerAdapter(greuler);
+      adapter.initialize(new MockDomNode());
+    });
+
+    it('defers updating instance until after operations complete', function() {
+      instance.update.reset();
+      adapter.performInBulk(function() {
+        expect(arguments[0]).toBe(adapter);
+        arguments[0].addNode({ color: '#FFFFFF' });
+        expect(instance.update).toNotHaveBeenCalled();
+      });
+      expect(instance.update).toHaveBeenCalled();
+    });
+  });
 });

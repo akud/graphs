@@ -6,6 +6,7 @@ var LOG = require('./Logger');
 
 function GreulerAdapter(greuler) {
   this.greuler = greuler;
+  this.isInBulkOperation = false;
 }
 
 
@@ -26,7 +27,12 @@ GreulerAdapter.prototype = {
 
   addNode: function(node) {
     var result = this.graph.addNode(this._translateNodeObj(node));
-    this.instance = this.instance.update();
+    this._updateInstance();
+  },
+
+  removeNode: function(node) {
+    var result = this.graph.removeNode(this._translateNodeObj(node));
+    this._updateInstance();
   },
 
   addEdge: function(node1, node2) {
@@ -34,7 +40,7 @@ GreulerAdapter.prototype = {
       source: node1.id,
       target: node2.id
     });
-    this.instance = this.instance.update();
+    this._updateInstance();
   },
 
   setNodeColor: function(target, color) {
@@ -63,6 +69,13 @@ GreulerAdapter.prototype = {
         color: domElement.getAttribute('fill'),
       });
     }).bind(this));
+  },
+
+  performInBulk: function(actions) {
+    this.isInBulkOperation = true;
+    actions(this);
+    this.isInBulkOperation = false;
+    this._updateInstance();
   },
 
   _translateNodeObj: function(node) {
@@ -108,6 +121,12 @@ GreulerAdapter.prototype = {
       return matchingNodes[0];
     } else {
       return undefined;
+    }
+  },
+
+  _updateInstance: function() {
+    if (!this.isInBulkOperation) {
+      this.instance = this.instance.update();
     }
   },
 };

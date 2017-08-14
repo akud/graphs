@@ -89,6 +89,13 @@ UrlState.prototype = {
     return this.baseUrl + '?' + this.urlSearchParams.toString();
   },
 
+  reset: function() {
+    this._getKeys().forEach((function(key) {
+      this.urlSearchParams.delete(key);
+    }).bind(this));
+    this._persistState();
+  },
+
   _isColor: function(options) {
     options = this._normalizeColorOptions(options);
 
@@ -169,6 +176,7 @@ UrlState.prototype = {
   },
 
   _getKeys: function(predicate) {
+    predicate = predicate || function() { return true; };
     var keys = [];
     var iterator = this.urlSearchParams.keys();
     var next = iterator.next();

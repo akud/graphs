@@ -21,7 +21,7 @@ describe('UrlState', function() {
 
   describe('persistNode', function() {
 
-    afterEach(function() { expectStateToHaveBeenPushed(); });
+    afterEach(expectStateToHaveBeenPushed);
 
     it('sets the number of nodes to 1 if there are no nodes', function() {
       spyOn(state, 'persistNodeColor');
@@ -51,7 +51,7 @@ describe('UrlState', function() {
 
   describe('persistNodeColor', function() {
 
-    afterEach(function() { expectStateToHaveBeenPushed(); });
+    afterEach(expectStateToHaveBeenPushed);
 
     it('adds a param with node color', function() {
       state.persistNodeColor(7, '#FFFFFF' );
@@ -81,7 +81,7 @@ describe('UrlState', function() {
 
   describe('persistEdge', function() {
 
-    afterEach(function() { expectStateToHaveBeenPushed(); });
+    afterEach(expectStateToHaveBeenPushed);
 
     it('adds a param if there are no existing connections', function() {
       state.persistEdge(3, 5);
@@ -149,6 +149,18 @@ describe('UrlState', function() {
         { source: 7, target: 9 },
         { source: 7, target: 10 },
       ]);
+    });
+  });
+
+  describe('reset', function() {
+    afterEach(expectStateToHaveBeenPushed);
+
+    it('deletes each key in the urlsearchparams', function() {
+      urlSearchParams.set('foo', 'BAR');
+      urlSearchParams.set('baz', 'bul');
+      state.reset();
+      expect(urlSearchParams.delete).toHaveBeenCalledWith('foo');
+      expect(urlSearchParams.delete).toHaveBeenCalledWith('baz');
     });
   });
 

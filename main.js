@@ -4,6 +4,7 @@ var Graph = require('./src/Graph');
 var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
+var ResetButton = require('./src/ResetButton');
 
 var actionQueue = new ActionQueue();
 
@@ -34,4 +35,12 @@ global.graph = new Graph(
     editModeAlternateInterval: 250,
   });
 
+global.resetButton = new ResetButton({
+  actionQueue: actionQueue,
+  resettables: [
+    global.graph,
+  ],
+});
+
 global.graph.attachTo(document.getElementById('main-graph'));
+global.resetButton.attachTo(document.getElementById('reset-button'));

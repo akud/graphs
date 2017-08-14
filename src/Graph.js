@@ -25,10 +25,7 @@ function Graph(options) {
     this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
     this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
   }
-  this.colors = {};
-  this.currentlyEditedNode = null;
-  this.editModeOtherNodes = [];
-  this.editModeOriginalColors = {};
+  this._setInitialState();
 }
 
 
@@ -83,6 +80,22 @@ Graph.prototype = Object.assign(new Component(), {
         this._enterEditMode(clickTarget);
       }
     }
+  },
+
+  reset: function() {
+    this.adapter.performInBulk((function() {
+      this.state.retrievePersistedNodes().forEach((function(node) {
+        this.adapter.removeNode(node);
+      }).bind(this));
+
+      this.state.retrievePersistedNodes().forEach((function(node) {
+        this.adapter.removeNode(node);
+      }).bind(this));
+
+    }).bind(this));
+
+    this._setInitialState();
+    this.state.reset();
   },
 
   _setNextColor: function(node) {
@@ -169,6 +182,13 @@ Graph.prototype = Object.assign(new Component(), {
         this.adapter.setNodeColor(n, this.editModeOriginalColors[n.id]);
       }
     }).bind(this));
+  },
+
+  _setInitialState: function() {
+    this.colors = {};
+    this.currentlyEditedNode = null;
+    this.editModeOtherNodes = [];
+    this.editModeOriginalColors = {};
   },
 });
 

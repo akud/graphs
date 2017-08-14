@@ -20,7 +20,11 @@ describe('Graph', function() {
       'getClickTarget',
       'getNodes',
       'initialize',
-      'setNodeColor'
+      'setNodeColor',
+      'removeNode',
+      {
+        'performInBulk': function(fn) { fn(adapter); },
+      }
     );
     alternatingAnimation = createSpyObjectWith(
       'play',
@@ -37,6 +41,7 @@ describe('Graph', function() {
       'persistEdge',
       'persistNode',
       'persistNodeColor',
+      'reset',
       {
         'retrievePersistedEdges.returnValue': [],
         'retrievePersistedNodes.returnValue': [],
@@ -466,6 +471,31 @@ describe('Graph', function() {
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.click();
       expect(adapter.setNodeColor).toNotHaveBeenCalled();
+    });
+  });
+
+  describe('reset', function() {
+    var graph;
+    beforeEach(function() {
+      graph = newGraph();
+      graph.attachTo(targetElement);
+    });
+
+    it('resets the state', function() {
+      graph.reset();
+      expect(state.reset).toHaveBeenCalled();
+    });
+
+    it('removes all the nodes', function() {
+      state.retrievePersistedNodes.andReturn([
+        { id: 0 },
+        { id: 1 },
+        { id: 2 },
+      ]);
+      graph.reset();
+      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 0 });
+      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 1 });
+      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 2 });
     });
   });
 });
