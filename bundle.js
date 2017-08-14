@@ -6,6 +6,7 @@ var Graph = require('./src/Graph');
 var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
+var ResetButton = require('./src/ResetButton');
 
 var actionQueue = new ActionQueue();
 
@@ -29,8 +30,6 @@ global.graph = new Graph(
       setUrl: window.history.replaceState.bind(window.history, {}, ''),
       urlSearchParams: new URLSearchParams(window.location.search),
     }),
-  },
-  {
     width: width,
     height: height,
     nodeSize: nodeSize,
@@ -38,11 +37,19 @@ global.graph = new Graph(
     editModeAlternateInterval: 250,
   });
 
+global.resetButton = new ResetButton({
+  actionQueue: actionQueue,
+  resettables: [
+    global.graph,
+  ],
+});
+
 global.graph.attachTo(document.getElementById('main-graph'));
+global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/UrlState":9}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/ResetButton":9,"./src/UrlState":10}],2:[function(require,module,exports){
 (function (global){
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
@@ -155,12 +162,12 @@ module.exports = BoundingBox;
 /**
  * Component constructor
  *
- * services - service objects
+ * options - service objects
  * options - options for the component.
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
-function Component(services, options) {
-  this.actionQueue = (services && services.actionQueue);
+function Component(options) {
+  this.actionQueue = (options && options.actionQueue);
   this.holdTime = (options && options.holdTime) || 250;
 
   this.mouseDownCount = 0;
@@ -174,7 +181,7 @@ Component.prototype = {
 
 
   attachTo: function(targetElement) {
-    this._checkServices();
+    this._validateOptions();
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
       if (this.isInClickAndHold) {
@@ -207,7 +214,7 @@ Component.prototype = {
 
   },
 
-  _checkServices: function() {
+  _validateOptions: function() {
     if (!this.actionQueue) {
       throw Error('actionQueue is required');
     }
@@ -232,28 +239,24 @@ var COLOR_ORDER = [
   colors.BLUE,
 ];
 
-function Graph(services, options) {
+function Graph(options) {
   Component.apply(this, arguments);
-  this.adapter = (services && services.adapter);
-  this.animator = (services && services.animator);
-  this.state = (services && services.state);
-  this.colors = {};
-  this.width = (options && options.width);
-  this.height = (options && options.height);
-  this.nodeSize = (options && options.nodeSize);
-  this.nodeAreaFuzzFactor = (options && options.nodeAreaFuzzFactor);
-  this.editModeAlternateInterval = (options && options.editModeAlternateInterval) || 100;
-
-  this.currentlyEditedNode = null;
-  this.editModeOtherNodes = [];
-  this.editModeOriginalColors = {};
+  if (options) {
+    this.adapter = options.adapter;
+    this.animator = options.animator;
+    this.state = options.state;
+    this.width = options.width;
+    this.height = options.height;
+    this.nodeSize = options.nodeSize;
+    this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
+    this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
+  }
+  this._setInitialState();
 }
 
 
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
-    this._checkServices();
-
     this.adapter.initialize(
       targetElement,
       utils.optional({
@@ -303,6 +306,22 @@ Graph.prototype = Object.assign(new Component(), {
         this._enterEditMode(clickTarget);
       }
     }
+  },
+
+  reset: function() {
+    this.adapter.performInBulk((function() {
+      this.state.retrievePersistedNodes().forEach((function(node) {
+        this.adapter.removeNode(node);
+      }).bind(this));
+
+      this.state.retrievePersistedNodes().forEach((function(node) {
+        this.adapter.removeNode(node);
+      }).bind(this));
+
+    }).bind(this));
+
+    this._setInitialState();
+    this.state.reset();
   },
 
   _setNextColor: function(node) {
@@ -361,14 +380,15 @@ Graph.prototype = Object.assign(new Component(), {
     this.editModeOriginalColors = {};
   },
 
-  _checkServices: function() {
+  _validateOptions: function() {
+    Component.prototype._validateOptions.call(this, arguments);
     if (!this.adapter) {
       throw new Error('adapter is not present');
     }
     if (!this.animator) {
       throw new Error('animator is not present');
     }
-    if (!this.animator) {
+    if (!this.state) {
       throw new Error('state is not present');
     }
   },
@@ -389,11 +409,18 @@ Graph.prototype = Object.assign(new Component(), {
       }
     }).bind(this));
   },
+
+  _setInitialState: function() {
+    this.colors = {};
+    this.currentlyEditedNode = null;
+    this.editModeOtherNodes = [];
+    this.editModeOriginalColors = {};
+  },
 });
 
 module.exports = Graph;
 
-},{"./Component":5,"./Logger":8,"./colors":10,"./utils":12}],7:[function(require,module,exports){
+},{"./Component":5,"./Logger":8,"./colors":11,"./utils":13}],7:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var BoundingBox = require('./BoundingBox');
@@ -402,6 +429,7 @@ var LOG = require('./Logger');
 
 function GreulerAdapter(greuler) {
   this.greuler = greuler;
+  this.isInBulkOperation = false;
 }
 
 
@@ -422,7 +450,12 @@ GreulerAdapter.prototype = {
 
   addNode: function(node) {
     var result = this.graph.addNode(this._translateNodeObj(node));
-    this.instance = this.instance.update();
+    this._updateInstance();
+  },
+
+  removeNode: function(node) {
+    var result = this.graph.removeNode(this._translateNodeObj(node));
+    this._updateInstance();
   },
 
   addEdge: function(node1, node2) {
@@ -430,7 +463,7 @@ GreulerAdapter.prototype = {
       source: node1.id,
       target: node2.id
     });
-    this.instance = this.instance.update();
+    this._updateInstance();
   },
 
   setNodeColor: function(target, color) {
@@ -459,6 +492,13 @@ GreulerAdapter.prototype = {
         color: domElement.getAttribute('fill'),
       });
     }).bind(this));
+  },
+
+  performInBulk: function(actions) {
+    this.isInBulkOperation = true;
+    actions(this);
+    this.isInBulkOperation = false;
+    this._updateInstance();
   },
 
   _translateNodeObj: function(node) {
@@ -506,6 +546,12 @@ GreulerAdapter.prototype = {
       return undefined;
     }
   },
+
+  _updateInstance: function() {
+    if (!this.isInBulkOperation) {
+      this.instance = this.instance.update();
+    }
+  },
 };
 
 
@@ -520,7 +566,7 @@ function center(node) {
 
 module.exports = GreulerAdapter;
 
-},{"./BoundingBox":4,"./Logger":8,"./graphelements":11,"./utils":12}],8:[function(require,module,exports){
+},{"./BoundingBox":4,"./Logger":8,"./graphelements":12,"./utils":13}],8:[function(require,module,exports){
 (function (global){
 function Logger() {
 
@@ -548,6 +594,29 @@ module.exports = new Logger();
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],9:[function(require,module,exports){
+var Component = require('./Component');
+
+function ResetButton(options) {
+  Component.apply(this, arguments);
+  if (options) {
+    this.resettables = options.resettables;
+  } else {
+    this.resettables = [];
+  }
+
+}
+
+ResetButton.prototype = Object.assign(new Component(), {
+  handleClick: function(event) {
+    this.resettables.forEach(function(resettable) {
+      resettable.reset();
+    });
+  },
+});
+
+module.exports = ResetButton;
+
+},{"./Component":5}],10:[function(require,module,exports){
 var utils = require('./utils');
 
 NUM_NODES_PARAM = 'n'
@@ -639,6 +708,13 @@ UrlState.prototype = {
     return this.baseUrl + '?' + this.urlSearchParams.toString();
   },
 
+  reset: function() {
+    this._getKeys().forEach((function(key) {
+      this.urlSearchParams.delete(key);
+    }).bind(this));
+    this._persistState();
+  },
+
   _isColor: function(options) {
     options = this._normalizeColorOptions(options);
 
@@ -719,6 +795,7 @@ UrlState.prototype = {
   },
 
   _getKeys: function(predicate) {
+    predicate = predicate || function() { return true; };
     var keys = [];
     var iterator = this.urlSearchParams.keys();
     var next = iterator.next();
@@ -746,7 +823,7 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"./utils":12}],10:[function(require,module,exports){
+},{"./utils":13}],11:[function(require,module,exports){
 module.exports = {
   RED: '#db190f',
   ORANGE: '#f76402',
@@ -758,7 +835,7 @@ module.exports = {
   NEON: '#00FF00',
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -810,7 +887,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /**
  * Compute the cartesian distance between two vectors
  */
