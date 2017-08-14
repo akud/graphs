@@ -13,18 +13,19 @@ var COLOR_ORDER = [
   colors.BLUE,
 ];
 
-function Graph(services, options) {
+function Graph(options) {
   Component.apply(this, arguments);
-  this.adapter = (services && services.adapter);
-  this.animator = (services && services.animator);
-  this.state = (services && services.state);
+  if (options) {
+    this.adapter = options.adapter;
+    this.animator = options.animator;
+    this.state = options.state;
+    this.width = options.width;
+    this.height = options.height;
+    this.nodeSize = options.nodeSize;
+    this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
+    this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
+  }
   this.colors = {};
-  this.width = (options && options.width);
-  this.height = (options && options.height);
-  this.nodeSize = (options && options.nodeSize);
-  this.nodeAreaFuzzFactor = (options && options.nodeAreaFuzzFactor);
-  this.editModeAlternateInterval = (options && options.editModeAlternateInterval) || 100;
-
   this.currentlyEditedNode = null;
   this.editModeOtherNodes = [];
   this.editModeOriginalColors = {};
@@ -33,8 +34,6 @@ function Graph(services, options) {
 
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
-    this._checkServices();
-
     this.adapter.initialize(
       targetElement,
       utils.optional({
@@ -142,14 +141,15 @@ Graph.prototype = Object.assign(new Component(), {
     this.editModeOriginalColors = {};
   },
 
-  _checkServices: function() {
+  _validateOptions: function() {
+    Component.prototype._validateOptions.call(this, arguments);
     if (!this.adapter) {
       throw new Error('adapter is not present');
     }
     if (!this.animator) {
       throw new Error('animator is not present');
     }
-    if (!this.animator) {
+    if (!this.state) {
       throw new Error('state is not present');
     }
   },

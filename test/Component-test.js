@@ -10,10 +10,10 @@ describe('Component', function() {
 
   beforeEach(function() {
     actionQueue = new MockActionQueue();
-    component = new Component(
-      { actionQueue: actionQueue },
-      { holdTime: 100 }
-    );
+    component = new Component({
+      actionQueue: actionQueue,
+      holdTime: 100,
+    });
     element = new MockDomNode();
   });
 

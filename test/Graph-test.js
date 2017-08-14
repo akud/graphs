@@ -46,15 +46,14 @@ describe('Graph', function() {
   });
 
   function newGraph(options) {
-    return new Graph(
-      {
+    return new Graph(Object.assign({
         adapter: adapter,
         animator: animator,
         actionQueue: actionQueue,
         state: state,
-      },
-      Object.assign({ editModeAlternateInterval: 100, holdTime: 100 }, options)
-    );
+        editModeAlternateInterval: 100,
+        holdTime: 100,
+      }, options));
   }
 
   it('does nothing when constructed', function() {

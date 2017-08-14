@@ -27,8 +27,6 @@ global.graph = new Graph(
       setUrl: window.history.replaceState.bind(window.history, {}, ''),
       urlSearchParams: new URLSearchParams(window.location.search),
     }),
-  },
-  {
     width: width,
     height: height,
     nodeSize: nodeSize,

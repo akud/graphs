@@ -1,12 +1,12 @@
 /**
  * Component constructor
  *
- * services - service objects
+ * options - service objects
  * options - options for the component.
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
-function Component(services, options) {
-  this.actionQueue = (services && services.actionQueue);
+function Component(options) {
+  this.actionQueue = (options && options.actionQueue);
   this.holdTime = (options && options.holdTime) || 250;
 
   this.mouseDownCount = 0;
@@ -20,7 +20,7 @@ Component.prototype = {
 
 
   attachTo: function(targetElement) {
-    this._checkServices();
+    this._validateOptions();
     targetElement.addEventListener('mouseup', (function(event) {
       this.mouseUpCount++;
       if (this.isInClickAndHold) {
@@ -53,7 +53,7 @@ Component.prototype = {
 
   },
 
-  _checkServices: function() {
+  _validateOptions: function() {
     if (!this.actionQueue) {
       throw Error('actionQueue is required');
     }
