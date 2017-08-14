@@ -13,8 +13,8 @@ var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.wid
 var height = Math.floor(( 3/4 ) * ((window.innerHeight > 0) ? window.innerHeight : screen.height));
 var nodeSize;
 
-if (width < 700) {
-  nodeSize = Math.floor(Math.min(width, height) * (1/15));
+if (width < 1000) {
+  nodeSize = Math.floor(Math.min(width, height) * (1/18));
 }
 
 global.adapter = new GreulerAdapter(greuler);
