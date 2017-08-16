@@ -1,3 +1,5 @@
+var ModeSwitch = require('./ModeSwitch');
+
 /**
  * Component constructor
  *
@@ -6,8 +8,14 @@
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(options) {
-  this.actionQueue = (options && options.actionQueue);
-  this.holdTime = (options && options.holdTime) || 250;
+  if (options) {
+    this.actionQueue = options.actionQueue;
+    this.holdTime = options.holdTime || 250;
+    this.mouseTouchSwitch = new ModeSwitch({
+      actionQueue: this.actionQueue,
+      timeout: 10,
+    });
+  }
 
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
@@ -21,25 +29,28 @@ Component.prototype = {
 
   attachTo: function(targetElement) {
     this._validateOptions();
+
     targetElement.addEventListener('mouseup', (function(event) {
-      this.mouseUpCount++;
-      if (this.isInClickAndHold) {
-        this.isInClickAndHold = false;
-      } else {
-        this.handleClick(event);
-      }
+      this.mouseTouchSwitch.exit('mouse', (function() {
+        this._handleMouseUp(event);
+      }).bind(this));
+    }).bind(this));
+
+    targetElement.addEventListener('touchend', (function(event) {
+      this.mouseTouchSwitch.exit('touch', (function() {
+        this._handleMouseUp(event);
+      }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('mousedown', (function(event) {
-      this.mouseDownCount++;
-      var originalCount = this.mouseDownCount;
+      this.mouseTouchSwitch.enter('mouse', (function() {
+        this._handleMouseDown(event);
+      }).bind(this));
+    }).bind(this));
 
-      this.actionQueue.defer(this.holdTime, (function() {
-        if (this.mouseDownCount === originalCount &&
-            this.mouseUpCount === this.mouseDownCount - 1) {
-          this.isInClickAndHold = true;
-          this.handleClickAndHold(event);
-        }
+    targetElement.addEventListener('touchstart', (function(event) {
+      this.mouseTouchSwitch.enter('touch', (function() {
+        this._handleMouseDown(event);
       }).bind(this));
     }).bind(this));
 
@@ -57,6 +68,28 @@ Component.prototype = {
     if (!this.actionQueue) {
       throw Error('actionQueue is required');
     }
+  },
+
+  _handleMouseUp: function(event) {
+    this.mouseUpCount++;
+    if (this.isInClickAndHold) {
+      this.isInClickAndHold = false;
+    } else {
+      this.handleClick(event);
+    }
+  },
+
+  _handleMouseDown: function(event) {
+    this.mouseDownCount++;
+    var originalCount = this.mouseDownCount;
+
+    this.actionQueue.defer(this.holdTime, (function() {
+      if (this.mouseDownCount === originalCount &&
+          this.mouseUpCount === this.mouseDownCount - 1) {
+        this.isInClickAndHold = true;
+        this.handleClickAndHold(event);
+      }
+    }).bind(this));
   },
 };
 

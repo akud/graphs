@@ -13,6 +13,10 @@ expect.extend({
     return this;
   },
 
+  toBeAn: function() {
+    this.toBeA.apply(this, arguments);
+  },
+
   toHaveBeenCalledWith: function() {
     this.toHaveBeenCalled();
     var expected = Array.prototype.map.call(arguments, function(e) {

@@ -1,5 +1,6 @@
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
+  this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
 }
 
 ActionQueue.prototype = {
@@ -8,7 +9,12 @@ ActionQueue.prototype = {
       fn = timeout;
       timeout = 1;
     }
-    this.setTimeout(fn, timeout);
+    var timeoutId = this.setTimeout(fn, timeout);
+    return {
+      cancel: (function() {
+        this.clearTimeout(timeoutId);
+      }).bind(this),
+    };
   },
 
 };

@@ -24,11 +24,20 @@ MockActionQueue.prototype = {
       timeInFuture = 1;
     }
     var callTime = this.currentTime + timeInFuture;
+
     if (this.pendingCalls[callTime]) {
       this.pendingCalls[callTime].push(callback);
     } else {
       this.pendingCalls[callTime] = [callback];
     }
+
+    return {
+      cancel: (function() {
+        if (this.pendingCalls[callTime]) {
+          this.pendingCalls[callTime].splice(this.pendingCalls[callTime].indexOf(callback), 1);
+        }
+      }).bind(this),
+    };
   },
 };
 
