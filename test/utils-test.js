@@ -57,4 +57,24 @@ describe('utils', function() {
       expect(utils.distance({ x: 4, y: 7 }, { x: 2, y: 9 })).toEqual(2 * Math.sqrt(2));
     });
   });
+
+  describe('normalizeEvent', function() {
+    it('does nothing if no touches property', function() {
+      expect(utils.normalizeEvent({ foo: 'bar' })).toEqual({ foo: 'bar' });
+    });
+
+    it('squashes the first touches element into the event', function() {
+      var event = {
+        touches: [
+          {
+            clientX: 12,
+            clientY: 56,
+          }
+        ],
+      };
+      var normalized = utils.normalizeEvent(event);
+      expect(normalized.clientX).toBe(12);
+      expect(normalized.clientY).toBe(56);
+    });
+  });
 });

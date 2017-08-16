@@ -30,7 +30,17 @@ function optional(keyValuePairs, options) {
   return obj;
 }
 
+
+function normalizeEvent(event) {
+  if (event && event.touches && event.touches.length) {
+    return Object.assign(event, event.touches[0]);
+  } else {
+    return event;
+  }
+};
+
 module.exports = {
   distance: distance,
   optional: optional,
+  normalizeEvent: normalizeEvent,
 };
