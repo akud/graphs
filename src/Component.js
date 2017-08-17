@@ -14,7 +14,7 @@ function Component(options) {
     this.holdTime = options.holdTime || 250;
     this.mouseTouchSwitch = new ModeSwitch({
       actionQueue: this.actionQueue,
-      timeout: 10,
+      timeout: 500,
     });
   }
 
