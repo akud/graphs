@@ -53,6 +53,7 @@ Component.prototype = {
     }).bind(this));
 
     targetElement.addEventListener('touchstart', (function(event) {
+      event - utils.normalizeEvent(event);
       this.mouseTouchSwitch.enter('touch', (function() {
         this._handleMouseDown(event);
       }).bind(this));
