@@ -31,20 +31,19 @@ Component.prototype = {
 
   attachTo: function(targetElement) {
     this._validateOptions();
+    var lastDownEvent = null;
 
     targetElement.addEventListener('mouseup', (function(event) {
-      event = utils.normalizeEvent(event);
-      LOG.debug('mouseup', event);
+      LOG.debug('mouseup', utils.normalizeEvent(event));
       this.mouseTouchSwitch.exit('mouse', (function() {
-        this._handleMouseUp(event);
+        this._handleMouseUp(lastDownEvent);
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchend', (function(event) {
-      event = utils.normalizeEvent(event);
-      LOG.debug('touchend', event);
+      LOG.debug('touchend', utils.normalizeEvent(event));
       this.mouseTouchSwitch.exit('touch', (function() {
-        this._handleMouseUp(event);
+        this._handleMouseUp(lastDownEvent);
       }).bind(this));
     }).bind(this));
 
@@ -52,6 +51,7 @@ Component.prototype = {
       event = utils.normalizeEvent(event);
       LOG.debug('mousedown', event);
       this.mouseTouchSwitch.enter('mouse', (function() {
+        lastDownEvent = event;
         this._handleMouseDown(event);
       }).bind(this));
     }).bind(this));
@@ -60,6 +60,7 @@ Component.prototype = {
       event - utils.normalizeEvent(event);
       LOG.debug('touchstart', event);
       this.mouseTouchSwitch.enter('touch', (function() {
+        lastDownEvent = event;
         this._handleMouseDown(event);
       }).bind(this));
     }).bind(this));

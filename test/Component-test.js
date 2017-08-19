@@ -31,15 +31,15 @@ describe('Component', function() {
     });
   });
 
-  describe('click event', function() {
+  describe('click', function() {
     beforeEach(function() {
       component.attachTo(element);
       spyOn(component, 'handleClick');
     });
 
-    it('calls the component\'s handleClick method', function() {
-      var event = createSpy();
-      element.click(event);
+    it('passes the mousedown event to the component\'s handleClick method', function() {
+      var event = createSpyObjectWith({ id: 123 });
+      element.click({ mousedown: event });
       expect(component.handleClick).toHaveBeenCalledWith(event);
     });
   });
@@ -50,9 +50,9 @@ describe('Component', function() {
       spyOn(component, 'handleClick');
     });
 
-    it('calls the component\'s handleClick method', function() {
-      var event = createSpy();
-      element.touch(event);
+    it('passes the touchstart event to the component\'s handleClick method', function() {
+      var event = createSpyObjectWith({ id: 567 });
+      element.touch({ touchstart: event });
       expect(component.handleClick).toHaveBeenCalledWith(event);
     });
   });
@@ -91,7 +91,7 @@ describe('Component', function() {
 
     it('passes the mousedown event', function() {
       var mouseDownEvent = createSpy();
-      element.clickAndHold(actionQueue, 100, mouseDownEvent);
+      element.clickAndHold(actionQueue, 100, { mousedown: mouseDownEvent });
       expect(component.handleClickAndHold).toHaveBeenCalledWith(mouseDownEvent);
     });
 

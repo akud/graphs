@@ -39,34 +39,61 @@ MockDomNode.prototype = {
     }
   },
 
-  click: function(event) {
-    this.trigger('mousedown', event);
-    this.trigger('click', event);
-    this.trigger('mouseup', event);
+  click: function(events) {
+    events = Object.assign({
+      mousedown: createSpyObjectWith({ name: 'mousedown' }),
+      mouseup: createSpyObjectWith({ name: 'mouseup' }),
+      click: createSpyObjectWith({ name: 'click' }),
+    }, events);
+    this.trigger('mousedown', events.mousedown);
+    this.trigger('click', events.mouseup);
+    this.trigger('mouseup', events.click);
   },
 
-  touch: function(event) {
-    this.trigger('touchstart', event);
-    this.trigger('touchend', event);
-    this.trigger('mousedown', event);
-    this.trigger('click', event);
-    this.trigger('mouseup', event);
+  touch: function(events) {
+    events = Object.assign({
+      mousedown: createSpyObjectWith({ name: 'mousedown' }),
+      mouseup: createSpyObjectWith({ name: 'mouseup' }),
+      click: createSpyObjectWith({ name: 'click' }),
+      touchstart: createSpyObjectWith({ name: 'touchstart' }),
+      touchend: createSpyObjectWith({ name: 'touchend' }),
+    }, events);
+
+    this.trigger('touchstart', events.touchstart);
+    this.trigger('touchend', events.touchend);
+    this.trigger('mousedown', events.mousedown);
+    this.trigger('click', events.click);
+    this.trigger('mouseup', events.mouseup);
   },
 
-  clickAndHold: function(timer, amount, mouseDownEvent) {
-    this.trigger('mousedown', mouseDownEvent);
+  clickAndHold: function(timer, amount, events) {
+    events = Object.assign({
+      mousedown: createSpyObjectWith({ name: 'mousedown' }),
+      mouseup: createSpyObjectWith({ name: 'mouseup' }),
+      click: createSpyObjectWith({ name: 'click' }),
+    }, events);
+
+    this.trigger('mousedown', events.mousedown);
     timer.step(amount || 100);
-    this.trigger('mouseup');
-    this.trigger('click');
+    this.trigger('mouseup', events.mouseup);
+    this.trigger('click', events.click);
   },
 
-  touchAndHold: function(timer, amount, touchStartEvent) {
-    this.trigger('touchstart', touchStartEvent);
-    this.trigger('mousedown', touchStartEvent);
+  touchAndHold: function(timer, amount, events) {
+    events = Object.assign({
+      mousedown: createSpyObjectWith({ name: 'mousedown' }),
+      mouseup: createSpyObjectWith({ name: 'mouseup' }),
+      click: createSpyObjectWith({ name: 'click' }),
+      touchstart: createSpyObjectWith({ name: 'touchstart' }),
+      touchend: createSpyObjectWith({ name: 'touchend' }),
+    }, events);
+
+    this.trigger('touchstart', events.touchstart);
+    this.trigger('mousedown', events.mousedown);
     timer.step(amount || 100);
-    this.trigger('touchend');
-    this.trigger('mouseup');
-    this.trigger('click');
+    this.trigger('touchend', events.touchend);
+    this.trigger('mouseup', events.mouseup);
+    this.trigger('click', events.click);
   },
 
   getAttribute: function(key) {
