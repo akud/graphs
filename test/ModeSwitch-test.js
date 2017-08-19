@@ -1,10 +1,16 @@
 var ModeSwitch = require('../src/ModeSwitch');
+var MockActionQueue = require('./utils/MockActionQueue');
 
 describe('ModeSwitch', function() {
   var modeSwitch;
+  var actionQueue;
 
   beforeEach(function() {
-    modeSwitch = new ModeSwitch();
+    actionQueue = new MockActionQueue();
+    modeSwitch = new ModeSwitch({
+      actionQueue: actionQueue,
+      timeout: 10,
+    });
   });
 
   describe('mode.enter', function() {
@@ -29,6 +35,16 @@ describe('ModeSwitch', function() {
       modeSwitch.enter('foo', fooAction);
       modeSwitch.enter('bar', barAction);
       expect(fooAction).toHaveBeenCalled();
+      expect(barAction).toNotHaveBeenCalled();
+    });
+
+    it('cancels mode reset', function() {
+      var barAction = createSpy();
+      modeSwitch.enter('foo');
+      actionQueue.step(5);
+      modeSwitch.enter('foo');
+      actionQueue.step(5);
+      modeSwitch.enter('bar', barAction);
       expect(barAction).toNotHaveBeenCalled();
     });
   });
@@ -59,6 +75,33 @@ describe('ModeSwitch', function() {
 
       expect(fooAction).toNotHaveBeenCalled();
       expect(barAction).toHaveBeenCalled();
+    });
+
+    it('resets the mode after timeout', function() {
+      var barAction = createSpy();
+      modeSwitch.enter('foo');
+      modeSwitch.exit('foo');
+
+      modeSwitch.enter('bar', barAction);
+      expect(barAction).toNotHaveBeenCalled();
+
+      actionQueue.step(10);
+      modeSwitch.enter('bar', barAction);
+
+      expect(barAction).toHaveBeenCalled();
+    });
+
+    it('cancels previously scheduled mode reset', function() {
+      var barAction = createSpy();
+      modeSwitch.enter('foo');
+      modeSwitch.exit('foo');
+
+      actionQueue.step(5);
+      modeSwitch.exit('foo');
+      actionQueue.step(5);
+      modeSwitch.enter('bar', barAction);
+
+      expect(barAction).toNotHaveBeenCalled();
     });
   });
 });

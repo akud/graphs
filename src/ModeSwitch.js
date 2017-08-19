@@ -9,6 +9,7 @@ function ModeSwitch(options) {
 
 ModeSwitch.prototype = {
   enter: function(mode, fn) {
+    this._validate();
     if (this.isPermitted(mode)) {
       (fn || function() {})();
       this.currentMode = mode;
@@ -17,6 +18,7 @@ ModeSwitch.prototype = {
   },
 
   exit: function(mode, fn) {
+    this._validate();
     if(this.isActive(mode)) {
       (fn || function() {})();
       this._scheduleModeReset();
@@ -40,6 +42,12 @@ ModeSwitch.prototype = {
     this.resetModeFuture = this.actionQueue.defer(this.timeout, (function() {
       this.currentMode = null;
     }).bind(this));
+  },
+
+  _validate: function() {
+    if(!this.actionQueue) {
+      throw new Error('action queue is required');
+    }
   },
 };
 
