@@ -22,6 +22,7 @@ function Graph(options) {
     this.width = options.width;
     this.height = options.height;
     this.nodeSize = options.nodeSize;
+    this.edgeDistance = options.edgeDistance;
     this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
     this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
   }
@@ -45,6 +46,7 @@ Graph.prototype = Object.assign(new Component(), {
           }, { force: ['id', 'label'] });
         }).bind(this)),
         edges: this.state.retrievePersistedEdges(),
+        edgeDistance: this.edgeDistance,
       })
     );
   },
@@ -57,7 +59,11 @@ Graph.prototype = Object.assign(new Component(), {
     if (this._isInEditMode()) {
       if (clickTarget.isNode() &&
           clickTarget.id !== this.currentlyEditedNode.id) {
-        this.adapter.addEdge(this.currentlyEditedNode, clickTarget);
+        this.adapter.addEdge({
+          source: this.currentlyEditedNode,
+          target: clickTarget,
+          distance: this.edgeDistance,
+        });
         this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
       } else {
         this._exitEditMode();

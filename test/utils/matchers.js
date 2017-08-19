@@ -1,5 +1,21 @@
 var isEqual = require('is-equal');
 
+function isEqualRespectingMatchers(expected, actual) {
+  if (expected && expected._isMatcher) {
+    return expected.match(actual).matches;
+  } else if (typeof expected === 'object') {
+    return Object.keys(expected).every(function(key) {
+      return isEqualRespectingMatchers(expected[key], actual[key]);
+    });
+  } else if (Array.isArray(expected)) {
+    return expected.every(function(entry, i) {
+      return isEqualRespectingMatchers(entry, actual[i]);
+    });
+  } else {
+    return isEqual(expected, actual);
+  }
+}
+
 module.exports = {
   any: function(constructor) {
     return {
@@ -18,7 +34,7 @@ module.exports = {
     return {
       match: function(arg) {
         return {
-          matches: isEqual(expected, arg),
+          matches: isEqualRespectingMatchers(expected, arg),
           expected: expected,
           actual: arg,
         };

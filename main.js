@@ -14,9 +14,11 @@ var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
 var height = Math.floor(( 3/4 ) * ((window.innerHeight > 0) ? window.innerHeight : screen.height));
 var nodeSize;
+var edgeDistance;
 
 if (width < 1000) {
   nodeSize = Math.floor(Math.min(width, height) * (1/18));
+  edgeDistance = 200;
 }
 
 global.adapter = new GreulerAdapter(greuler);
@@ -33,9 +35,9 @@ global.graph = new Graph(
     width: width,
     height: height,
     nodeSize: nodeSize,
+    edgeDistance: edgeDistance,
     nodeAreaFuzzFactor: 0.1,
     editModeAlternateInterval: 250,
-    logEvents: true,
   });
 
 global.resetButton = new ResetButton({

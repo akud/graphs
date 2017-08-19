@@ -99,6 +99,16 @@ describe('GreulerAdapter', function() {
       });
     });
 
+    it('passes edge distance to graph as a function', function() {
+      adapter.initialize(element, { edgeDistance: 243 });
+      expect(greuler).toHaveBeenCalledWith({
+        target: '#asdkfwer',
+        data: {
+          linkDistance: matchers.functionThatReturns(243),
+        },
+      });
+    });
+
     it('adds nodes and edges to the graph', function() {
       adapter.initialize(element, {
         nodes: [
@@ -194,12 +204,43 @@ describe('GreulerAdapter', function() {
     it('adds an edge and updates the instance', function() {
       var node1 = { id: 78 };
       var node2 = { id: 91 };
-      adapter.addEdge(node1, node2);
+      adapter.addEdge({ source: node1, target: node2 });
       expect(instance.graph.addEdge).toHaveBeenCalledWith({
         source: 78,
         target: 91
       });
       expect(instance.update).toHaveBeenCalled();
+    });
+
+    it('works if source id is 0', function() {
+      var node1 = { id: 0 };
+      var node2 = { id: 91 };
+      adapter.addEdge({ source: node1, target: node2 });
+      expect(instance.graph.addEdge).toHaveBeenCalledWith({
+        source: 0,
+        target: 91
+      });
+    });
+
+    it('works if target id is 0', function() {
+      var node1 = { id: 123 };
+      var node2 = { id: 0 };
+      adapter.addEdge({ source: node1, target: node2 });
+      expect(instance.graph.addEdge).toHaveBeenCalledWith({
+        source: 123,
+        target: 0
+      });
+    });
+
+    it('passes the distance to the graph', function() {
+      var node1 = { id: 78 };
+      var node2 = { id: 91 };
+      adapter.addEdge({ source: node1, target: node2, distance: 4589 });
+      expect(instance.graph.addEdge).toHaveBeenCalledWith({
+        source: 78,
+        target: 91,
+        linkDistance: 4589,
+      });
     });
   });
 

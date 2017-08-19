@@ -243,8 +243,10 @@ describe('Graph', function() {
 
   describe('edit mode', function() {
     var graph;
+    var edgeDistance;
     beforeEach(function() {
-      graph = newGraph();
+      edgeDistance = 234;
+      graph = newGraph({ edgeDistance: edgeDistance });
       graph.attachTo(targetElement);
     });
 
@@ -334,7 +336,11 @@ describe('Graph', function() {
 
       targetElement.click();
 
-      expect(adapter.addEdge).toHaveBeenCalledWith(originalNode, otherNode);
+      expect(adapter.addEdge).toHaveBeenCalledWith({
+        source: originalNode,
+        target: otherNode,
+        distance: edgeDistance,
+      });
       expect(adapter.addNode).toNotHaveBeenCalled();
       expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
     });

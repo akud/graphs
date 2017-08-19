@@ -20,6 +20,9 @@ GreulerAdapter.prototype = {
       data: utils.optional({
         nodes: (options.nodes && options.nodes.map(this._translateNodeObj)),
         links: options.edges,
+        linkDistance: options.edgeDistance && function() {
+          return options.edgeDistance;
+        },
       }),
     })).update();
     this.graph = this.instance.graph;
@@ -35,11 +38,12 @@ GreulerAdapter.prototype = {
     this._updateInstance();
   },
 
-  addEdge: function(node1, node2) {
-    var result = this.graph.addEdge({
-      source: node1.id,
-      target: node2.id
-    });
+  addEdge: function(options) {
+    var result = this.graph.addEdge(utils.optional({
+      source: options.source.id,
+      target: options.target.id,
+      linkDistance: options.distance,
+    }, { force: ['source', 'target'] }));
     this._updateInstance();
   },
 
