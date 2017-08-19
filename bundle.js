@@ -8,15 +8,19 @@ var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
 var ResetButton = require('./src/ResetButton');
 
+require('./src/Logger').level = global.logLevel;
+
 var actionQueue = new ActionQueue();
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
 var height = Math.floor(( 3/4 ) * ((window.innerHeight > 0) ? window.innerHeight : screen.height));
 var nodeSize;
+var edgeDistance;
 
-if (width < 700) {
-  nodeSize = Math.floor(Math.min(width, height) * (1/15));
+if (width < 1000) {
+  nodeSize = Math.floor(Math.min(width, height) * (1/18));
+  edgeDistance = 200;
 }
 
 global.adapter = new GreulerAdapter(greuler);
@@ -33,6 +37,7 @@ global.graph = new Graph(
     width: width,
     height: height,
     nodeSize: nodeSize,
+    edgeDistance: edgeDistance,
     nodeAreaFuzzFactor: 0.1,
     editModeAlternateInterval: 250,
   });
@@ -49,10 +54,11 @@ global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/ResetButton":9,"./src/UrlState":10}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/Logger":8,"./src/ResetButton":10,"./src/UrlState":11}],2:[function(require,module,exports){
 (function (global){
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
+  this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
 }
 
 ActionQueue.prototype = {
@@ -61,7 +67,12 @@ ActionQueue.prototype = {
       fn = timeout;
       timeout = 1;
     }
-    this.setTimeout(fn, timeout);
+    var timeoutId = this.setTimeout(fn, timeout);
+    return {
+      cancel: (function() {
+        this.clearTimeout(timeoutId);
+      }).bind(this),
+    };
   },
 
 };
@@ -159,6 +170,10 @@ BoundingBox.prototype = {
 module.exports = BoundingBox;
 
 },{}],5:[function(require,module,exports){
+var utils = require('./utils');
+var ModeSwitch = require('./ModeSwitch');
+var LOG = require('./Logger');
+
 /**
  * Component constructor
  *
@@ -167,8 +182,14 @@ module.exports = BoundingBox;
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(options) {
-  this.actionQueue = (options && options.actionQueue);
-  this.holdTime = (options && options.holdTime) || 250;
+  if (options) {
+    this.actionQueue = options.actionQueue;
+    this.holdTime = options.holdTime || 250;
+    this.mouseTouchSwitch = new ModeSwitch({
+      actionQueue: this.actionQueue,
+      timeout: 500,
+    });
+  }
 
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
@@ -182,25 +203,37 @@ Component.prototype = {
 
   attachTo: function(targetElement) {
     this._validateOptions();
+    var lastDownEvent = null;
+
     targetElement.addEventListener('mouseup', (function(event) {
-      this.mouseUpCount++;
-      if (this.isInClickAndHold) {
-        this.isInClickAndHold = false;
-      } else {
-        this.handleClick(event);
-      }
+      LOG.debug('mouseup', utils.normalizeEvent(event));
+      this.mouseTouchSwitch.exit('mouse', (function() {
+        this._handleMouseUp(lastDownEvent);
+      }).bind(this));
+    }).bind(this));
+
+    targetElement.addEventListener('touchend', (function(event) {
+      LOG.debug('touchend', utils.normalizeEvent(event));
+      this.mouseTouchSwitch.exit('touch', (function() {
+        this._handleMouseUp(lastDownEvent);
+      }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('mousedown', (function(event) {
-      this.mouseDownCount++;
-      var originalCount = this.mouseDownCount;
+      event = utils.normalizeEvent(event);
+      LOG.debug('mousedown', event);
+      this.mouseTouchSwitch.enter('mouse', (function() {
+        lastDownEvent = event;
+        this._handleMouseDown(event);
+      }).bind(this));
+    }).bind(this));
 
-      this.actionQueue.defer(this.holdTime, (function() {
-        if (this.mouseDownCount === originalCount &&
-            this.mouseUpCount === this.mouseDownCount - 1) {
-          this.isInClickAndHold = true;
-          this.handleClickAndHold(event);
-        }
+    targetElement.addEventListener('touchstart', (function(event) {
+      event - utils.normalizeEvent(event);
+      LOG.debug('touchstart', event);
+      this.mouseTouchSwitch.enter('touch', (function() {
+        lastDownEvent = event;
+        this._handleMouseDown(event);
       }).bind(this));
     }).bind(this));
 
@@ -219,11 +252,33 @@ Component.prototype = {
       throw Error('actionQueue is required');
     }
   },
+
+  _handleMouseUp: function(event) {
+    this.mouseUpCount++;
+    if (this.isInClickAndHold) {
+      this.isInClickAndHold = false;
+    } else {
+      this.handleClick(event);
+    }
+  },
+
+  _handleMouseDown: function(event) {
+    this.mouseDownCount++;
+    var originalCount = this.mouseDownCount;
+
+    this.actionQueue.defer(this.holdTime, (function() {
+      if (this.mouseDownCount === originalCount &&
+          this.mouseUpCount === this.mouseDownCount - 1) {
+        this.isInClickAndHold = true;
+        this.handleClickAndHold(event);
+      }
+    }).bind(this));
+  },
 };
 
 module.exports = Component;
 
-},{}],6:[function(require,module,exports){
+},{"./Logger":8,"./ModeSwitch":9,"./utils":14}],6:[function(require,module,exports){
 var Component = require('./Component');
 var colors = require('./colors');
 var utils = require('./utils');
@@ -248,6 +303,7 @@ function Graph(options) {
     this.width = options.width;
     this.height = options.height;
     this.nodeSize = options.nodeSize;
+    this.edgeDistance = options.edgeDistance;
     this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
     this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
   }
@@ -271,6 +327,7 @@ Graph.prototype = Object.assign(new Component(), {
           }, { force: ['id', 'label'] });
         }).bind(this)),
         edges: this.state.retrievePersistedEdges(),
+        edgeDistance: this.edgeDistance,
       })
     );
   },
@@ -283,7 +340,11 @@ Graph.prototype = Object.assign(new Component(), {
     if (this._isInEditMode()) {
       if (clickTarget.isNode() &&
           clickTarget.id !== this.currentlyEditedNode.id) {
-        this.adapter.addEdge(this.currentlyEditedNode, clickTarget);
+        this.adapter.addEdge({
+          source: this.currentlyEditedNode,
+          target: clickTarget,
+          distance: this.edgeDistance,
+        });
         this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
       } else {
         this._exitEditMode();
@@ -420,7 +481,7 @@ Graph.prototype = Object.assign(new Component(), {
 
 module.exports = Graph;
 
-},{"./Component":5,"./Logger":8,"./colors":11,"./utils":13}],7:[function(require,module,exports){
+},{"./Component":5,"./Logger":8,"./colors":12,"./utils":14}],7:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var BoundingBox = require('./BoundingBox');
@@ -443,6 +504,9 @@ GreulerAdapter.prototype = {
       data: utils.optional({
         nodes: (options.nodes && options.nodes.map(this._translateNodeObj)),
         links: options.edges,
+        linkDistance: options.edgeDistance && function() {
+          return options.edgeDistance;
+        },
       }),
     })).update();
     this.graph = this.instance.graph;
@@ -458,11 +522,12 @@ GreulerAdapter.prototype = {
     this._updateInstance();
   },
 
-  addEdge: function(node1, node2) {
-    var result = this.graph.addEdge({
-      source: node1.id,
-      target: node2.id
-    });
+  addEdge: function(options) {
+    var result = this.graph.addEdge(utils.optional({
+      source: options.source.id,
+      target: options.target.id,
+      linkDistance: options.distance,
+    }, { force: ['source', 'target'] }));
     this._updateInstance();
   },
 
@@ -566,25 +631,38 @@ function center(node) {
 
 module.exports = GreulerAdapter;
 
-},{"./BoundingBox":4,"./Logger":8,"./graphelements":12,"./utils":13}],8:[function(require,module,exports){
+},{"./BoundingBox":4,"./Logger":8,"./graphelements":13,"./utils":14}],8:[function(require,module,exports){
 (function (global){
-function Logger() {
+var LEVEL_ORDER = [
+  'DEBUG',
+  'INFO',
+  'WARN',
+  'ERROR',
+];
 
+function Logger() {
+  this.level = 'WARN';
 }
 
 Logger.prototype = {
   debug: function(msg, objs) {
-    this._log.apply(this, ['DEBUG'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'DEBUG'].concat(Array.prototype.splice.call(arguments, 0)));
+  },
+  info: function(msg, objs) {
+    this._log.apply(this, [new Date().getTime(), 'INFO'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   warn: function(msg, objs) {
-    this._log.apply(this, ['WARN'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'WARN'].concat(Array.prototype.splice.call(arguments, 0)));
   },
   error: function(msg, objs) {
-    this._log.apply(this, ['ERROR'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'ERROR'].concat(Array.prototype.splice.call(arguments, 0)));
   },
 
   _log: function() {
-    global.console.log.apply(global.console.log, arguments);
+    var level = arguments[1];
+    if (LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(this.level)) {
+      global.console.log.apply(global.console.log, arguments);
+    }
   },
 };
 
@@ -594,6 +672,62 @@ module.exports = new Logger();
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],9:[function(require,module,exports){
+function ModeSwitch(options) {
+  if (options) {
+    this.actionQueue = options.actionQueue;
+    this.timeout = options.timeout || 1;
+  }
+  this.currentMode = null;
+  this.resetModeFuture = null;
+}
+
+ModeSwitch.prototype = {
+  enter: function(mode, fn) {
+    this._validate();
+    if (this.isPermitted(mode)) {
+      (fn || function() {})();
+      this.currentMode = mode;
+      this._cancelModeReset();
+    }
+  },
+
+  exit: function(mode, fn) {
+    this._validate();
+    if(this.isActive(mode)) {
+      (fn || function() {})();
+      this._scheduleModeReset();
+    }
+  },
+
+  isPermitted: function(mode) {
+    return !this.currentMode || this.isActive(mode);
+  },
+
+  isActive: function(mode) {
+    return this.currentMode === mode;
+  },
+
+  _cancelModeReset: function() {
+    this.resetModeFuture && this.resetModeFuture.cancel();
+  },
+
+  _scheduleModeReset: function() {
+    this._cancelModeReset();
+    this.resetModeFuture = this.actionQueue.defer(this.timeout, (function() {
+      this.currentMode = null;
+    }).bind(this));
+  },
+
+  _validate: function() {
+    if(!this.actionQueue) {
+      throw new Error('action queue is required');
+    }
+  },
+};
+
+module.exports = ModeSwitch;
+
+},{}],10:[function(require,module,exports){
 var Component = require('./Component');
 
 function ResetButton(options) {
@@ -616,7 +750,7 @@ ResetButton.prototype = Object.assign(new Component(), {
 
 module.exports = ResetButton;
 
-},{"./Component":5}],10:[function(require,module,exports){
+},{"./Component":5}],11:[function(require,module,exports){
 var utils = require('./utils');
 
 NUM_NODES_PARAM = 'n'
@@ -823,7 +957,7 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"./utils":13}],11:[function(require,module,exports){
+},{"./utils":14}],12:[function(require,module,exports){
 module.exports = {
   RED: '#db190f',
   ORANGE: '#f76402',
@@ -835,7 +969,7 @@ module.exports = {
   NEON: '#00FF00',
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -887,7 +1021,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /**
  * Compute the cartesian distance between two vectors
  */
@@ -920,9 +1054,27 @@ function optional(keyValuePairs, options) {
   return obj;
 }
 
+
+function normalizeEvent(event) {
+  if (event && event.touches && event.touches.length) {
+    return Object.assign(
+      event,
+      {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY,
+        screenX: event.touches[0].screenX,
+        screenY: event.touches[0].screenY,
+      }
+    );
+  } else {
+    return event;
+  }
+}
+
 module.exports = {
   distance: distance,
   optional: optional,
+  normalizeEvent: normalizeEvent,
 };
 
 },{}]},{},[1])
