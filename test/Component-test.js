@@ -44,6 +44,19 @@ describe('Component', function() {
     });
   });
 
+  describe('touch', function() {
+    beforeEach(function() {
+      component.attachTo(element);
+      spyOn(component, 'handleClick');
+    });
+
+    it('calls the component\'s handleClick method', function() {
+      var event = createSpy();
+      element.touch(event);
+      expect(component.handleClick).toHaveBeenCalledWith(event);
+    });
+  });
+
   describe('click and hold event', function() {
     beforeEach(function() {
       component.attachTo(element);
@@ -53,6 +66,12 @@ describe('Component', function() {
     it('does not trigger on click', function() {
       var event = createSpy();
       element.click(event);
+      expect(component.handleClickAndHold).toNotHaveBeenCalled();
+    });
+
+    it('does not trigger on touch', function() {
+      var event = createSpy();
+      element.touch(event);
       expect(component.handleClickAndHold).toNotHaveBeenCalled();
     });
 

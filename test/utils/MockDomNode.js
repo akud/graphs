@@ -45,9 +45,26 @@ MockDomNode.prototype = {
     this.trigger('mouseup', event);
   },
 
+  touch: function(event) {
+    this.trigger('touchstart', event);
+    this.trigger('touchend', event);
+    this.trigger('mousedown', event);
+    this.trigger('click', event);
+    this.trigger('mouseup', event);
+  },
+
   clickAndHold: function(timer, amount, mouseDownEvent) {
     this.trigger('mousedown', mouseDownEvent);
     timer.step(amount || 100);
+    this.trigger('mouseup');
+    this.trigger('click');
+  },
+
+  touchAndHold: function(timer, amount, touchStartEvent) {
+    this.trigger('touchstart', touchStartEvent);
+    this.trigger('mousedown', touchStartEvent);
+    timer.step(amount || 100);
+    this.trigger('touchend');
     this.trigger('mouseup');
     this.trigger('click');
   },
