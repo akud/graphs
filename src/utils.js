@@ -33,11 +33,19 @@ function optional(keyValuePairs, options) {
 
 function normalizeEvent(event) {
   if (event && event.touches && event.touches.length) {
-    return Object.assign(event, event.touches[0]);
+    return Object.assign(
+      event,
+      {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY,
+        screenX: event.touches[0].screenX,
+        screenY: event.touches[0].screenY,
+      }
+    );
   } else {
     return event;
   }
-};
+}
 
 module.exports = {
   distance: distance,
