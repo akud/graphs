@@ -1,5 +1,6 @@
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
+var LOG = require('./Logger');
 
 /**
  * Component constructor
@@ -33,6 +34,7 @@ Component.prototype = {
 
     targetElement.addEventListener('mouseup', (function(event) {
       event = utils.normalizeEvent(event);
+      LOG.debug('mouseup', event);
       this.mouseTouchSwitch.exit('mouse', (function() {
         this._handleMouseUp(event);
       }).bind(this));
@@ -40,6 +42,7 @@ Component.prototype = {
 
     targetElement.addEventListener('touchend', (function(event) {
       event = utils.normalizeEvent(event);
+      LOG.debug('touchend', event);
       this.mouseTouchSwitch.exit('touch', (function() {
         this._handleMouseUp(event);
       }).bind(this));
@@ -47,6 +50,7 @@ Component.prototype = {
 
     targetElement.addEventListener('mousedown', (function(event) {
       event = utils.normalizeEvent(event);
+      LOG.debug('mousedown', event);
       this.mouseTouchSwitch.enter('mouse', (function() {
         this._handleMouseDown(event);
       }).bind(this));
@@ -54,6 +58,7 @@ Component.prototype = {
 
     targetElement.addEventListener('touchstart', (function(event) {
       event - utils.normalizeEvent(event);
+      LOG.debug('touchstart', event);
       this.mouseTouchSwitch.enter('touch', (function() {
         this._handleMouseDown(event);
       }).bind(this));

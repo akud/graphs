@@ -6,6 +6,8 @@ var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
 var ResetButton = require('./src/ResetButton');
 
+require('./src/Logger').level = global.logLevel;
+
 var actionQueue = new ActionQueue();
 
 var horizontalPadding = 20;
@@ -33,6 +35,7 @@ global.graph = new Graph(
     nodeSize: nodeSize,
     nodeAreaFuzzFactor: 0.1,
     editModeAlternateInterval: 250,
+    logEvents: true,
   });
 
 global.resetButton = new ResetButton({
