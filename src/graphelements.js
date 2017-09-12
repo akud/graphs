@@ -19,6 +19,7 @@ function Node(options) {
   if (options) {
     this.realNode = options.realNode;
     this.color = options.color;
+    this.boundingBox = options.boundingBox;
   }
 }
 

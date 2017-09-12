@@ -51,4 +51,46 @@ describe('BoundingBox', function() {
       expect(expanded.contains({ x: 10, y: 51 })).toBe(true);
     });
   });
+
+  describe('getWidth', function() {
+    it('returns the width of the box', function() {
+      expect(box.getWidth()).toBe(10);
+    });
+  });
+
+  describe('getHeight', function() {
+    it('returns the height of the box', function() {
+      box = new BoundingBox({
+        left: 0,
+        right: 10,
+        top: 10,
+        bottom: 400,
+      });
+      expect(box.getHeight()).toBe(390);
+    });
+  });
+
+  describe('getTopLeft', function() {
+    it('returns a point in the top left of the box', function() {
+      expect(box.getTopLeft()).toEqual({ x: 10, y: 40 });
+    });
+  });
+
+  describe('getTopRight', function() {
+    it('returns a point in the top right of the box', function() {
+      expect(box.getTopLeft()).toEqual({ x: 20, y: 40 });
+    });
+  });
+
+  describe('getBottomLeft', function() {
+    it('returns a point in the bottom left of the box', function() {
+      expect(box.getTopLeft()).toEqual({ x: 10, y: 50 });
+    });
+  });
+
+  describe('getBottomRight', function() {
+    it('returns a point in the top left of the box', function() {
+      expect(box.getTopLeft()).toEqual({ x: 20, y: 50 });
+    });
+  });
 });

@@ -1,6 +1,7 @@
 var colors = require('../src/colors');
 var GreulerAdapter = require('../src/GreulerAdapter');
 var graphelements = require('../src/graphelements');
+var BoundingBox = require('../src/BoundingBox');
 
 describe('GreulerAdapter', function() {
   var graph;
@@ -363,6 +364,26 @@ describe('GreulerAdapter', function() {
       expect(target.domElement).toBe(domElements[1]);
     });
 
+    it('adds a bounding box to the node', function() {
+      var event = makeEvent({
+        clientX: 50,
+        clientY: 100,
+      });
+
+      graph.getNodesByFn.andReturn([
+        makeNode({ id: 1, index: 0, left: 60, right: 60 + 10, top: 110, bottom: 110 + 10, }),
+      ]);
+
+      var target = adapter.getClickTarget(event);
+      expect(target).toBeA(graphelements.Node);
+      expect(target.boundingBox).toEqual(new BoundingBox({
+        left: 110,
+        right: 120,
+        top: 210,
+        bottom: 220,
+      }));
+    });
+
     it('translates client coordinates into internal coordinates', function() {
       root.getBoundingClientRect.andReturn({
         left: 140,
@@ -448,18 +469,74 @@ describe('GreulerAdapter', function() {
           realNode: node1,
           domElement: circle1,
           color: '#FF0000',
+          boundingBox: matchers.any(BoundingBox),
         }),
         new graphelements.Node({
           id: 45,
           realNode: node2,
           domElement: circle2,
           color: '#00FF00',
+          boundingBox: matchers.any(BoundingBox),
         }),
         new graphelements.Node({
           id: 98,
           realNode: node3,
           domElement: circle3,
           color: '#0000FF',
+          boundingBox: matchers.any(BoundingBox),
+        }),
+      ]);
+    });
+
+    it('adds boundingBox to node', function() {
+      root.getBoundingClientRect.andReturn({
+        left: 140,
+        top: 500,
+      });
+      instance.nodeGroup = [
+        [
+          {
+            childNodes: [
+              new MockDomNode({
+               'getElementsByTagName.returnValue': [new MockDomNode()],
+              }),
+              new MockDomNode({
+               'getElementsByTagName.returnValue': [new MockDomNode()],
+              }),
+            ],
+          }
+        ],
+      ];
+
+      graph.getNodesByFn.andReturn([
+        makeNode({ left: 10, right: 20, top: 40, bottom: 50 }),
+        makeNode({ left: 420, right: 450, top: 69, bottom: 71 }),
+      ]);
+
+      expect(adapter.getNodes()).toEqual([
+        new graphelements.Node({
+          id: matchers.any(),
+          realNode: matchers.any(),
+          domElement: matchers.any(),
+          color: matchers.any(),
+          boundingBox: new BoundingBox({
+            left: 150,
+            right: 160,
+            top: 540,
+            bottom: 550,
+          }),
+        }),
+        new graphelements.Node({
+          id: matchers.any(),
+          realNode: matchers.any(),
+          domElement: matchers.any(),
+          color: matchers.any(),
+          boundingBox: new BoundingBox({
+            left: 560,
+            right: 570,
+            top: 569,
+            bottom: 571,
+          }),
         }),
       ]);
     });
