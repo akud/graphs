@@ -30,17 +30,26 @@ describe('GreulerAdapter', function() {
   });
 
   function makeNode(options) {
-    options = options || {};
+    options = Object.assign({
+      left: 10,
+      top: 30,
+    }, options);
+    if (options.hasOwnProperty('x')) {
+      options.left = options.x;
+    }
+    if (options.hasOwnProperty('y')) {
+      options.top = options.y;
+    }
     return Object.assign({
       id: nodeId++,
       label: '',
       index: 0,
       fill: colors.RED,
       bounds: {
-        x: options.hasOwnProperty('left') ? options.left : 10,
-        X: options.hasOwnProperty('right') ? options.right : 20,
-        y: options.hasOwnProperty('top') ? options.top : 30,
-        Y: options.hasOwnProperty('bottom') ? options.bottom : 40,
+        x: options.left,
+        X: options.right || options.left + 10,
+        y: options.top,
+        Y: options.bottom || options.top + 10,
       },
     }, options);
   };
@@ -364,13 +373,14 @@ describe('GreulerAdapter', function() {
         clientY: 600,
       });
 
-      graph.getNodesByFn.andReturn([
-        { id: 1, index: 0, x: 50, y: 100, width: 10, height: 10, },
-      ]);
+      graph.getNodesByFn.andReturn([]);
 
-      var target = adapter.getClickTarget(event);
-      expect(target).toBeA(graphelements.Node);
-      expect(target.id).toBe(1);
+      adapter.getClickTarget(event);
+
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
+        { input: makeNode({ x: 50, y: 100 }), output: true },
+        { input: makeNode({ x: 190, y: 600 }), output: false }
+      ));
    });
   });
 
