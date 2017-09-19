@@ -71,7 +71,7 @@ GreulerAdapter.prototype = {
         realNode: node,
         domElement: domElement,
         color: domElement.getAttribute('fill'),
-        boundingBox: this._getBoundingBox(node),
+        getCurrentBoundingBox: this._getBoundingBox.bind(this, node),
       });
     }).bind(this));
   },
@@ -112,8 +112,8 @@ GreulerAdapter.prototype = {
 
     if (matchingNodes && matchingNodes.length) {
       matchingNodes.sort(function(a, b) {
-        var distanceToA = utils.distance(a.boundingBox.getCenter(), point);
-        var distanceToB = utils.distance(b.boundingBox.getCenter(), point);
+        var distanceToA = utils.distance(a.getCenter(), point);
+        var distanceToB = utils.distance(b.getCenter(), point);
         return distanceToA - distanceToB;
       });
       return matchingNodes[0];

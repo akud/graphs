@@ -376,11 +376,11 @@ describe('GreulerAdapter', function() {
 
       var target = adapter.getClickTarget(event);
       expect(target).toBeA(graphelements.Node);
-      expect(target.boundingBox).toEqual(new BoundingBox({
-        left: 110,
-        right: 120,
-        top: 210,
-        bottom: 220,
+      expect(target.getCurrentBoundingBox()).toEqual(new BoundingBox({
+        left: 60,
+        right: 70,
+        top: 110,
+        bottom: 120,
       }));
     });
 
@@ -469,21 +469,21 @@ describe('GreulerAdapter', function() {
           realNode: node1,
           domElement: circle1,
           color: '#FF0000',
-          boundingBox: matchers.any(BoundingBox),
+          getCurrentBoundingBox: matchers.any(Function),
         }),
         new graphelements.Node({
           id: 45,
           realNode: node2,
           domElement: circle2,
           color: '#00FF00',
-          boundingBox: matchers.any(BoundingBox),
+          getCurrentBoundingBox: matchers.any(Function),
         }),
         new graphelements.Node({
           id: 98,
           realNode: node3,
           domElement: circle3,
           color: '#0000FF',
-          boundingBox: matchers.any(BoundingBox),
+          getCurrentBoundingBox: matchers.any(Function),
         }),
       ]);
     });
@@ -512,33 +512,69 @@ describe('GreulerAdapter', function() {
         makeNode({ left: 10, right: 20, top: 40, bottom: 50 }),
         makeNode({ left: 420, right: 450, top: 69, bottom: 71 }),
       ]);
-
-      expect(adapter.getNodes()).toEqual([
-        new graphelements.Node({
-          id: matchers.any(),
-          realNode: matchers.any(),
-          domElement: matchers.any(),
-          color: matchers.any(),
-          boundingBox: new BoundingBox({
+      var results = adapter.getNodes();
+      expect(results.length).toBe(2);
+      expect(results[0].getCurrentBoundingBox).toBeA(Function);
+      expect(results[0].getCurrentBoundingBox()).toEqual(
+        new BoundingBox({
             left: 150,
             right: 160,
             top: 540,
             bottom: 550,
-          }),
-        }),
-        new graphelements.Node({
-          id: matchers.any(),
-          realNode: matchers.any(),
-          domElement: matchers.any(),
-          color: matchers.any(),
-          boundingBox: new BoundingBox({
-            left: 560,
-            right: 570,
-            top: 569,
-            bottom: 571,
-          }),
-        }),
-      ]);
+          })
+      );
+      expect(results[1].getCurrentBoundingBox).toBeA(Function);
+      expect(results[1].getCurrentBoundingBox()).toEqual(
+        new BoundingBox({
+          left: 560,
+          right: 590,
+          top: 569,
+          bottom: 571,
+        })
+      );
+    });
+
+    it('updates the node bounding box automatically', function() {
+      root.getBoundingClientRect.andReturn({
+        left: 140,
+        top: 500,
+      });
+      instance.nodeGroup = [
+        [
+          {
+            childNodes: [
+              new MockDomNode({
+               'getElementsByTagName.returnValue': [new MockDomNode()],
+              }),
+            ],
+          }
+        ],
+      ];
+      var realNode = makeNode({ left: 10, right: 20, top: 40, bottom: 50 });
+      graph.getNodesByFn.andReturn([ realNode ]);
+      var node = adapter.getNodes()[0];
+      expect(node.getCurrentBoundingBox()).toEqual(
+        new BoundingBox({
+            left: 150,
+            right: 160,
+            top: 540,
+            bottom: 550,
+          })
+      );
+      realNode.bounds = {
+        x: 50,
+        X: 60,
+        y: 70,
+        Y: 80,
+      };
+      expect(node.getCurrentBoundingBox()).toEqual(
+        new BoundingBox({
+            left: 190,
+            right: 200,
+            top: 570,
+            bottom: 580,
+          })
+      );
     });
 
     it('passes filter to greuler', function() {

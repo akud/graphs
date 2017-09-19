@@ -19,12 +19,32 @@ function Node(options) {
   if (options) {
     this.realNode = options.realNode;
     this.color = options.color;
-    this.boundingBox = options.boundingBox;
+    this.getCurrentBoundingBox = options.getCurrentBoundingBox;
   }
 }
 
 Node.prototype = Object.assign(new GraphElement(), {
   isNode: function() { return true; },
+
+  getCenter: function() {
+    return this.getCurrentBoundingBox().getCenter();
+  },
+
+  getTopLeft: function() {
+    return this.getCurrentBoundingBox().getTopLeft();
+  },
+
+  getTopRight: function() {
+    return this.getCurrentBoundingBox().getTopRight();
+  },
+
+  getBottomLeft: function() {
+    return this.getCurrentBoundingBox().getBottomLeft();
+  },
+
+  getBottomRight: function() {
+    return this.getCurrentBoundingBox().getBottomRight();
+  },
 });
 
 
