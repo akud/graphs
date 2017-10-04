@@ -3,6 +3,7 @@ var createSpy = require('expect').createSpy;
 function MockDomNode(options) {
   options = Object.assign({
     'getElementsByTagName.returnValue': [],
+    'remove.returnValue': undefined,
   }, options);
 
   this.attributes = {};

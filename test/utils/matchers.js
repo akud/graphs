@@ -3,7 +3,7 @@ var isEqual = require('is-equal');
 function isEqualRespectingMatchers(expected, actual) {
   if (expected && expected._isMatcher) {
     return expected.match(actual).matches;
-  } else if (typeof expected === 'object') {
+  } else if (typeof expected === 'object' && expected !== null) {
     return Object.keys(expected).every(function(key) {
       return isEqualRespectingMatchers(expected[key], actual[key]);
     });

@@ -22,15 +22,16 @@ function Component(options) {
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
   this.isInClickAndHold = false;
+  this.closeListeners = [];
 }
 
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
 
-
   attachTo: function(targetElement) {
     this._validateOptions();
+    this.element = targetElement;
     var lastDownEvent = null;
 
     targetElement.addEventListener('mouseup', (function(event) {
@@ -65,7 +66,19 @@ Component.prototype = {
       }).bind(this));
     }).bind(this));
 
+    if (this.getGeneratedMarkup()) {
+      targetElement.innerHTML = this.getGeneratedMarkup();
+    }
+
     this.doAttach(targetElement);
+  },
+
+  /**
+   * subclasses can override to indicate initial markup
+   * to be set on the target element
+   */
+  getGeneratedMarkup: function() {
+    return null;
   },
 
   /**
@@ -73,6 +86,18 @@ Component.prototype = {
    */
   doAttach: function(element) {
 
+  },
+
+  onClose: function(listener) {
+    this.closeListeners.push(listener);
+    return this;
+  },
+
+  close: function() {
+    this.closeListeners.forEach((function(f) {
+      f(this);
+    }).bind(this));
+    this.element.remove();
   },
 
   _validateOptions: function() {

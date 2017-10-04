@@ -126,4 +126,29 @@ describe('Component', function() {
       expect(component.handleClick).toNotHaveBeenCalled();
     });
   });
+
+  describe('close', function() {
+    beforeEach(function() {
+      component.attachTo(element);
+    });
+
+    it('removes the dom node', function() {
+      expect(element.remove).toNotHaveBeenCalled();
+      component.close();
+      expect(element.remove).toHaveBeenCalled();
+    });
+
+    it('calls all the close listeners', function() {
+      var l1 = createSpy();
+      var l2 = createSpy();
+      component.onClose(l1).onClose(l2);
+      expect(l1).toNotHaveBeenCalled();
+      expect(l2).toNotHaveBeenCalled();
+
+      component.close();
+
+      expect(l1).toHaveBeenCalledWith(component);
+      expect(l2).toHaveBeenCalledWith(component);
+    });
+  });
 });
