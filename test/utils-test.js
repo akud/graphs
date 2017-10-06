@@ -77,4 +77,27 @@ describe('utils', function() {
       expect(normalized.clientY).toBe(56);
     });
   });
+
+  describe('isOneValuedObject', function() {
+    it('returns false if the object is not present', function() {
+      expect(utils.isOneValuedObject()).toBe(false)
+      expect(utils.isOneValuedObject(undefined)).toBe(false)
+      expect(utils.isOneValuedObject(null)).toBe(false)
+    });
+
+    it('returns false if the value is not an object', function() {
+      expect(utils.isOneValuedObject([])).toBe(false)
+      expect(utils.isOneValuedObject(['hello'])).toBe(false)
+      expect(utils.isOneValuedObject('h')).toBe(false)
+    });
+
+    it('returns true if the object has one value', function() {
+      expect(utils.isOneValuedObject({})).toBe(false)
+      expect(utils.isOneValuedObject({a: 'b'})).toBe(true)
+      expect(utils.isOneValuedObject({a: 'b', c: undefined})).toBe(true)
+      expect(utils.isOneValuedObject({a: 'b', c: null})).toBe(true)
+      expect(utils.isOneValuedObject({a: 'b', c: 'd'})).toBe(false)
+    });
+
+  });
 });

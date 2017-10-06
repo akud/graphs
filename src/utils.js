@@ -47,8 +47,20 @@ function normalizeEvent(event) {
   }
 }
 
+function isOneValuedObject(obj) {
+  if (obj && (typeof obj === 'object') && !Array.isArray(obj)) {
+    var presentKeys = Object.keys(obj)
+      .filter(function(k) { return !!obj[k]; });
+    return presentKeys.length === 1
+  } else {
+    return false;
+  }
+
+}
+
 module.exports = {
   distance: distance,
   optional: optional,
   normalizeEvent: normalizeEvent,
+  isOneValuedObject: isOneValuedObject,
 };
