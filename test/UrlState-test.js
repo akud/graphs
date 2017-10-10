@@ -24,56 +24,42 @@ describe('UrlState', function() {
     afterEach(expectStateToHaveBeenPushed);
 
     it('sets the number of nodes to 1 if there are no nodes', function() {
-      spyOn(state, 'persistNodeColor');
       urlSearchParams.has.andReturn(false);
       var id = state.persistNode();
       expect(id).toBe(0);
       expect(urlSearchParams.set).toHaveBeenCalledWith('n', 1);
-      expect(state.persistNodeColor).toNotHaveBeenCalled();
     });
 
     it('increments number of nodes', function() {
-      spyOn(state, 'persistNodeColor');
       urlSearchParams.setNumericParam('n', 4);
       var id = state.persistNode();
       expect(id).toBe(4);
       expect(urlSearchParams.set).toHaveBeenCalledWith('n', 5);
-      expect(state.persistNodeColor).toNotHaveBeenCalled();
     });
 
-    it('persists the node color if it is provided', function() {
-      spyOn(state, 'persistNodeColor');
+    it('persists a new node\'s color if it is provided', function() {
       urlSearchParams.setNumericParam('n', 7);
       state.persistNode({ color: '#FFFFFF' });
-      expect(state.persistNodeColor).toHaveBeenCalled();
-    });
-  });
-
-  describe('persistNodeColor', function() {
-
-    afterEach(expectStateToHaveBeenPushed);
-
-    it('adds a param with node color', function() {
-      state.persistNodeColor(7, '#FFFFFF' );
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('10000000'));
     });
 
-    it('persists the node color to existing color bitmask', function() {
+    it('persists a new node\'s color to existing color bitmask', function() {
+      urlSearchParams.setNumericParam('n', 5);
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
-      state.persistNodeColor(5, '#FFFFFF' );
+      state.persistNode({ color: '#FFFFFF' });
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('101010'));
     });
 
-    it('removes the existing color from the node', function() {
+    it('removes existing color from the node if changing colors', function() {
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
-      state.persistNodeColor(3, '#00FF00' );
+      state.persistNode({ id: 3, color: '#00FF00' });
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('0010'));
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_00FF00', matchers.hexEncodedBinary('1000'));
     });
 
     it('removes the existing color param if node was only one with color', function() {
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '10');
-      state.persistNodeColor(1, '#00FF00' );
+      state.persistNode({ id: 1, color: '#00FF00' });
       expect(urlSearchParams.delete).toHaveBeenCalledWith('c_FFFFFF');
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_00FF00', matchers.hexEncodedBinary('10'));
     });

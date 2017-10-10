@@ -40,7 +40,6 @@ describe('Graph', function() {
     state = createSpyObjectWith(
       'persistEdge',
       'persistNode',
-      'persistNodeColor',
       'reset',
       {
         'retrievePersistedEdges.returnValue': [],
@@ -211,14 +210,14 @@ describe('Graph', function() {
       expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.INDIGO);
       expect(adapter.setNodeColor).toHaveBeenCalledWith(clickTarget, colors.VIOLET);
 
-      expect(state.persistNodeColor.calls.length).toBe(7);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.RED);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.ORANGE);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.YELLOW);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.GREEN);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.BLUE);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.INDIGO);
-      expect(state.persistNodeColor).toHaveBeenCalledWith(clickTarget.id, colors.VIOLET);
+      expect(state.persistNode.calls.length).toBe(7);
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.RED });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.ORANGE });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.YELLOW });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.GREEN });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.BLUE });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.INDIGO });
+      expect(state.persistNode).toHaveBeenCalledWith({ id: clickTarget.id, color: colors.VIOLET });
     });
 
     it('tracks colors for nodes separately', function() {

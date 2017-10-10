@@ -15,27 +15,21 @@ UrlState.prototype = {
    * Perist a node and return its id
    */
   persistNode: function(options) {
-    var nodeId = this._getNumNodes();
-    this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
-    this._persistState();
-    if (options && options.color) {
-      this.persistNodeColor(nodeId, options.color);
+    options = options || {};
+    var nodeId;
+    if (options.id) {
+      nodeId = options.id;
+    } else {
+      nodeId = this._getNumNodes();
+      this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
-    return nodeId;
-  },
+    if (options.color) {
+      this._setNodeColor(nodeId, options.color);
+    }
 
-  persistNodeColor: function(nodeId, color) {
-    var bit = this._idToBit(nodeId);
-
-    this._getColorKeys().forEach((function(key) {
-      if (this._isColor({ bit: bit, colorKey: key })) {
-        this._removeColor({ bit: bit, colorKey: key });
-      }
-    }).bind(this));
-
-    this._setColor({ bit: bit, color: color });
     this._persistState();
+    return nodeId;
   },
 
   persistEdge: function(sourceId, targetId) {
@@ -196,6 +190,19 @@ UrlState.prototype = {
       return 0;
     }
   },
+
+  _setNodeColor: function(nodeId, color) {
+    var bit = this._idToBit(nodeId);
+
+    this._getColorKeys().forEach((function(key) {
+      if (this._isColor({ bit: bit, colorKey: key })) {
+        this._removeColor({ bit: bit, colorKey: key });
+      }
+    }).bind(this));
+
+    this._setColor({ bit: bit, color: color });
+  },
+
 
   _persistState: function() {
     this.setUrl(this.getUrl());

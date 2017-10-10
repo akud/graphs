@@ -109,7 +109,7 @@ Graph.prototype = Object.assign(new Component(), {
     var newColor = COLOR_ORDER[colorIndex];
     this.adapter.setNodeColor(node, newColor);
     this.colors[node.id] = colorIndex;
-    this.state.persistNodeColor(node.id, newColor);
+    this.state.persistNode({ id: node.id, color: newColor });
   },
 
   _createNode: function() {
