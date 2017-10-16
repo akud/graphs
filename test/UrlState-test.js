@@ -43,6 +43,40 @@ describe('UrlState', function() {
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('10000000'));
     });
 
+    it('persists a new node\'s label if it is provided', function() {
+      urlSearchParams.setNumericParam('n', 7);
+      state.persistNode({ label: 'hello' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('l_7', 'hello');
+    });
+
+    it('encodes a new node\'s label before setting on the params', function() {
+      urlSearchParams.setNumericParam('n', 2);
+      state.persistNode({ label: 'hello world:' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('l_2', 'hello%20world%3A');
+    });
+
+    it('updates a node label', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      state.persistNode({ id: 1, label: 'hello world:' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('l_1', 'hello%20world%3A');
+    });
+
+    it('does not change a node\'s color if only a label is provided', function() {
+      urlSearchParams.setNumericParam('n', 5);
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
+      state.persistNode({ id: 1, label: 'hello' });
+      expect(urlSearchParams.get('c_FFFFFF')).toEqual(matchers.hexEncodedBinary('1010'));
+    });
+
+    it('does not change a node\'s label if only a color is provided', function() {
+      urlSearchParams.setNumericParam('n', 5);
+      urlSearchParams.set('l_1', 'hello');
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1000');
+      state.persistNode({ id: 1, color: '#FFFFFF' });
+      expect(urlSearchParams.get('l_1')).toEqual('hello');
+      expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('1010'));
+    });
+
     it('persists a new node\'s color to existing color bitmask', function() {
       urlSearchParams.setNumericParam('n', 5);
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
@@ -110,6 +144,17 @@ describe('UrlState', function() {
         { id: 3, color: '#FF0000' },
         { id: 4, color: '#FF0000' },
         { id: 5, color: '#0000FF' },
+      ]);
+    });
+
+    it('returns node labels if present', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      urlSearchParams.set('l_0', 'hello');
+      urlSearchParams.set('l_2', encodeURIComponent('what\'s up doc'));
+      expect(state.retrievePersistedNodes()).toEqual([
+        { id: 0, label: 'hello' },
+        { id: 1 },
+        { id: 2, label: 'what\'s up doc' },
       ]);
     });
   });

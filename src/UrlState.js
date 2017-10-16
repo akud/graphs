@@ -3,6 +3,7 @@ var utils = require('./utils');
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
+LABEL_PARAM_PREFIX = 'l_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -26,6 +27,10 @@ UrlState.prototype = {
 
     if (options.color) {
       this._setNodeColor(nodeId, options.color);
+    }
+
+    if (options.label) {
+      this._setNodeLabel(nodeId, options.label);
     }
 
     this._persistState();
@@ -53,9 +58,11 @@ UrlState.prototype = {
         var nodeColor = colorParams.find((function(param) {
           return this._isColor({ bit: nodeBit, colorKey: param });
         }).bind(this));
+        var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + i);
         nodes.push(utils.optional({
           id: i,
           color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
+          label: label && decodeURIComponent(label),
         }, { force: 'id' }));
       }
     }
@@ -77,6 +84,13 @@ UrlState.prototype = {
       return edges;
     }).bind(this))
     .reduce(function(a, b) { return a.concat(b); }, []);
+  },
+
+  _setNodeLabel: function(nodeId, label) {
+    this.urlSearchParams.set(
+      LABEL_PARAM_PREFIX + nodeId,
+      encodeURIComponent(label)
+    );
   },
 
   getUrl: function() {
