@@ -37,6 +37,19 @@ UrlState.prototype = {
     return nodeId;
   },
 
+  retrieveNode: function(nodeId) {
+    var nodeBit = this._idToBit(nodeId);
+    var nodeColor = this._getColorKeys().find((function(param) {
+      return this._isColor({ bit: nodeBit, colorKey: param });
+    }).bind(this));
+    var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    return utils.optional({
+      id: nodeId,
+      color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
+      label: label && decodeURIComponent(label),
+    }, { force: 'id' });
+  },
+
   persistEdge: function(sourceId, targetId) {
     var param = EDGE_PARAM_PREFIX + sourceId;
     var bitmask;
@@ -52,18 +65,8 @@ UrlState.prototype = {
   retrievePersistedNodes: function() {
     var nodes = [];
     if (this.urlSearchParams.has(NUM_NODES_PARAM)) {
-      var colorParams = this._getColorKeys();
       for (var i = 0 ; i < this.urlSearchParams.get(NUM_NODES_PARAM); i++) {
-        var nodeBit = this._idToBit(i);
-        var nodeColor = colorParams.find((function(param) {
-          return this._isColor({ bit: nodeBit, colorKey: param });
-        }).bind(this));
-        var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + i);
-        nodes.push(utils.optional({
-          id: i,
-          color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
-          label: label && decodeURIComponent(label),
-        }, { force: 'id' }));
+        nodes.push(this.retrieveNode(i));
       }
     }
     return nodes;

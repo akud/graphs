@@ -115,6 +115,22 @@ describe('UrlState', function() {
     });
   });
 
+  describe('retrieve node', function() {
+    it('returns just the node id if there is no other data', function() {
+      expect(state.retrieveNode(3)).toEqual({ id: 3 });
+    });
+
+    it('returns the node\'s color and label', function() {
+      urlSearchParams.setHexEncodedBinary('c_0000FF', '101001');
+      urlSearchParams.set('l_3', 'hello%20world');
+      expect(state.retrieveNode(3)).toEqual({
+        id: 3,
+        color: '#0000FF',
+        label: 'hello world',
+      });
+    });
+  });
+
   describe('retrieve persisted nodes', function() {
     it('returns empty array if there is no node param', function() {
       expect(state.retrievePersistedNodes()).toEqual([]);
