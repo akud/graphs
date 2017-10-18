@@ -135,9 +135,6 @@ Graph.prototype = Object.assign(new Component(), {
   },
 
   _enterEditMode: function(node) {
-    if (!this.animator) {
-      throw new Error('adapter is not present');
-    }
     this.currentlyEditedNode = node;
 
     this.editModeOtherNodes = this.adapter.getNodes(function(n) {
