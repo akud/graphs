@@ -103,5 +103,15 @@ describe('ModeSwitch', function() {
 
       expect(barAction).toNotHaveBeenCalled();
     });
+
+    it('immediately resets mode if no timeout is specified', function() {
+      modeSwitch = new ModeSwitch();
+      var barAction = createSpy();
+      modeSwitch.enter('foo');
+      modeSwitch.exit('foo');
+
+      modeSwitch.enter('bar', barAction);
+      expect(barAction).toHaveBeenCalled();
+    });
   });
 });

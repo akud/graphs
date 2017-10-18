@@ -1,7 +1,7 @@
 function ModeSwitch(options) {
   if (options) {
     this.actionQueue = options.actionQueue;
-    this.timeout = options.timeout || 1;
+    this.timeout = options.timeout || 0;
   }
   this.currentMode = null;
   this.resetModeFuture = null;
@@ -38,15 +38,23 @@ ModeSwitch.prototype = {
   },
 
   _scheduleModeReset: function() {
-    this._cancelModeReset();
-    this.resetModeFuture = this.actionQueue.defer(this.timeout, (function() {
+    var resetFunction = (function() {
       this.currentMode = null;
-    }).bind(this));
+    }).bind(this);
+
+    this._cancelModeReset();
+    if (this.timeout) {
+      this.resetModeFuture = this.actionQueue.defer(
+        this.timeout, resetFunction
+      );
+    } else {
+      resetFunction();
+    }
   },
 
   _validate: function() {
-    if(!this.actionQueue) {
-      throw new Error('action queue is required');
+    if(this.timeout && !this.actionQueue) {
+      throw new Error('action queue is required if a timeout is specified');
     }
   },
 };
