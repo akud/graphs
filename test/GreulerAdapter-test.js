@@ -585,6 +585,45 @@ describe('GreulerAdapter', function() {
     });
   });
 
+  describe('getNode', function() {
+    var adapter;
+    beforeEach(function() {
+      adapter = new GreulerAdapter(greuler);
+      adapter.initialize(new MockDomNode());
+    });
+
+    it('retrieves the node by id', function() {
+      var node = makeNode({ id: 34, index: 0 });
+      graph.getNodesByFn.andReturn([ node ]);
+      instance.nodeGroup = [
+        [
+          {
+            childNodes: [
+              new MockDomNode({
+               'getElementsByTagName.returnValue': [new MockDomNode()],
+              }),
+            ],
+          }
+        ],
+      ];
+
+
+      expect(adapter.getNode(34)).toEqual(
+        new graphelements.Node({
+          id: 34,
+          color: matchers.any(),
+          domElement: matchers.any(),
+          realNode: matchers.any(),
+          getCurrentBoundingBox: matchers.any(Function),
+        })
+      );
+      expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
+        {input: makeNode({ id: 34 }), output: true },
+        {input: makeNode({ id: 35 }), output: false }
+      ));
+    });
+  });
+
   describe('performInBulk', function() {
     var adapter;
     beforeEach(function() {

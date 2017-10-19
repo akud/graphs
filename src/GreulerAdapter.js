@@ -62,6 +62,10 @@ GreulerAdapter.prototype = {
     return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
+  getNode: function(nodeId) {
+    return this.getNodes(function(n) { return n.id === nodeId; })[0];
+  },
+
   getNodes: function(filter) {
     filter = filter || function() { return true; };
     return this.graph.getNodesByFn(filter).map((function(node) {
