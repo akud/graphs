@@ -32,19 +32,18 @@ Component.prototype = {
   attachTo: function(targetElement) {
     this._validateOptions();
     this.element = targetElement;
-    var lastDownEvent = null;
 
     targetElement.addEventListener('mouseup', (function(event) {
       LOG.debug('mouseup', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('mouse', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('mouse', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchend', (function(event) {
       LOG.debug('touchend', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('touch', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('touch', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
@@ -52,17 +51,17 @@ Component.prototype = {
       event = utils.normalizeEvent(event);
       LOG.debug('mousedown', event);
       this.mouseTouchSwitch.enter('mouse', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchstart', (function(event) {
-      event - utils.normalizeEvent(event);
+      event = utils.normalizeEvent(event);
       LOG.debug('touchstart', event);
       this.mouseTouchSwitch.enter('touch', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 

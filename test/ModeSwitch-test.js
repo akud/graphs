@@ -47,6 +47,15 @@ describe('ModeSwitch', function() {
       modeSwitch.enter('bar', barAction);
       expect(barAction).toNotHaveBeenCalled();
     });
+
+    it('stores the return value of enter function to pass to exit function', function() {
+      var modeState = { hello: 'world' };
+      var enterAction = createSpy().andReturn(modeState);
+      var exitAction = createSpy();
+      modeSwitch.enter('foo', enterAction);
+      modeSwitch.exit('foo', exitAction);
+      expect(exitAction).toHaveBeenCalledWith(modeState);
+    });
   });
 
   describe('mode.exit', function() {

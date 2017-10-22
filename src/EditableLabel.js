@@ -16,20 +16,20 @@ EditableLabel.prototype = {
   display: function() {
     this._validate();
 
-    this.modeSwitch.exit('edit', (function() {
-      this.text = this.editComponent.getText();
-      this.editComponent.remove();
-      this.editComponent = null;
+    this.modeSwitch.exit('edit', (function(editState) {
+      this.text = editState.component.getText();
+      editState.component.remove();
     }).bind(this));
 
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
-        this.displayComponent = this.componentManager.insertComponent({
+        var component = this.componentManager.insertComponent({
           class: BlockText,
           constructorArgs: { text: this.text },
           pinTo: this.pinTo,
         });
         this.onChange(this.text);
+        return { component: component };
       }).bind(this));
     }
     return this;
@@ -37,18 +37,18 @@ EditableLabel.prototype = {
 
   edit: function() {
     this._validate();
-    this.modeSwitch.exit('display', (function() {
-      this.text = this.displayComponent.getText();
-      this.displayComponent.remove();
-      this.displayComponent = null;
+    this.modeSwitch.exit('display', (function(displayState) {
+      this.text = displayState.component.getText();
+      displayState.component.remove();
     }).bind(this));
 
     this.modeSwitch.enter('edit', (function() {
-      this.editComponent = this.componentManager.insertComponent({
+       var component = this.componentManager.insertComponent({
         class: TextBox,
         constructorArgs: { text: this.text },
         pinTo: this.pinTo,
       });
+      return { component: component };
     }).bind(this));
     return this;
   },

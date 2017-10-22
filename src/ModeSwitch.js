@@ -1,8 +1,7 @@
 function ModeSwitch(options) {
-  if (options) {
-    this.actionQueue = options.actionQueue;
-    this.timeout = options.timeout || 0;
-  }
+  this.actionQueue = options && options.actionQueue;
+  this.timeout = (options && options.timeout) || 0;
+  this.modeStates = (options && options.initialStates) || {};
   this.currentMode = null;
   this.resetModeFuture = null;
 }
@@ -11,18 +10,21 @@ ModeSwitch.prototype = {
   enter: function(mode, fn) {
     this._validate();
     if (this.isPermitted(mode)) {
-      (fn || function() {})();
+      var state = (fn || function() {})();
+      this.modeStates[mode] = state;
       this.currentMode = mode;
       this._cancelModeReset();
     }
+    return this;
   },
 
   exit: function(mode, fn) {
     this._validate();
     if(this.isActive(mode)) {
-      (fn || function() {})();
+      (fn || function() {})(this.modeStates[mode]);
       this._scheduleModeReset();
     }
+    return this;
   },
 
   isPermitted: function(mode) {
@@ -39,6 +41,7 @@ ModeSwitch.prototype = {
 
   _scheduleModeReset: function() {
     var resetFunction = (function() {
+      delete this.modeStates[this.currentMode];
       this.currentMode = null;
     }).bind(this);
 
