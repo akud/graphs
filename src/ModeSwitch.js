@@ -9,7 +9,7 @@ function ModeSwitch(options) {
 ModeSwitch.prototype = {
   enter: function(mode, fn) {
     this._validate();
-    if (this.isPermitted(mode)) {
+    if (this._isPermitted(mode)) {
       var state = (fn || function() {})();
       this.modeStates[mode] = state;
       this.currentMode = mode;
@@ -20,18 +20,25 @@ ModeSwitch.prototype = {
 
   exit: function(mode, fn) {
     this._validate();
-    if(this.isActive(mode)) {
+    if(this._isActive(mode)) {
       (fn || function() {})(this.modeStates[mode]);
       this._scheduleModeReset();
     }
     return this;
   },
 
-  isPermitted: function(mode) {
-    return !this.currentMode || this.isActive(mode);
+  ifActive: function(callbackObj) {
+    var callback = callbackObj[this.currentMode || 'default'];
+    var modeState = this.modeStates[this.currentMode || 'default'];
+    (callback || function(){})(modeState);
+    return this;
   },
 
-  isActive: function(mode) {
+  _isPermitted: function(mode) {
+    return !this.currentMode || this._isActive(mode);
+  },
+
+  _isActive: function(mode) {
     return this.currentMode === mode;
   },
 
