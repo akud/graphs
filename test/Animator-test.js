@@ -89,6 +89,28 @@ describe('Animator', function() {
       expect(f1).toNotHaveBeenCalled();
     });
 
+    it('stops when told to', function() {
+      var f1 = createSpy();
+
+      var animation = animator.alternate(f1).every(100).play();
+
+      expect(f1).toHaveBeenCalled();
+
+      f1.reset();
+      actionQueue.step(100);
+
+      expect(f1).toHaveBeenCalled();
+
+      f1.reset();
+      animation.stop();
+      actionQueue.step(100);
+
+      expect(f1).toNotHaveBeenCalled();
+
+      actionQueue.step(100);
+      expect(f1).toNotHaveBeenCalled();
+    });
+
     it('does nothing if the predicate is false immediately', function() {
       var f1 = createSpy();
       var predicate = createSpy().andReturn(false);
