@@ -94,10 +94,6 @@ Graph.prototype = Object.assign(new Component(), {
         this.adapter.removeNode(node);
       }).bind(this));
 
-      this.state.retrievePersistedNodes().forEach((function(node) {
-        this.adapter.removeNode(node);
-      }).bind(this));
-
     }).bind(this));
 
     this._setInitialState();
