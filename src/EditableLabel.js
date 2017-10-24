@@ -63,4 +63,8 @@ EditableLabel.prototype = {
   },
 };
 
+EditableLabel.Factory = {
+  create: function(opts) { return new EditableLabel(opts); },
+};
+
 module.exports = EditableLabel;

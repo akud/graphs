@@ -3,6 +3,11 @@ var createSpy = require('expect').createSpy;
 createSpyObjectWith = function() {
   var obj = {};
   var spies = [];
+  function setSpy(name, spy) {
+    obj[name] = spy;
+    spies.push(spy);
+  }
+
   Array.prototype.forEach.call(arguments, function(fnName) {
     if (typeof fnName === 'object') {
       var spy = null;;
@@ -10,18 +15,13 @@ createSpyObjectWith = function() {
       Object.keys(spec).forEach(function(key) {
         var value = spec[key];
         if (key.endsWith('.returnValue')) {
-          spy = createSpy().andReturn(value === 'this' ? obj : value);
-          obj[key.split('.')[0]] = spy;
+          setSpy(key.split('.')[0], createSpy().andReturn(value === 'this' ? obj : value));
         } else {
           obj[key] = value;
         }
       });
     } else {
-      spy = createSpy();
-      obj[fnName] = spy;
-    }
-    if (spy) {
-      spies.push(spy);
+      setSpy(fnName, createSpy());
     }
   });
   obj.reset = obj.reset || function() {
