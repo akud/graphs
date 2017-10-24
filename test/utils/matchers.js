@@ -86,6 +86,41 @@ module.exports = {
     };
   },
 
+  functionThatHasSideEffect: function(opts) {
+    opts = Object.assign({
+      arguments: undefined,
+      before: function() {},
+      after: function() {},
+      reset: function() {},
+    }, opts);
+    return {
+      match: function(fn) {
+        if (typeof fn === 'function') {
+          try {
+            opts.before();
+            var result = fn.apply(
+              null,
+              Array.isArray(opts.arguments) ? opts.arguments : [opts.arguments]
+            );
+            opts.after(result);
+            return {
+              matches: true,
+            };
+          } finally {
+            opts.reset();
+          }
+        } else {
+          return {
+            matches: false,
+            expected: 'function',
+            actual: fn,
+          };
+        }
+      },
+      _isMatcher: true,
+    };
+  },
+
   hexEncodedBinary: function(binaryString) {
     var expectedHex = parseInt(binaryString, 2).toString(16);
     return {
