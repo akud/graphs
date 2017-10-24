@@ -9,6 +9,7 @@ describe('Graph', function() {
   var targetElement;
   var state;
   var editMode;
+  var labelSet;
   var actionQueue;
 
   beforeEach(function() {
@@ -18,6 +19,7 @@ describe('Graph', function() {
       'addNode',
       'getClickTarget',
       'getNodes',
+      'getNode',
       'initialize',
       'setNodeColor',
       'removeNode',
@@ -40,6 +42,7 @@ describe('Graph', function() {
         'retrievePersistedNodes.returnValue': [],
       }
     );
+    labelSet = createSpyObjectWith('initialize');
     targetElement = new MockDomNode();
   });
 
@@ -49,6 +52,7 @@ describe('Graph', function() {
         actionQueue: actionQueue,
         state: state,
         editMode: editMode,
+        labelSet: labelSet,
         holdTime: 100,
       }, options));
   }
@@ -134,6 +138,32 @@ describe('Graph', function() {
         }
       );
       expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('initializes the label set with nodes from state', function() {
+      var realNode1 = new graphelements.Node({ id: 0 });
+      var realNode2 = new graphelements.Node({ id: 1 });
+      var realNode3 = new graphelements.Node({ id: 2 });
+      var getNodeIndex = 0;
+
+      graph = newGraph();
+      state.retrievePersistedNodes.andReturn([
+        { id: 0, color: '#0000FF', label: 'asdf', },
+        { id: 1, color: '#00FF00' },
+        { id: 2, label: 'hello' },
+      ]);
+      adapter.getNode.andCall(function() {
+        return [realNode1, realNode2, realNode3][(getNodeIndex++)%3];
+      });
+      state.retrievePersistedEdges.andReturn([]);
+
+      graph.attachTo(targetElement);
+
+      expect(labelSet.initialize).toHaveBeenCalledWith([
+        { node: realNode1, label: 'asdf' },
+        { node: realNode2, label: undefined },
+        { node: realNode3, label: 'hello' },
+      ]);
     });
   });
 

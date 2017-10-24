@@ -6,6 +6,7 @@ function EditMode(opts) {
   this.adapter = opts && opts.adapter;
   this.animator = opts && opts.animator;
   this.alternateInterval = (opts && opts.alternateInterval) || 100;
+  this.labelSet = opts && opts.labelSet;
   this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch();
   this.modeSwitch.enter('display');
 }
@@ -34,6 +35,8 @@ EditMode.prototype = {
           )
           .every(this.alternateInterval)
           .play();
+
+        this.labelSet.edit(node);
         return {
           node: node,
           animation: animation,
@@ -77,6 +80,7 @@ EditMode.prototype = {
 
   _cleanUpEditState: function(editState) {
     editState.animation.stop();
+    this.labelSet.display(editState.node);
     this._setOriginalColors(editState.otherNodes, editState.originalColors);
   },
 

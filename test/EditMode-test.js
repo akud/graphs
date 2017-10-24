@@ -8,6 +8,7 @@ describe('EditMode', function() {
   var animator;
   var animation;
   var editMode;
+  var labelSet;
   var alternateInterval = 456;
 
   beforeEach(function() {
@@ -23,14 +24,25 @@ describe('EditMode', function() {
     animator = createSpyObjectWith({
       'alternate.returnValue': animation,
     });
+
+    labelSet = createSpyObjectWith('display', 'edit');
+
     editMode = new EditMode({
       adapter: adapter,
       animator: animator,
+      labelSet: labelSet,
       alternateInterval: alternateInterval,
     });
   });
 
   describe('activate', function() {
+
+    it('edits the node label', function() {
+      var node = new graphelements.Node({ id: 1, color: '#FFFFFF' });
+      adapter.getNodes.andReturn([]);
+      editMode.activate(node);
+      expect(labelSet.edit).toHaveBeenCalledWith(node);
+    });
 
     it('animates the other nodes', function() {
       var otherNode1 = new graphelements.Node({ id: 1, color: '#FFFFFF' });
@@ -86,6 +98,7 @@ describe('EditMode', function() {
       expect(adapter.setNodeColor).toHaveBeenCalledWith(node2, '#FFFF00');
       expect(adapter.setNodeColor).toHaveBeenCalledWith(node3, '#FF00FF');
       expect(adapter.setNodeColor.calls.length).toBe(2);
+      expect(labelSet.display).toHaveBeenCalledWith(node1);
     });
   });
 
@@ -104,6 +117,7 @@ describe('EditMode', function() {
       expect(adapter.setNodeColor).toHaveBeenCalledWith(node2, '#FFFF00');
       expect(adapter.setNodeColor).toHaveBeenCalledWith(node3, '#FF00FF');
       expect(adapter.setNodeColor.calls.length).toBe(2);
+      expect(labelSet.display).toHaveBeenCalledWith(node1);
     });
   });
 

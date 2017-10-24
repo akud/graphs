@@ -18,6 +18,7 @@ function Graph(options) {
   if (options) {
     this.adapter = options.adapter;
     this.animator = options.animator;
+    this.labelSet = options.labelSet;
     this.editMode = options.editMode;
     this.state = options.state;
     this.width = options.width;
@@ -32,12 +33,13 @@ function Graph(options) {
 
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
+    var persistedNodes = this.state.retrievePersistedNodes();
     this.adapter.initialize(
       targetElement,
       utils.optional({
         width: this.width,
         height: this.height,
-        nodes: this.state.retrievePersistedNodes().map((function(n) {
+        nodes: persistedNodes.map((function(n) {
           return utils.optional({
             id: n.id,
             color: n.color || COLOR_ORDER[0],
@@ -49,6 +51,13 @@ Graph.prototype = Object.assign(new Component(), {
         edgeDistance: this.edgeDistance,
       })
     );
+    var labelSetData = persistedNodes.map((function(n) {
+      return {
+        node: this.adapter.getNode(n.id),
+        label: n.label,
+      };
+    }).bind(this));
+    this.labelSet.initialize(labelSetData);
   },
 
   handleClick: function(event) {
@@ -138,6 +147,9 @@ Graph.prototype = Object.assign(new Component(), {
     }
     if (!this.state) {
       throw new Error('state is not present');
+    }
+    if (!this.labelSet) {
+      throw new Error('labelSet is not present');
     }
   },
 
