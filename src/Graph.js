@@ -18,13 +18,13 @@ function Graph(options) {
   if (options) {
     this.adapter = options.adapter;
     this.animator = options.animator;
+    this.editMode = options.editMode;
     this.state = options.state;
     this.width = options.width;
     this.height = options.height;
     this.nodeSize = options.nodeSize;
     this.edgeDistance = options.edgeDistance;
     this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
-    this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
   }
   this._setInitialState();
 }
@@ -56,35 +56,36 @@ Graph.prototype = Object.assign(new Component(), {
       event, this.nodeAreaFuzzFactor
     );
 
-    if (this._isInEditMode()) {
-      if (clickTarget.isNode() &&
-          clickTarget.id !== this.currentlyEditedNode.id) {
-        this.adapter.addEdge({
-          source: this.currentlyEditedNode,
-          target: clickTarget,
-          distance: this.edgeDistance,
-        });
-        this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
-      } else {
-        this._exitEditMode();
-      }
-    } else {
-      if (clickTarget.isNode()) {
-        this._setNextColor(clickTarget);
-      } else {
-        this._createNode();
-      }
-    }
+    this.editMode.perform({
+      ifActive: (function(currentlyEditedNode) {
+        if (clickTarget.isNode() && clickTarget.id !== currentlyEditedNode.id) {
+           this.adapter.addEdge({
+            source: currentlyEditedNode,
+            target: clickTarget,
+            distance: this.edgeDistance,
+          });
+          this.state.persistEdge(currentlyEditedNode.id, clickTarget.id);
+        } else {
+          this.editMode.deactivate();
+        }
+      }).bind(this),
+
+      ifNotActive: (function() {
+        if (clickTarget.isNode()) {
+          this._setNextColor(clickTarget);
+        } else {
+          this._createNode();
+        }
+      }).bind(this)
+    });
   },
 
   handleClickAndHold: function(event) {
-    if (!this._isInEditMode()) {
-      var clickTarget = this.adapter.getClickTarget(
-        event, this.nodeAreaFuzzFactor
-      );
-      if (clickTarget.isNode()) {
-        this._enterEditMode(clickTarget);
-      }
+    var clickTarget = this.adapter.getClickTarget(
+      event, this.nodeAreaFuzzFactor
+    );
+    if (clickTarget.isNode()) {
+      this.editMode.activate(clickTarget);
     }
   },
 
@@ -98,6 +99,7 @@ Graph.prototype = Object.assign(new Component(), {
 
     this._setInitialState();
     this.state.reset();
+    this.editMode.deactivate();
   },
 
   _setNextColor: function(node) {
@@ -126,68 +128,21 @@ Graph.prototype = Object.assign(new Component(), {
     return (colorIndex + 1) % COLOR_ORDER.length;
   },
 
-  _isInEditMode: function() {
-    return !!this.currentlyEditedNode;
-  },
-
-  _enterEditMode: function(node) {
-    this.currentlyEditedNode = node;
-
-    this.editModeOtherNodes = this.adapter.getNodes(function(n) {
-      return n.id !== node.id;
-    });
-
-    this.animator
-      .alternate(
-        this._setNeon.bind(this),
-        this._setOriginalColor.bind(this)
-      )
-      .every(this.editModeAlternateInterval)
-      .asLongAs(this._isInEditMode.bind(this))
-      .play();
-  },
-
-  _exitEditMode: function() {
-    this.currentlyEditedNode = null;
-    this._setOriginalColor();
-    this.editModeOriginalColors = {};
-  },
-
   _validateOptions: function() {
     Component.prototype._validateOptions.call(this, arguments);
     if (!this.adapter) {
       throw new Error('adapter is not present');
     }
-    if (!this.animator) {
-      throw new Error('animator is not present');
+    if (!this.editMode) {
+      throw new Error('edit mode is not present');
     }
     if (!this.state) {
       throw new Error('state is not present');
     }
   },
 
-  _setNeon: function() {
-    this.editModeOtherNodes.forEach((function(n) {
-      if (!this.editModeOriginalColors[n.id]) {
-        this.editModeOriginalColors[n.id] = n.color;
-      }
-      this.adapter.setNodeColor(n, colors.NEON);
-    }).bind(this));
-  },
-
-  _setOriginalColor: function() {
-    this.editModeOtherNodes.forEach((function(n) {
-      if (this.editModeOriginalColors[n.id]) {
-        this.adapter.setNodeColor(n, this.editModeOriginalColors[n.id]);
-      }
-    }).bind(this));
-  },
-
   _setInitialState: function() {
     this.colors = {};
-    this.currentlyEditedNode = null;
-    this.editModeOtherNodes = [];
-    this.editModeOriginalColors = {};
   },
 });
 

@@ -5,6 +5,7 @@ var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
 var ResetButton = require('./src/ResetButton');
+var EditMode = require('./src/EditMode');
 
 require('./src/Logger').level = global.logLevel;
 
@@ -26,7 +27,11 @@ global.graph = new Graph(
   {
     actionQueue: actionQueue,
     adapter: adapter,
-    animator: new Animator({ actionQueue: actionQueue }),
+    editMode: new EditMode({
+      adapter: adapter,
+      animator: new Animator({ actionQueue: actionQueue }),
+      alternateInterval: 250,
+    }),
     state: new UrlState({
       baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
       setUrl: window.history.replaceState.bind(window.history, {}, ''),
@@ -37,7 +42,6 @@ global.graph = new Graph(
     nodeSize: nodeSize,
     edgeDistance: edgeDistance,
     nodeAreaFuzzFactor: 0.1,
-    editModeAlternateInterval: 250,
   });
 
 global.resetButton = new ResetButton({

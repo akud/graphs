@@ -7,9 +7,8 @@ var MockActionQueue = require('./utils/MockActionQueue');
 describe('Graph', function() {
   var adapter;
   var targetElement;
-  var animator;
   var state;
-  var alternatingAnimation;
+  var editMode;
   var actionQueue;
 
   beforeEach(function() {
@@ -26,17 +25,12 @@ describe('Graph', function() {
         'performInBulk': function(fn) { fn(adapter); },
       }
     );
-    alternatingAnimation = createSpyObjectWith(
-      'play',
-      {
-        'every.returnValue': 'this',
-        'asLongAs.returnValue': 'this',
-        'withThis.returnValue': 'this',
-      }
+    editMode = createSpyObjectWith(
+      'activate',
+      'deactivate',
+      'perform'
     );
-    animator = createSpyObjectWith({
-      'alternate.returnValue': alternatingAnimation,
-    });
+    deactivateEditMode();
     state = createSpyObjectWith(
       'persistEdge',
       'persistNode',
@@ -52,12 +46,19 @@ describe('Graph', function() {
   function newGraph(options) {
     return new Graph(Object.assign({
         adapter: adapter,
-        animator: animator,
         actionQueue: actionQueue,
         state: state,
-        editModeAlternateInterval: 100,
+        editMode: editMode,
         holdTime: 100,
       }, options));
+  }
+
+  function deactivateEditMode() {
+    editMode.perform.andCall(function(opts) { opts.ifNotActive(); });
+  }
+
+  function activateEditMode(node) {
+    editMode.perform.andCall(function(opts) { opts.ifActive(node); });
   }
 
   it('does nothing when constructed', function() {
@@ -250,71 +251,21 @@ describe('Graph', function() {
     });
 
     it('is triggered on click and hold on a graph node', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node());
+      var node = new graphelements.Node();
+      adapter.getClickTarget.andReturn(node);
       targetElement.trigger('mousedown');
       actionQueue.step(50);
-      expect(animator.alternate).toNotHaveBeenCalled();
+      expect(editMode.activate).toNotHaveBeenCalled();
       actionQueue.step(50);
-      expect(animator.alternate).toHaveBeenCalled();
+      expect(editMode.activate).toHaveBeenCalledWith(node);
+      expect(editMode.deactivate).toNotHaveBeenCalled();
     });
 
     it('is not triggered by click and hold on other graph elements', function() {
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.clickAndHold(actionQueue, 100);
-      expect(animator.alternate).toNotHaveBeenCalled();
-    });
-
-    it('alternates the color of other nodes', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node({
-        id: 23,
-      }));
-      var otherNodes = [
-        new graphelements.Node({
-          id: 67,
-          color: '#678901',
-        }),
-        new graphelements.Node({
-          id: 23,
-          color: '#123456',
-        }),
-      ];
-      adapter.getNodes.andReturn(otherNodes);
-
-      targetElement.clickAndHold(actionQueue, 100);
-
-      expect(adapter.getNodes).toHaveBeenCalledWith(matchers.functionThatReturns(
-        { input: { id: 23 }, output: false },
-        { input: { id: 43 }, output: true }
-      ));
-
-      expect(animator.alternate).toHaveBeenCalledWith(
-        matchers.any(Function),
-        matchers.any(Function)
-      );
-
-      expect(alternatingAnimation.every).toHaveBeenCalledWith(graph.editModeAlternateInterval);
-      expect(alternatingAnimation.asLongAs).toHaveBeenCalledWith(matchers.functionThatReturns(true));
-      expect(alternatingAnimation.play).toHaveBeenCalled();
-
-      var setNeon = animator.alternate.calls[0].arguments[0];
-      var setOriginal = animator.alternate.calls[0].arguments[1];
-
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], colors.NEON);
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], colors.NEON);
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
-
-      setNeon();
-
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[0], colors.NEON);
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[1], colors.NEON);
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
-
-      setOriginal();
-
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[0], '#678901');
-      expect(adapter.setNodeColor).toNotHaveBeenCalledWith(otherNodes[1], '#123456');
+      expect(editMode.activate).toNotHaveBeenCalled();
+      expect(editMode.deactivate).toNotHaveBeenCalled();
     });
 
     it('makes a connection when clicking on another node', function() {
@@ -326,13 +277,9 @@ describe('Graph', function() {
         id: 567,
         'isNode.returnValue': true,
       });
-      adapter.getClickTarget.andReturn(originalNode);
-      adapter.getNodes.andReturn([]);
-
-      targetElement.clickAndHold(actionQueue, 100);
+      activateEditMode(originalNode);
 
       adapter.getClickTarget.andReturn(otherNode);
-
       targetElement.click();
 
       expect(adapter.addEdge).toHaveBeenCalledWith({
@@ -340,6 +287,7 @@ describe('Graph', function() {
         target: otherNode,
         distance: edgeDistance,
       });
+      expect(editMode.deactivate).toNotHaveBeenCalled();
       expect(adapter.addNode).toNotHaveBeenCalled();
       expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
     });
@@ -349,10 +297,9 @@ describe('Graph', function() {
         id: 1231,
         'isNode.returnValue': true,
       });
-      adapter.getClickTarget.andReturn(originalNode);
-      adapter.getNodes.andReturn([]);
+      activateEditMode(originalNode);
 
-      targetElement.clickAndHold(actionQueue, 100);
+      adapter.getClickTarget.andReturn(originalNode);
       targetElement.click();
 
       expect(adapter.addEdge).toNotHaveBeenCalled();
@@ -365,10 +312,8 @@ describe('Graph', function() {
         id: 1231,
         'isNode.returnValue': true,
       });
-      adapter.getClickTarget.andReturn(originalNode);
-      adapter.getNodes.andReturn([]);
+      activateEditMode(originalNode);
 
-      targetElement.clickAndHold(actionQueue, 100);
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.click();
 
@@ -377,105 +322,33 @@ describe('Graph', function() {
     });
 
     it('exits edit mode when clicking elsewhere', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
-      adapter.getNodes.andReturn([]);
-
-      targetElement.clickAndHold(actionQueue, 100);
-      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
-
-      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
-
-      expect(asLongAs()).toBe(true);
+      activateEditMode(new graphelements.Node({ id: 20 }));
 
       adapter.getClickTarget.andReturn(graphelements.NONE);
       targetElement.click();
 
-      expect(asLongAs()).toBe(false);
+      expect(editMode.deactivate).toHaveBeenCalled();
     });
 
     it('exits edit mode when clicking on the same node', function() {
       var node = new graphelements.Node({ id: 21 });
+      activateEditMode(node);
+
       adapter.getClickTarget.andReturn(node);
-      adapter.getNodes.andReturn([]);
-
-      targetElement.clickAndHold(actionQueue, 100);
-      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
-
-      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
-
-      expect(asLongAs()).toBe(true);
 
       targetElement.click();
 
-      expect(asLongAs()).toBe(false);
+      expect(editMode.deactivate).toHaveBeenCalled();
     });
 
 
     it('does not exit edit mode when clicking on another node', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 21 }));
-      adapter.getNodes.andReturn([]);
-
-      targetElement.clickAndHold(actionQueue, 100);
-
-      expect(alternatingAnimation.asLongAs).toHaveBeenCalled();
-      var asLongAs = alternatingAnimation.asLongAs.calls[0].arguments[0];
-
-      expect(asLongAs()).toBe(true);
+      activateEditMode(new graphelements.Node({ id: 21 }));
 
       adapter.getClickTarget.andReturn(new graphelements.Node({ id: 23 }));
       targetElement.click();
 
-      expect(asLongAs()).toBe(true);
-    });
-
-    it('sets nodes back to original color when exiting', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node({
-        id: 23,
-      }));
-      var otherNodes = [
-        new graphelements.Node({
-          id: 67,
-          color: '#678901',
-        }),
-        new graphelements.Node({
-          id: 23,
-          color: '#123456',
-        }),
-      ];
-      adapter.getNodes.andReturn(otherNodes);
-
-      targetElement.clickAndHold(actionQueue, 100);
-
-      var setNeon = animator.alternate.calls[0].arguments[0];
-      setNeon();
-
-      adapter.getClickTarget.andReturn(graphelements.NONE);
-      targetElement.click();
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[0], '#678901');
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(otherNodes[1], '#123456');
-    });
-
-    it('does not set original color if color was never changed', function() {
-      adapter.getClickTarget.andReturn(new graphelements.Node({
-        id: 23,
-      }));
-      var otherNodes = [
-        new graphelements.Node({
-          id: 67,
-          color: '#678901',
-        }),
-        new graphelements.Node({
-          id: 23,
-          color: '#123456',
-        }),
-      ];
-      adapter.getNodes.andReturn(otherNodes);
-
-      targetElement.clickAndHold(actionQueue, 100);
-
-      adapter.getClickTarget.andReturn(graphelements.NONE);
-      targetElement.click();
-      expect(adapter.setNodeColor).toNotHaveBeenCalled();
+      expect(editMode.deactivate).toNotHaveBeenCalled();
     });
   });
 
@@ -489,6 +362,7 @@ describe('Graph', function() {
     it('resets the state', function() {
       graph.reset();
       expect(state.reset).toHaveBeenCalled();
+      expect(editMode.deactivate).toHaveBeenCalled();
     });
 
     it('removes all the nodes', function() {
