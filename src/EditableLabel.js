@@ -1,24 +1,29 @@
 var ModeSwitch = require('./ModeSwitch');
 var BlockText = require('./BlockText');
 var TextBox = require('./TextBox');
+var LOG = require('./Logger');
 
 function EditableLabel(opts) {
   if (opts) {
     this.componentManager = opts.componentManager;
     this.text = opts.text;
     this.pinTo = opts.pinTo;
-    this.modeSwitch = new ModeSwitch();
+    this.modeSwitch = new ModeSwitch({
+      name: 'EditableLabel({ text: \'' + this.text + '\'})'
+    });
     this.onChange = opts.onChange || function() {};
   }
 }
 
 EditableLabel.prototype = {
   display: function() {
+    LOG.debug('EditableLabel: displaying text', this.text);
     this._validate();
 
     this.modeSwitch.exit('edit', (function(editState) {
       this.text = editState.component.getText();
       editState.component.remove();
+      LOG.debug('EditableLabel: got text from input component', this.text);
     }).bind(this));
 
     if (this.text) {
@@ -29,6 +34,7 @@ EditableLabel.prototype = {
           pinTo: this.pinTo,
         });
         this.onChange(this.text);
+        LOG.debug('EditableLabel: displaying component with text', this.text);
         return { component: component };
       }).bind(this));
     }
@@ -36,10 +42,12 @@ EditableLabel.prototype = {
   },
 
   edit: function() {
+    LOG.debug('EditableLabel: editing text', this.text);
     this._validate();
     this.modeSwitch.exit('display', (function(displayState) {
       this.text = displayState.component.getText();
       displayState.component.remove();
+      LOG.debug('EditableLabel: closed display component');
     }).bind(this));
 
     this.modeSwitch.enter('edit', (function() {
@@ -48,6 +56,7 @@ EditableLabel.prototype = {
         constructorArgs: { text: this.text },
         pinTo: this.pinTo,
       });
+      LOG.debug('EditableLabel: opened edit component');
       return { component: component };
     }).bind(this));
     return this;

@@ -16,6 +16,7 @@ function Component(options) {
     this.mouseTouchSwitch = new ModeSwitch({
       actionQueue: this.actionQueue,
       timeout: 500,
+      name: 'mouseTouchSwitch',
     });
   }
 
@@ -97,6 +98,7 @@ Component.prototype = {
       f(this);
     }).bind(this));
     this.element.remove();
+    LOG.debug('closed component', this);
   },
 
   _validateOptions: function() {

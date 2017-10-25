@@ -1,5 +1,6 @@
 var ModeSwitch = require('./ModeSwitch');
 var colors = require('./colors');
+var LOG = require('./Logger');
 
 
 function EditMode(opts) {
@@ -7,7 +8,9 @@ function EditMode(opts) {
   this.animator = opts && opts.animator;
   this.alternateInterval = (opts && opts.alternateInterval) || 100;
   this.labelSet = opts && opts.labelSet;
-  this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch();
+  this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch({
+    name: 'editMode',
+  });
   this.modeSwitch.enter('display');
 }
 
@@ -15,6 +18,7 @@ function EditMode(opts) {
 EditMode.prototype = {
 
   activate: function(node) {
+    LOG.info('EditMode: activating');
     this._validate();
     this.modeSwitch
       .exit('display')
@@ -37,20 +41,26 @@ EditMode.prototype = {
           .play();
 
         this.labelSet.edit(node);
-        return {
+
+        var editState = {
           node: node,
           animation: animation,
           otherNodes: otherNodes,
           originalColors: originalColors,
         };
+        LOG.debug('EditMode: activated', editState);
+        return editState;
       }).bind(this));
   },
 
   deactivate: function() {
+    LOG.debug('EditMode: deactvating');
     this._validate();
     this.modeSwitch
       .exit('edit', this._cleanUpEditState.bind(this))
-      .enter('display');
+      .enter('display', function() {
+        LOG.debug('EditMode: deactvated');
+      });
   },
 
   perform: function(opts) {
@@ -79,6 +89,7 @@ EditMode.prototype = {
   },
 
   _cleanUpEditState: function(editState) {
+    LOG.debug('cleaning up edit mode state', editState);
     editState.animation.stop();
     this.labelSet.display(editState.node);
     this._setOriginalColors(editState.otherNodes, editState.originalColors);

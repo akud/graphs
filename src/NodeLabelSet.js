@@ -1,5 +1,6 @@
 var Position = require('./Position');
 var EditableLabel = require('./EditableLabel');
+var LOG = require('./Logger');
 
 function NodeLabelSet(opts) {
   this.componentManager = opts && opts.componentManager;
@@ -19,13 +20,25 @@ NodeLabelSet.prototype = {
   },
 
   edit: function(node) {
-    var label = this.labels[node.id] || this._createLabel(node);
-    label.edit();
+    LOG.debug('LabelSet: editing label for node ' + node.id);
+    this._getOrCreateLabel(node).edit();
   },
 
   display: function(node) {
-    var label = this.labels[node.id] || this._createLabel(node);
-    label.display();
+    LOG.debug('LabelSet: displaying label for node ' + node.id);
+    this._getOrCreateLabel(node).display();
+  },
+
+  _getOrCreateLabel: function(node) {
+    var label;
+    if (this.labels[node.id]) {
+      label = this.labels[node.id];
+      LOG.info('reusing existing label for node ' + node.id, label);
+    } else {
+      label = this._createLabel(node);
+      LOG.info('created new label for node ' + node.id, label);
+    }
+    return label;
   },
 
   _createLabel: function(node, label) {
