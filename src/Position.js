@@ -18,23 +18,28 @@ function Position(opts) {
 
 
 Position.prototype = {
-  getStyle: function() {
+  getStyle: function(opts) {
+    opts = Object.assign({
+      width: 0,
+      height: 0,
+    }, opts);
+
     if (this.topLeft) {
         return 'position: absolute;' +
         ' left: ' + this.topLeft.x + ';' +
         ' top: ' + this.topLeft.y + ';';
     } else if (this.topRight) {
       return 'position: absolute;' +
-        ' right: ' + this.topRight.x + ';' +
+        ' left: ' + (this.topRight.x - opts.width) + ';' +
         ' top: ' + this.topRight.y + ';';
     } else if (this.bottomLeft) {
       return 'position: absolute;' +
         ' left: ' + this.bottomLeft.x + ';' +
-        ' bottom: ' + this.bottomLeft.y + ';';
+        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
     } else if (this.bottomRight) {
       return 'position: absolute;' +
-        ' right: ' + this.bottomRight.x + ';' +
-        ' bottom: ' + this.bottomRight.y + ';';
+        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
+        ' top: ' + (this.bottomRight.y - opts.height) + ';';
     } else {
       throw new Error('invalid position object: ' + this);
     }

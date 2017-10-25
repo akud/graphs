@@ -16,7 +16,10 @@ describe('ComponentManager', function() {
 
   beforeEach(function() {
     body = createSpyObjectWith('insertBefore', 'firstChild');
-    element = new MockDomNode();
+    element = new MockDomNode({
+      'offsetWidth': 123,
+      'offsetHeight': 456,
+    });
     document = createSpyObjectWith({
       'createElement.returnValue': element,
       body: body,
@@ -79,12 +82,24 @@ describe('ComponentManager', function() {
 
       actionQueue.step(actionQueue.mainQueueInterval);
       expect(element.style).toEqual('position1');
+      expect(p1.getStyle).toHaveBeenCalledWith({
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+      });
 
       actionQueue.step(actionQueue.mainQueueInterval);
       expect(element.style).toEqual('position2');
+      expect(p2.getStyle).toHaveBeenCalledWith({
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+      });
 
       actionQueue.step(actionQueue.mainQueueInterval);
       expect(element.style).toEqual('position3');
+      expect(p3.getStyle).toHaveBeenCalledWith({
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+      });
 
       expect(pinTo.calls.length).toBe(3);
     });

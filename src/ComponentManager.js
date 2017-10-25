@@ -29,7 +29,10 @@ ComponentManager.prototype = {
     }
     if (typeof options.pinTo === 'function') {
       var positionTracker = this.actionQueue.periodically((function() {
-        element.style = options.pinTo().getStyle();
+        element.style = options.pinTo().getStyle({
+          width: element.offsetWidth,
+          height: element.offsetHeight,
+        });
       }).bind(this));
       component.onClose(positionTracker.cancel.bind(positionTracker));
     }
