@@ -29,6 +29,7 @@ function Component(options) {
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
+  handleEnter: function() {},
 
   attachTo: function(targetElement) {
     this._validateOptions();
@@ -64,6 +65,14 @@ Component.prototype = {
         this._handleMouseDown(event);
         return { lastDownEvent: event };
       }).bind(this));
+    }).bind(this));
+
+    targetElement.addEventListener('keyup', (function(event) {
+      event = utils.normalizeEvent(event);
+      LOG.debug('keyup', event);
+      if (event.keyCode === 13) {
+        this.handleEnter(event);
+      }
     }).bind(this));
 
     if (this.getGeneratedMarkup()) {
@@ -128,6 +137,7 @@ Component.prototype = {
       }
     }).bind(this));
   },
+
 };
 
 module.exports = Component;

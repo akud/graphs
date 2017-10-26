@@ -127,6 +127,25 @@ describe('Component', function() {
     });
   });
 
+  describe('enter event', function() {
+    beforeEach(function() {
+      component.attachTo(element);
+      spyOn(component, 'handleEnter');
+    });
+
+    it('calls handleEnter', function() {
+      expect(component.handleEnter).toNotHaveBeenCalled();
+      element.pressEnter();
+      expect(component.handleEnter).toHaveBeenCalled();
+    });
+
+    it('does not call handleEnter on other key presses', function() {
+      expect(component.handleEnter).toNotHaveBeenCalled();
+      element.pressKey(14);
+      expect(component.handleEnter).toNotHaveBeenCalled();
+    });
+  });
+
   describe('close', function() {
     beforeEach(function() {
       component.attachTo(element);

@@ -58,7 +58,41 @@ describe('EditableLabel', function() {
       editableLabel.edit();
       expect(componentManager.insertComponent).toHaveBeenCalledWith({
         class: TextBox,
-        constructorArgs: { text: 'foobar' },
+        constructorArgs: {
+         text: 'foobar',
+         onSave: matchers.any(Function),
+        },
+        pinTo: pinTo,
+      });
+    });
+
+    it('enters display mode when the edit component is saved', function() {
+      var editComponent = createSpyObjectWith('getText', 'close');
+      editComponent.getText.andReturn('edited text');
+      componentManager.insertComponent.andReturn(editComponent);
+      editableLabel.text = 'foobar';
+      editableLabel.edit();
+      expect(componentManager.insertComponent).toHaveBeenCalledWith({
+        class: TextBox,
+        constructorArgs: {
+         text: 'foobar',
+         onSave: matchers.functionThatHasSideEffect({
+          before: function() {
+            expect(componentManager.insertComponent).toNotHaveBeenCalledWith({
+              class: BlockText,
+              constructorArgs: { text: 'edited text' },
+              pinTo: pinTo,
+            });
+          },
+          after: function() {
+            expect(componentManager.insertComponent).toHaveBeenCalledWith({
+              class: BlockText,
+              constructorArgs: { text: 'edited text' },
+              pinTo: pinTo,
+            });
+          },
+         }),
+        },
         pinTo: pinTo,
       });
     });
