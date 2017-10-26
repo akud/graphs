@@ -7,10 +7,41 @@ var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
 var ResetButton = require('./src/ResetButton');
+var EditMode = require('./src/EditMode');
+var NodeLabelSet = require('./src/NodeLabelSet');
+var ComponentManager = require('./src/ComponentManager');
 
 require('./src/Logger').level = global.logLevel;
 
+global.adapter = new GreulerAdapter(greuler);
+
 var actionQueue = new ActionQueue();
+var componentServices = {
+  actionQueue: actionQueue,
+};
+var componentManager = new ComponentManager({
+  actionQueue: actionQueue,
+  componentServices: componentServices,
+  document: document,
+});
+
+var state = new UrlState({
+  baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
+  setUrl: window.history.replaceState.bind(window.history, {}, ''),
+  urlSearchParams: new URLSearchParams(window.location.search),
+});
+
+var labelSet = new NodeLabelSet({
+  componentManager: componentManager,
+  state: state,
+});
+
+var editMode = new EditMode({
+  adapter: adapter,
+  animator: new Animator({ actionQueue: actionQueue }),
+  labelSet: labelSet,
+  alternateInterval: 250,
+});
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -23,24 +54,21 @@ if (width < 1000) {
   edgeDistance = 200;
 }
 
-global.adapter = new GreulerAdapter(greuler);
-global.graph = new Graph(
+
+global.graph = new Graph(Object.assign(
   {
-    actionQueue: actionQueue,
     adapter: adapter,
-    animator: new Animator({ actionQueue: actionQueue }),
-    state: new UrlState({
-      baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
-      setUrl: window.history.replaceState.bind(window.history, {}, ''),
-      urlSearchParams: new URLSearchParams(window.location.search),
-    }),
+    editMode: editMode,
+    labelSet: labelSet,
+    state: state,
     width: width,
     height: height,
     nodeSize: nodeSize,
     edgeDistance: edgeDistance,
     nodeAreaFuzzFactor: 0.1,
-    editModeAlternateInterval: 250,
-  });
+  },
+  componentServices
+));
 
 global.resetButton = new ResetButton({
   actionQueue: actionQueue,
@@ -54,11 +82,14 @@ global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Graph":6,"./src/GreulerAdapter":7,"./src/Logger":8,"./src/ResetButton":10,"./src/UrlState":11}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/ComponentManager":7,"./src/EditMode":8,"./src/Graph":10,"./src/GreulerAdapter":11,"./src/Logger":12,"./src/NodeLabelSet":14,"./src/ResetButton":16,"./src/UrlState":18}],2:[function(require,module,exports){
 (function (global){
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
   this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
+  this.actionInterval = (options && options.actionInterval) || 10;
+  this.periodicActions = [];
+  this.hasStartedPeriodicActions = false;
 }
 
 ActionQueue.prototype = {
@@ -75,6 +106,32 @@ ActionQueue.prototype = {
     };
   },
 
+  periodically: function(fn) {
+    var periodicActions = this.periodicActions;
+    periodicActions.push(fn);
+
+    if(!this.hasStartedPeriodicActions) {
+      this._startPeriodicActions();
+    }
+
+    return {
+      cancel: function() {
+        periodicActions.splice(
+          periodicActions.indexOf(fn),
+          1
+        );
+      },
+    };
+  },
+
+  _startPeriodicActions: function() {
+      var queueFn = (function() {
+        this.periodicActions.forEach(function(fn) { fn(); });
+        this.setTimeout(queueFn, this.actionInterval);
+      }).bind(this);
+      queueFn();
+      this.hasStartedPeriodicActions = true;
+  },
 };
 
 module.exports = ActionQueue;
@@ -127,26 +184,50 @@ AlternatingAnimation.prototype = {
       }
     }).bind(this);
     execute();
+    return this;
+  },
+
+  stop: function() {
+    return this.asLongAs(function() { return false; });
   },
 };
 
 module.exports = Animator;
 
 },{}],4:[function(require,module,exports){
+var Component = require('./Component');
+
+function BlockText(opts) {
+  Component.apply(this, arguments);
+  this.text = opts && opts.text;
+}
+
+BlockText.prototype = Object.assign(new Component(), {
+  getGeneratedMarkup: function() {
+    return this.text && ('<p>'  + this.text + '</p>');
+  },
+});
+
+module.exports = BlockText;
+
+},{"./Component":6}],5:[function(require,module,exports){
 function BoundingBox(dimensions) {
-  this.dimensions = dimensions;
+  this.dimensions = dimensions || {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  };
 }
 
 BoundingBox.prototype = {
 
   expandBy: function(factor) {
-    var width = this.dimensions.right - this.dimensions.left;
-    var height = this.dimensions.bottom - this.dimensions.top;
     return new BoundingBox({
-      left: this.dimensions.left - width*factor,
-      right: this.dimensions.right + width*factor,
-      top: this.dimensions.top - height*factor,
-      bottom: this.dimensions.bottom + width*factor,
+      left: this.dimensions.left - this.getWidth()*factor,
+      right: this.dimensions.right + this.getWidth()*factor,
+      top: this.dimensions.top - this.getHeight()*factor,
+      bottom: this.dimensions.bottom + this.getHeight()*factor,
     });
   },
 
@@ -165,11 +246,56 @@ BoundingBox.prototype = {
 
   },
 
+  getCenter: function() {
+    return {
+      x: this.dimensions.left + this.getWidth() / 2,
+      y: this.dimensions.top + this.getHeight() / 2,
+    };
+  },
+
+  getTopLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getTopRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getBottomLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getBottomRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getWidth: function() {
+    return this.dimensions.right - this.dimensions.left;
+  },
+
+  getHeight: function() {
+    return this.dimensions.bottom - this.dimensions.top;
+  },
+
 };
 
 module.exports = BoundingBox;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
 var LOG = require('./Logger');
@@ -188,34 +314,35 @@ function Component(options) {
     this.mouseTouchSwitch = new ModeSwitch({
       actionQueue: this.actionQueue,
       timeout: 500,
+      name: 'mouseTouchSwitch',
     });
   }
 
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
   this.isInClickAndHold = false;
+  this.closeListeners = [];
 }
 
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
 
-
   attachTo: function(targetElement) {
     this._validateOptions();
-    var lastDownEvent = null;
+    this.element = targetElement;
 
     targetElement.addEventListener('mouseup', (function(event) {
       LOG.debug('mouseup', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('mouse', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('mouse', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchend', (function(event) {
       LOG.debug('touchend', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('touch', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('touch', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
@@ -223,21 +350,33 @@ Component.prototype = {
       event = utils.normalizeEvent(event);
       LOG.debug('mousedown', event);
       this.mouseTouchSwitch.enter('mouse', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchstart', (function(event) {
-      event - utils.normalizeEvent(event);
+      event = utils.normalizeEvent(event);
       LOG.debug('touchstart', event);
       this.mouseTouchSwitch.enter('touch', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 
+    if (this.getGeneratedMarkup()) {
+      targetElement.innerHTML = this.getGeneratedMarkup();
+    }
+
     this.doAttach(targetElement);
+  },
+
+  /**
+   * subclasses can override to indicate initial markup
+   * to be set on the target element
+   */
+  getGeneratedMarkup: function() {
+    return null;
   },
 
   /**
@@ -245,6 +384,19 @@ Component.prototype = {
    */
   doAttach: function(element) {
 
+  },
+
+  onClose: function(listener) {
+    this.closeListeners.push(listener);
+    return this;
+  },
+
+  close: function() {
+    this.closeListeners.forEach((function(f) {
+      f(this);
+    }).bind(this));
+    this.element.remove();
+    LOG.debug('closed component', this);
   },
 
   _validateOptions: function() {
@@ -278,7 +430,248 @@ Component.prototype = {
 
 module.exports = Component;
 
-},{"./Logger":8,"./ModeSwitch":9,"./utils":14}],6:[function(require,module,exports){
+},{"./Logger":12,"./ModeSwitch":13,"./utils":21}],7:[function(require,module,exports){
+var utils = require('./utils');
+var Position = require('./Position');
+var Component = require('./Component');
+
+function ComponentManager(options) {
+  this.document = options && options.document;
+  this.actionQueue = options && options.actionQueue;
+  this.componentServices = options && options.componentServices;
+}
+
+ComponentManager.prototype = {
+  insertComponent: function(options) {
+    options = Object.assign({
+      position: new Position({ topLeft: { x: 0, y: 0 }}),
+      pinTo: undefined,
+      class: Component,
+      constructorArgs: undefined,
+    }, options);
+
+    var component = new options.class(Object.assign(
+      {},
+      this.componentServices,
+      options.constructorArgs
+    ));
+
+    var element = this.document.createElement('div');
+    if (options.position) {
+      element.style = options.position.getStyle();
+    }
+    if (typeof options.pinTo === 'function') {
+      var positionTracker = this.actionQueue.periodically((function() {
+        element.style = options.pinTo().getStyle({
+          width: element.offsetWidth,
+          height: element.offsetHeight,
+        });
+      }).bind(this));
+      component.onClose(positionTracker.cancel.bind(positionTracker));
+    }
+    this.document.body.insertBefore(element, this.document.body.firstChild);
+    component.attachTo(element);
+    return component;
+  },
+};
+
+module.exports = ComponentManager;
+
+},{"./Component":6,"./Position":15,"./utils":21}],8:[function(require,module,exports){
+var ModeSwitch = require('./ModeSwitch');
+var colors = require('./colors');
+var LOG = require('./Logger');
+
+
+function EditMode(opts) {
+  this.adapter = opts && opts.adapter;
+  this.animator = opts && opts.animator;
+  this.alternateInterval = (opts && opts.alternateInterval) || 100;
+  this.labelSet = opts && opts.labelSet;
+  this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch({
+    name: 'editMode',
+  });
+  this.modeSwitch.enter('display');
+}
+
+
+EditMode.prototype = {
+
+  activate: function(node) {
+    LOG.info('EditMode: activating');
+    this._validate();
+    this.modeSwitch
+      .exit('display')
+      .exit('edit', this._cleanUpEditState.bind(this))
+      .enter('edit', (function() {
+        var otherNodes = this.adapter.getNodes(function(n) {
+          return n.id !== node.id;
+        });
+        var originalColors = otherNodes.reduce(function(accum, node) {
+          accum[node.id] = node.color;
+          return accum;
+        }, {});
+
+        var animation = this.animator
+          .alternate(
+            this._setNeon.bind(this, otherNodes),
+            this._setOriginalColors.bind(this, otherNodes, originalColors)
+          )
+          .every(this.alternateInterval)
+          .play();
+
+        this.labelSet.edit(node);
+
+        var editState = {
+          node: node,
+          animation: animation,
+          otherNodes: otherNodes,
+          originalColors: originalColors,
+        };
+        LOG.debug('EditMode: activated', editState);
+        return editState;
+      }).bind(this));
+  },
+
+  deactivate: function() {
+    LOG.debug('EditMode: deactvating');
+    this._validate();
+    this.modeSwitch
+      .exit('edit', this._cleanUpEditState.bind(this))
+      .enter('display', function() {
+        LOG.debug('EditMode: deactvated');
+      });
+  },
+
+  perform: function(opts) {
+    opts = Object.assign({
+      ifActive: function() {},
+      ifNotActive: function() {},
+    }, opts);
+    this._validate();
+
+    this.modeSwitch.ifActive({
+      edit: function(editState) { opts.ifActive(editState.node); },
+      display: opts.ifNotActive,
+    });
+  },
+
+  _setNeon: function(otherNodes) {
+    otherNodes.forEach((function(n) {
+      this.adapter.setNodeColor(n, colors.NEON);
+    }).bind(this));
+  },
+
+  _setOriginalColors: function(otherNodes, originalColors) {
+    otherNodes.forEach((function(n) {
+      this.adapter.setNodeColor(n, originalColors[n.id]);
+    }).bind(this));
+  },
+
+  _cleanUpEditState: function(editState) {
+    LOG.debug('cleaning up edit mode state', editState);
+    editState.animation.stop();
+    this.labelSet.display(editState.node);
+    this._setOriginalColors(editState.otherNodes, editState.originalColors);
+  },
+
+  _validate: function() {
+    if (!this.adapter) {
+      throw new Error('adapter is required');
+    }
+    if (!this.animator) {
+      throw new Error('animator is required');
+    }
+    if (!this.modeSwitch) {
+      throw new Error('modeSwitch is required');
+    }
+  }
+
+};
+
+module.exports = EditMode;
+
+},{"./Logger":12,"./ModeSwitch":13,"./colors":19}],9:[function(require,module,exports){
+var ModeSwitch = require('./ModeSwitch');
+var BlockText = require('./BlockText');
+var TextBox = require('./TextBox');
+var LOG = require('./Logger');
+
+function EditableLabel(opts) {
+  if (opts) {
+    this.componentManager = opts.componentManager;
+    this.text = opts.text;
+    this.pinTo = opts.pinTo;
+    this.modeSwitch = new ModeSwitch({
+      name: 'EditableLabel({ text: \'' + this.text + '\'})'
+    });
+    this.onChange = opts.onChange || function() {};
+  }
+}
+
+EditableLabel.prototype = {
+  display: function() {
+    LOG.debug('EditableLabel: displaying text', this.text);
+    this._validate();
+
+    this.modeSwitch.exit('edit', (function(editState) {
+      this.text = editState.component.getText();
+      editState.component.close();
+      LOG.debug('EditableLabel: got text from input component', this.text);
+    }).bind(this));
+
+    if (this.text) {
+      this.modeSwitch.enter('display', (function() {
+        var component = this.componentManager.insertComponent({
+          class: BlockText,
+          constructorArgs: { text: this.text },
+          pinTo: this.pinTo,
+        });
+        this.onChange(this.text);
+        LOG.debug('EditableLabel: displaying component with text', this.text);
+        return { component: component };
+      }).bind(this));
+    }
+    return this;
+  },
+
+  edit: function() {
+    LOG.debug('EditableLabel: editing text', this.text);
+    this._validate();
+    this.modeSwitch.exit('display', (function(displayState) {
+      displayState.component.close();
+      LOG.debug('EditableLabel: closed display component');
+    }).bind(this));
+
+    this.modeSwitch.enter('edit', (function() {
+       var component = this.componentManager.insertComponent({
+        class: TextBox,
+        constructorArgs: { text: this.text },
+        pinTo: this.pinTo,
+      });
+      LOG.debug('EditableLabel: opened edit component');
+      return { component: component };
+    }).bind(this));
+    return this;
+  },
+
+  _validate: function() {
+    if(!this.componentManager) {
+      throw new Error('componentManager is required');
+    }
+    if(!this.modeSwitch) {
+      throw new Error('modeSwitch is required');
+    }
+  },
+};
+
+EditableLabel.Factory = {
+  create: function(opts) { return new EditableLabel(opts); },
+};
+
+module.exports = EditableLabel;
+
+},{"./BlockText":4,"./Logger":12,"./ModeSwitch":13,"./TextBox":17}],10:[function(require,module,exports){
 var Component = require('./Component');
 var colors = require('./colors');
 var utils = require('./utils');
@@ -299,13 +692,14 @@ function Graph(options) {
   if (options) {
     this.adapter = options.adapter;
     this.animator = options.animator;
+    this.labelSet = options.labelSet;
+    this.editMode = options.editMode;
     this.state = options.state;
     this.width = options.width;
     this.height = options.height;
     this.nodeSize = options.nodeSize;
     this.edgeDistance = options.edgeDistance;
     this.nodeAreaFuzzFactor = options.nodeAreaFuzzFactor;
-    this.editModeAlternateInterval = options.editModeAlternateInterval || 100;
   }
   this._setInitialState();
 }
@@ -313,12 +707,13 @@ function Graph(options) {
 
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
+    var persistedNodes = this.state.retrievePersistedNodes();
     this.adapter.initialize(
       targetElement,
       utils.optional({
         width: this.width,
         height: this.height,
-        nodes: this.state.retrievePersistedNodes().map((function(n) {
+        nodes: persistedNodes.map((function(n) {
           return utils.optional({
             id: n.id,
             color: n.color || COLOR_ORDER[0],
@@ -330,6 +725,13 @@ Graph.prototype = Object.assign(new Component(), {
         edgeDistance: this.edgeDistance,
       })
     );
+    var labelSetData = persistedNodes.map((function(n) {
+      return {
+        node: this.adapter.getNode(n.id),
+        label: n.label,
+      };
+    }).bind(this));
+    this.labelSet.initialize(labelSetData);
   },
 
   handleClick: function(event) {
@@ -337,35 +739,36 @@ Graph.prototype = Object.assign(new Component(), {
       event, this.nodeAreaFuzzFactor
     );
 
-    if (this._isInEditMode()) {
-      if (clickTarget.isNode() &&
-          clickTarget.id !== this.currentlyEditedNode.id) {
-        this.adapter.addEdge({
-          source: this.currentlyEditedNode,
-          target: clickTarget,
-          distance: this.edgeDistance,
-        });
-        this.state.persistEdge(this.currentlyEditedNode.id, clickTarget.id);
-      } else {
-        this._exitEditMode();
-      }
-    } else {
-      if (clickTarget.isNode()) {
-        this._setNextColor(clickTarget);
-      } else {
-        this._createNode();
-      }
-    }
+    this.editMode.perform({
+      ifActive: (function(currentlyEditedNode) {
+        if (clickTarget.isNode() && clickTarget.id !== currentlyEditedNode.id) {
+           this.adapter.addEdge({
+            source: currentlyEditedNode,
+            target: clickTarget,
+            distance: this.edgeDistance,
+          });
+          this.state.persistEdge(currentlyEditedNode.id, clickTarget.id);
+        } else {
+          this.editMode.deactivate();
+        }
+      }).bind(this),
+
+      ifNotActive: (function() {
+        if (clickTarget.isNode()) {
+          this._setNextColor(clickTarget);
+        } else {
+          this._createNode();
+        }
+      }).bind(this)
+    });
   },
 
   handleClickAndHold: function(event) {
-    if (!this._isInEditMode()) {
-      var clickTarget = this.adapter.getClickTarget(
-        event, this.nodeAreaFuzzFactor
-      );
-      if (clickTarget.isNode()) {
-        this._enterEditMode(clickTarget);
-      }
+    var clickTarget = this.adapter.getClickTarget(
+      event, this.nodeAreaFuzzFactor
+    );
+    if (clickTarget.isNode()) {
+      this.editMode.activate(clickTarget);
     }
   },
 
@@ -375,14 +778,11 @@ Graph.prototype = Object.assign(new Component(), {
         this.adapter.removeNode(node);
       }).bind(this));
 
-      this.state.retrievePersistedNodes().forEach((function(node) {
-        this.adapter.removeNode(node);
-      }).bind(this));
-
     }).bind(this));
 
     this._setInitialState();
     this.state.reset();
+    this.editMode.deactivate();
   },
 
   _setNextColor: function(node) {
@@ -390,7 +790,7 @@ Graph.prototype = Object.assign(new Component(), {
     var newColor = COLOR_ORDER[colorIndex];
     this.adapter.setNodeColor(node, newColor);
     this.colors[node.id] = colorIndex;
-    this.state.persistNodeColor(node.id, newColor);
+    this.state.persistNode({ id: node.id, color: newColor });
   },
 
   _createNode: function() {
@@ -411,77 +811,30 @@ Graph.prototype = Object.assign(new Component(), {
     return (colorIndex + 1) % COLOR_ORDER.length;
   },
 
-  _isInEditMode: function() {
-    return !!this.currentlyEditedNode;
-  },
-
-  _enterEditMode: function(node) {
-    if (!this.animator) {
-      throw new Error('adapter is not present');
-    }
-    this.currentlyEditedNode = node;
-
-    this.editModeOtherNodes = this.adapter.getNodes(function(n) {
-      return n.id !== node.id;
-    });
-
-    this.animator
-      .alternate(
-        this._setNeon.bind(this),
-        this._setOriginalColor.bind(this)
-      )
-      .every(this.editModeAlternateInterval)
-      .asLongAs(this._isInEditMode.bind(this))
-      .play();
-  },
-
-  _exitEditMode: function() {
-    this.currentlyEditedNode = null;
-    this._setOriginalColor();
-    this.editModeOriginalColors = {};
-  },
-
   _validateOptions: function() {
     Component.prototype._validateOptions.call(this, arguments);
     if (!this.adapter) {
       throw new Error('adapter is not present');
     }
-    if (!this.animator) {
-      throw new Error('animator is not present');
+    if (!this.editMode) {
+      throw new Error('edit mode is not present');
     }
     if (!this.state) {
       throw new Error('state is not present');
     }
-  },
-
-  _setNeon: function() {
-    this.editModeOtherNodes.forEach((function(n) {
-      if (!this.editModeOriginalColors[n.id]) {
-        this.editModeOriginalColors[n.id] = n.color;
-      }
-      this.adapter.setNodeColor(n, colors.NEON);
-    }).bind(this));
-  },
-
-  _setOriginalColor: function() {
-    this.editModeOtherNodes.forEach((function(n) {
-      if (this.editModeOriginalColors[n.id]) {
-        this.adapter.setNodeColor(n, this.editModeOriginalColors[n.id]);
-      }
-    }).bind(this));
+    if (!this.labelSet) {
+      throw new Error('labelSet is not present');
+    }
   },
 
   _setInitialState: function() {
     this.colors = {};
-    this.currentlyEditedNode = null;
-    this.editModeOtherNodes = [];
-    this.editModeOriginalColors = {};
   },
 });
 
 module.exports = Graph;
 
-},{"./Component":5,"./Logger":8,"./colors":12,"./utils":14}],7:[function(require,module,exports){
+},{"./Component":6,"./Logger":12,"./colors":19,"./utils":21}],11:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var BoundingBox = require('./BoundingBox');
@@ -546,6 +899,10 @@ GreulerAdapter.prototype = {
     return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
+  getNode: function(nodeId) {
+    return this.getNodes(function(n) { return n.id === nodeId; })[0];
+  },
+
   getNodes: function(filter) {
     filter = filter || function() { return true; };
     return this.graph.getNodesByFn(filter).map((function(node) {
@@ -555,6 +912,7 @@ GreulerAdapter.prototype = {
         realNode: node,
         domElement: domElement,
         color: domElement.getAttribute('fill'),
+        getCurrentBoundingBox: this._getBoundingBox.bind(this, node),
       });
     }).bind(this));
   },
@@ -583,27 +941,20 @@ GreulerAdapter.prototype = {
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {
     nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
     var point = {
       x: event.clientX,
       y: event.clientY,
     };
-    var matchingNodes = this.getNodes(function(node) {
-      return new BoundingBox({
-        left: node.bounds.x,
-        right: node.bounds.X,
-        top: node.bounds.y,
-        bottom: node.bounds.Y
-      })
+    var matchingNodes = this.getNodes((function(node) {
+      return this._getBoundingBox(node)
         .expandBy(nodeAreaFuzzFactor)
-        .translate({ x: graphElementBounds.left, y: graphElementBounds.top })
         .contains(point);
-    });
+    }).bind(this));
 
     if (matchingNodes && matchingNodes.length) {
       matchingNodes.sort(function(a, b) {
-        var distanceToA = utils.distance(center(a.realNode), point);
-        var distanceToB = utils.distance(center(b.realNode), point);
+        var distanceToA = utils.distance(a.getCenter(), point);
+        var distanceToB = utils.distance(b.getCenter(), point);
         return distanceToA - distanceToB;
       });
       return matchingNodes[0];
@@ -617,21 +968,25 @@ GreulerAdapter.prototype = {
       this.instance = this.instance.update();
     }
   },
+
+  _getBoundingBox: function(node) {
+    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
+    return new BoundingBox({
+      left: node.bounds.x,
+      right: node.bounds.X,
+      top: node.bounds.y,
+      bottom: node.bounds.Y,
+    })
+    .translate({
+      x: graphElementBounds.left,
+      y: graphElementBounds.top
+    });
+  },
 };
-
-
-function center(node) {
-  var width = node.bounds.X - node.bounds.x;
-  var height = node.bounds.Y - node.bounds.y;
-  return {
-    x: node.bounds.x + (width / 2),
-    y: node.bounds.y + (height / 2),
-  };
-}
 
 module.exports = GreulerAdapter;
 
-},{"./BoundingBox":4,"./Logger":8,"./graphelements":13,"./utils":14}],8:[function(require,module,exports){
+},{"./BoundingBox":5,"./Logger":12,"./graphelements":20,"./utils":21}],12:[function(require,module,exports){
 (function (global){
 var LEVEL_ORDER = [
   'DEBUG',
@@ -671,39 +1026,66 @@ module.exports = new Logger();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],9:[function(require,module,exports){
-function ModeSwitch(options) {
-  if (options) {
-    this.actionQueue = options.actionQueue;
-    this.timeout = options.timeout || 1;
-  }
+},{}],13:[function(require,module,exports){
+var LOG = require('./Logger');
+
+function ModeSwitch(opts) {
+  this.actionQueue = opts && opts.actionQueue;
+  this.timeout = (opts && opts.timeout) || 0;
+  this.modeStates = (opts && opts.initialStates) || {};
+  this.name = (opts && opts.name) || 'ModeSwitch';
   this.currentMode = null;
   this.resetModeFuture = null;
+  LOG.debug('Initialized ' + this.name, this);
 }
 
 ModeSwitch.prototype = {
   enter: function(mode, fn) {
     this._validate();
-    if (this.isPermitted(mode)) {
-      (fn || function() {})();
+    if (this._isPermitted(mode)) {
+      LOG.debug(this.name + ': Entering \'' + mode + '\'', this);
+      var state = (fn || function() {})();
+      this.modeStates[mode] = state;
       this.currentMode = mode;
       this._cancelModeReset();
+    } else {
+      LOG.debug(this.name + ': Not entering \'' + mode + '\';'
+                + ' active mode is ' + this.currentMode, this);
     }
+    return this;
   },
 
   exit: function(mode, fn) {
     this._validate();
-    if(this.isActive(mode)) {
-      (fn || function() {})();
+    if(this._isActive(mode)) {
+      LOG.debug(this.name + ': Exiting ' + mode, this);
+      (fn || function() {})(this.modeStates[mode]);
       this._scheduleModeReset();
+    } else {
+      LOG.debug(this.name + ': Not exiting \'' + mode + '\';'
+                + ' active mode is ' + this.currentMode, this);
     }
+    return this;
   },
 
-  isPermitted: function(mode) {
-    return !this.currentMode || this.isActive(mode);
+  ifActive: function(callbackObj) {
+    var activeMode = this.currentMode || 'default';
+    var callback = callbackObj[activeMode];
+    if (callback) {
+      LOG.debug(this.name + ': Found callback for active mode', activeMode, callbackObj);
+      var modeState = this.modeStates[this.currentMode || 'default'];
+      callback(modeState);
+    } else {
+      LOG.debug(this.name + ': No callback for active mode', activeMode, callbackObj);
+    }
+    return this;
   },
 
-  isActive: function(mode) {
+  _isPermitted: function(mode) {
+    return !this.currentMode || this._isActive(mode);
+  },
+
+  _isActive: function(mode) {
     return this.currentMode === mode;
   },
 
@@ -712,22 +1094,154 @@ ModeSwitch.prototype = {
   },
 
   _scheduleModeReset: function() {
-    this._cancelModeReset();
-    this.resetModeFuture = this.actionQueue.defer(this.timeout, (function() {
+    var resetFunction = (function() {
+      delete this.modeStates[this.currentMode];
       this.currentMode = null;
-    }).bind(this));
+    }).bind(this);
+
+    this._cancelModeReset();
+    if (this.timeout) {
+      this.resetModeFuture = this.actionQueue.defer(
+        this.timeout, resetFunction
+      );
+    } else {
+      resetFunction();
+    }
   },
 
   _validate: function() {
-    if(!this.actionQueue) {
-      throw new Error('action queue is required');
+    if(this.timeout && !this.actionQueue) {
+      throw new Error('action queue is required if a timeout is specified');
     }
   },
 };
 
 module.exports = ModeSwitch;
 
-},{}],10:[function(require,module,exports){
+},{"./Logger":12}],14:[function(require,module,exports){
+var Position = require('./Position');
+var EditableLabel = require('./EditableLabel');
+var LOG = require('./Logger');
+
+function NodeLabelSet(opts) {
+  this.componentManager = opts && opts.componentManager;
+  this.state = opts && opts.state;
+  this.editableLabelFactory = (opts && opts.editableLabelFactory) || EditableLabel.Factory;
+  this.labels = {};
+}
+
+NodeLabelSet.prototype = {
+
+  initialize: function(initialData) {
+    initialData
+      .filter(function(o) { return !!o.label; })
+      .forEach((function(o) {
+        this.labels[o.node.id] = this._createLabel(o.node, o.label).display();
+      }).bind(this));
+  },
+
+  edit: function(node) {
+    LOG.debug('LabelSet: editing label for node ' + node.id);
+    this._getOrCreateLabel(node).edit();
+  },
+
+  display: function(node) {
+    LOG.debug('LabelSet: displaying label for node ' + node.id);
+    this._getOrCreateLabel(node).display();
+  },
+
+  _getOrCreateLabel: function(node) {
+    var label;
+    if (this.labels[node.id]) {
+      label = this.labels[node.id];
+      LOG.info('reusing existing label for node ' + node.id, label);
+    } else {
+      label = this._createLabel(node);
+      this.labels[node.id] = label;
+      LOG.info('created new label for node ' + node.id, label);
+    }
+    return label;
+  },
+
+  _createLabel: function(node, label) {
+    return this.editableLabelFactory.create({
+      text: label,
+      componentManager: this.componentManager,
+      pinTo: function() {
+        return new Position({
+          bottomRight: node.getCurrentBoundingBox().getTopLeft(),
+        });
+      },
+      onChange: (function(text) {
+        this.state.persistNode({ id: node.id, label: text });
+      }).bind(this),
+    });
+  },
+
+  _validate: function() {
+    if (!this.componentManager) {
+      throw new Error('componentManager is required');
+    }
+    if (!this.state) {
+      throw new Error('state is required');
+    }
+  },
+};
+
+module.exports = NodeLabelSet;
+
+},{"./EditableLabel":9,"./Logger":12,"./Position":15}],15:[function(require,module,exports){
+var utils = require('./utils');
+
+function Position(opts) {
+  /* opts -
+   * {
+    topLeft: { x: 0, y: 0 },
+    topRight: undefined,
+    bottomLeft: undefined,
+    bottomRight: undefined,
+    }
+   */
+  if (!utils.isOneValuedObject(opts)) {
+    throw new Error('invalid position object ' + opts);
+  }
+
+  Object.assign(this, opts);
+}
+
+
+Position.prototype = {
+  getStyle: function(opts) {
+    opts = Object.assign({
+      width: 0,
+      height: 0,
+    }, opts);
+
+    if (this.topLeft) {
+        return 'position: absolute;' +
+        ' left: ' + this.topLeft.x + ';' +
+        ' top: ' + this.topLeft.y + ';';
+    } else if (this.topRight) {
+      return 'position: absolute;' +
+        ' left: ' + (this.topRight.x - opts.width) + ';' +
+        ' top: ' + this.topRight.y + ';';
+    } else if (this.bottomLeft) {
+      return 'position: absolute;' +
+        ' left: ' + this.bottomLeft.x + ';' +
+        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
+    } else if (this.bottomRight) {
+      return 'position: absolute;' +
+        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
+        ' top: ' + (this.bottomRight.y - opts.height) + ';';
+    } else {
+      throw new Error('invalid position object: ' + this);
+    }
+  },
+};
+
+module.exports = Position;
+
+},{"./utils":21}],16:[function(require,module,exports){
 var Component = require('./Component');
 
 function ResetButton(options) {
@@ -750,12 +1264,35 @@ ResetButton.prototype = Object.assign(new Component(), {
 
 module.exports = ResetButton;
 
-},{"./Component":5}],11:[function(require,module,exports){
+},{"./Component":6}],17:[function(require,module,exports){
+var Component = require('./Component');
+
+function TextBox(options) {
+  Component.apply(this, arguments);
+  this.initialText = (options && options.text) || '';
+}
+
+TextBox.prototype = Object.assign(new Component(), {
+  getGeneratedMarkup: function() {
+    return '<input type="text"' +
+    ' value="' + this.initialText + '"' +
+    '></input>';
+  },
+
+  getText: function() {
+    return this.element.getElementsByTagName('input')[0].value;
+  },
+});
+
+module.exports = TextBox;
+
+},{"./Component":6}],18:[function(require,module,exports){
 var utils = require('./utils');
 
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
+LABEL_PARAM_PREFIX = 'l_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -768,27 +1305,38 @@ UrlState.prototype = {
    * Perist a node and return its id
    */
   persistNode: function(options) {
-    var nodeId = this._getNumNodes();
-    this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
-    this._persistState();
-    if (options && options.color) {
-      this.persistNodeColor(nodeId, options.color);
+    options = options || {};
+    var nodeId;
+    if (options.id) {
+      nodeId = options.id;
+    } else {
+      nodeId = this._getNumNodes();
+      this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
+    if (options.color) {
+      this._setNodeColor(nodeId, options.color);
+    }
+
+    if (options.label) {
+      this._setNodeLabel(nodeId, options.label);
+    }
+
+    this._persistState();
     return nodeId;
   },
 
-  persistNodeColor: function(nodeId, color) {
-    var bit = this._idToBit(nodeId);
-
-    this._getColorKeys().forEach((function(key) {
-      if (this._isColor({ bit: bit, colorKey: key })) {
-        this._removeColor({ bit: bit, colorKey: key });
-      }
+  retrieveNode: function(nodeId) {
+    var nodeBit = this._idToBit(nodeId);
+    var nodeColor = this._getColorKeys().find((function(param) {
+      return this._isColor({ bit: nodeBit, colorKey: param });
     }).bind(this));
-
-    this._setColor({ bit: bit, color: color });
-    this._persistState();
+    var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    return utils.optional({
+      id: nodeId,
+      color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
+      label: label && decodeURIComponent(label),
+    }, { force: 'id' });
   },
 
   persistEdge: function(sourceId, targetId) {
@@ -806,16 +1354,8 @@ UrlState.prototype = {
   retrievePersistedNodes: function() {
     var nodes = [];
     if (this.urlSearchParams.has(NUM_NODES_PARAM)) {
-      var colorParams = this._getColorKeys();
       for (var i = 0 ; i < this.urlSearchParams.get(NUM_NODES_PARAM); i++) {
-        var nodeBit = this._idToBit(i);
-        var nodeColor = colorParams.find((function(param) {
-          return this._isColor({ bit: nodeBit, colorKey: param });
-        }).bind(this));
-        nodes.push(utils.optional({
-          id: i,
-          color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
-        }, { force: 'id' }));
+        nodes.push(this.retrieveNode(i));
       }
     }
     return nodes;
@@ -836,6 +1376,13 @@ UrlState.prototype = {
       return edges;
     }).bind(this))
     .reduce(function(a, b) { return a.concat(b); }, []);
+  },
+
+  _setNodeLabel: function(nodeId, label) {
+    this.urlSearchParams.set(
+      LABEL_PARAM_PREFIX + nodeId,
+      encodeURIComponent(label)
+    );
   },
 
   getUrl: function() {
@@ -950,6 +1497,19 @@ UrlState.prototype = {
     }
   },
 
+  _setNodeColor: function(nodeId, color) {
+    var bit = this._idToBit(nodeId);
+
+    this._getColorKeys().forEach((function(key) {
+      if (this._isColor({ bit: bit, colorKey: key })) {
+        this._removeColor({ bit: bit, colorKey: key });
+      }
+    }).bind(this));
+
+    this._setColor({ bit: bit, color: color });
+  },
+
+
   _persistState: function() {
     this.setUrl(this.getUrl());
   },
@@ -957,7 +1517,7 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"./utils":14}],12:[function(require,module,exports){
+},{"./utils":21}],19:[function(require,module,exports){
 module.exports = {
   RED: '#db190f',
   ORANGE: '#f76402',
@@ -969,7 +1529,7 @@ module.exports = {
   NEON: '#00FF00',
 };
 
-},{}],13:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -991,11 +1551,32 @@ function Node(options) {
   if (options) {
     this.realNode = options.realNode;
     this.color = options.color;
+    this.getCurrentBoundingBox = options.getCurrentBoundingBox;
   }
 }
 
 Node.prototype = Object.assign(new GraphElement(), {
   isNode: function() { return true; },
+
+  getCenter: function() {
+    return this.getCurrentBoundingBox().getCenter();
+  },
+
+  getTopLeft: function() {
+    return this.getCurrentBoundingBox().getTopLeft();
+  },
+
+  getTopRight: function() {
+    return this.getCurrentBoundingBox().getTopRight();
+  },
+
+  getBottomLeft: function() {
+    return this.getCurrentBoundingBox().getBottomLeft();
+  },
+
+  getBottomRight: function() {
+    return this.getCurrentBoundingBox().getBottomRight();
+  },
 });
 
 
@@ -1021,7 +1602,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],14:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /**
  * Compute the cartesian distance between two vectors
  */
@@ -1071,10 +1652,22 @@ function normalizeEvent(event) {
   }
 }
 
+function isOneValuedObject(obj) {
+  if (obj && (typeof obj === 'object') && !Array.isArray(obj)) {
+    var presentKeys = Object.keys(obj)
+      .filter(function(k) { return !!obj[k]; });
+    return presentKeys.length === 1
+  } else {
+    return false;
+  }
+
+}
+
 module.exports = {
   distance: distance,
   optional: optional,
   normalizeEvent: normalizeEvent,
+  isOneValuedObject: isOneValuedObject,
 };
 
 },{}]},{},[1])
