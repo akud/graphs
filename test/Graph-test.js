@@ -42,7 +42,7 @@ describe('Graph', function() {
         'retrievePersistedNodes.returnValue': [],
       }
     );
-    labelSet = createSpyObjectWith('initialize');
+    labelSet = createSpyObjectWith('initialize', 'closeAll');
     targetElement = new MockDomNode();
   });
 
@@ -393,6 +393,7 @@ describe('Graph', function() {
       graph.reset();
       expect(state.reset).toHaveBeenCalled();
       expect(editMode.deactivate).toHaveBeenCalled();
+      expect(labelSet.closeAll).toHaveBeenCalled();
     });
 
     it('removes all the nodes', function() {

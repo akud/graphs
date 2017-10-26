@@ -52,7 +52,10 @@ EditableLabel.prototype = {
     this.modeSwitch.enter('edit', (function() {
        var component = this.componentManager.insertComponent({
         class: TextBox,
-        constructorArgs: { text: this.text },
+        constructorArgs: {
+          text: this.text,
+          onSave: this.display.bind(this),
+        },
         pinTo: this.pinTo,
       });
       LOG.debug('EditableLabel: opened edit component');
@@ -68,6 +71,13 @@ EditableLabel.prototype = {
     if(!this.modeSwitch) {
       throw new Error('modeSwitch is required');
     }
+  },
+
+  close: function() {
+    this.modeSwitch
+      .exit('display', function(displayState) { displayState.component.close(); })
+      .exit('edit', function(editState) { editState.component.close(); }) ;
+
   },
 };
 

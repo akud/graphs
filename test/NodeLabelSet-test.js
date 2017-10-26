@@ -178,4 +178,33 @@ describe('NodeLabelSet', function() {
       expect(label.display).toHaveBeenCalled();
     });
   });
+
+  describe('closeAll', function() {
+    it('closes all the labels', function() {
+      var label1 = createSpyObjectWith('display', 'edit', 'close');
+      var label2 = createSpyObjectWith('display', 'edit', 'close');
+      var label3 = createSpyObjectWith('display', 'edit', 'close');
+      var createCallCount = 0;
+      labelFactory.create.andCall(function(opts) {
+        return [label1, label2, label3][(createCallCount++)%3];
+      });
+
+      labelSet.initialize([
+        { node: createNode({ id: 0 }), label: 'asdf' }
+      ]);
+      labelSet.edit(createNode({ id: 1 }));
+      labelSet.display(createNode({ id: 2 }));
+
+      labelSet.closeAll();
+      expect(label1.close).toHaveBeenCalled();
+      expect(label2.close).toHaveBeenCalled();
+      expect(label3.close).toHaveBeenCalled();
+
+      labelFactory.create.reset();
+
+      labelSet.edit(createNode({ id: 1 }));
+
+      expect(labelFactory.create).toHaveBeenCalled();
+    });
+  });
 });

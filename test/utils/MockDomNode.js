@@ -99,6 +99,15 @@ MockDomNode.prototype = {
     this.trigger('click', events.click);
   },
 
+  pressKey: function(keyCode) {
+    this.trigger('keydown', { keyCode: keyCode });
+    this.trigger('keyup', { keyCode: keyCode });
+  },
+
+  pressEnter: function() {
+    this.pressKey(13);
+  },
+
   getAttribute: function(key) {
     return this.attributes[key];
   }
