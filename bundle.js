@@ -327,6 +327,7 @@ function Component(options) {
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
+  handleEnter: function() {},
 
   attachTo: function(targetElement) {
     this._validateOptions();
@@ -362,6 +363,14 @@ Component.prototype = {
         this._handleMouseDown(event);
         return { lastDownEvent: event };
       }).bind(this));
+    }).bind(this));
+
+    targetElement.addEventListener('keyup', (function(event) {
+      event = utils.normalizeEvent(event);
+      LOG.debug('keyup', event);
+      if (event.keyCode === 13) {
+        this.handleEnter(event);
+      }
     }).bind(this));
 
     if (this.getGeneratedMarkup()) {
@@ -426,6 +435,7 @@ Component.prototype = {
       }
     }).bind(this));
   },
+
 };
 
 module.exports = Component;
@@ -646,7 +656,10 @@ EditableLabel.prototype = {
     this.modeSwitch.enter('edit', (function() {
        var component = this.componentManager.insertComponent({
         class: TextBox,
-        constructorArgs: { text: this.text },
+        constructorArgs: {
+          text: this.text,
+          onSave: this.display.bind(this),
+        },
         pinTo: this.pinTo,
       });
       LOG.debug('EditableLabel: opened edit component');
@@ -662,6 +675,13 @@ EditableLabel.prototype = {
     if(!this.modeSwitch) {
       throw new Error('modeSwitch is required');
     }
+  },
+
+  close: function() {
+    this.modeSwitch
+      .exit('display', function(displayState) { displayState.component.close(); })
+      .exit('edit', function(editState) { editState.component.close(); }) ;
+
   },
 };
 
@@ -691,7 +711,6 @@ function Graph(options) {
   Component.apply(this, arguments);
   if (options) {
     this.adapter = options.adapter;
-    this.animator = options.animator;
     this.labelSet = options.labelSet;
     this.editMode = options.editMode;
     this.state = options.state;
@@ -783,6 +802,7 @@ Graph.prototype = Object.assign(new Component(), {
     this._setInitialState();
     this.state.reset();
     this.editMode.deactivate();
+    this.labelSet.closeAll();
   },
 
   _setNextColor: function(node) {
@@ -1136,7 +1156,9 @@ NodeLabelSet.prototype = {
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
-        this.labels[o.node.id] = this._createLabel(o.node, o.label).display();
+        var label = this._createLabel(o.node, o.label);
+        this.labels[o.node.id] = label;
+        label.display();
       }).bind(this));
   },
 
@@ -1148,6 +1170,13 @@ NodeLabelSet.prototype = {
   display: function(node) {
     LOG.debug('LabelSet: displaying label for node ' + node.id);
     this._getOrCreateLabel(node).display();
+  },
+
+  closeAll: function() {
+    Object.values(this.labels).forEach(function(label) {
+      label.close();
+    });
+    this.labels = {};
   },
 
   _getOrCreateLabel: function(node) {
@@ -1270,6 +1299,7 @@ var Component = require('./Component');
 function TextBox(options) {
   Component.apply(this, arguments);
   this.initialText = (options && options.text) || '';
+  this.onSave = (options && options.onSave) || function() {};
 }
 
 TextBox.prototype = Object.assign(new Component(), {
@@ -1281,6 +1311,10 @@ TextBox.prototype = Object.assign(new Component(), {
 
   getText: function() {
     return this.element.getElementsByTagName('input')[0].value;
+  },
+
+  handleEnter: function(event) {
+    this.onSave();
   },
 });
 
