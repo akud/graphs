@@ -159,6 +159,10 @@ describe('Graph', function() {
 
       graph.attachTo(targetElement);
 
+      expect(labelSet.initialize).toNotHaveBeenCalled();
+
+      actionQueue.step(1);
+
       expect(labelSet.initialize).toHaveBeenCalledWith([
         { node: realNode1, label: 'asdf' },
         { node: realNode2, label: undefined },

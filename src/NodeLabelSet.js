@@ -12,6 +12,7 @@ function NodeLabelSet(opts) {
 NodeLabelSet.prototype = {
 
   initialize: function(initialData) {
+    LOG.debug('LabelSet: initializing', initialData);
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
