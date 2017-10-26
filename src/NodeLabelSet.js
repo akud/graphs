@@ -15,7 +15,9 @@ NodeLabelSet.prototype = {
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
-        this.labels[o.node.id] = this._createLabel(o.node, o.label).display();
+        var label = this._createLabel(o.node, o.label);
+        this.labels[o.node.id] = label;
+        label.display();
       }).bind(this));
   },
 
@@ -27,6 +29,13 @@ NodeLabelSet.prototype = {
   display: function(node) {
     LOG.debug('LabelSet: displaying label for node ' + node.id);
     this._getOrCreateLabel(node).display();
+  },
+
+  closeAll: function() {
+    Object.values(this.labels).forEach(function(label) {
+      label.close();
+    });
+    this.labels = {};
   },
 
   _getOrCreateLabel: function(node) {

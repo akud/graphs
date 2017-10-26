@@ -63,4 +63,34 @@ describe('EditableLabel', function() {
       });
     });
   });
+
+  describe('close', function() {
+    it('closes the display component if it was active', function() {
+      var component = createSpyObjectWith('close');
+      componentManager.insertComponent.andReturn(component);
+
+      editableLabel.text = 'hello';
+      editableLabel.display();
+
+      expect(componentManager.insertComponent).toHaveBeenCalled();
+      expect(component.close).toNotHaveBeenCalled();
+
+      editableLabel.close();
+
+      expect(component.close).toHaveBeenCalled();
+    });
+
+    it('closes the edit component if it was active', function() {
+      var component = createSpyObjectWith('close');
+      componentManager.insertComponent.andReturn(component);
+      editableLabel.edit();
+
+      expect(componentManager.insertComponent).toHaveBeenCalled();
+      expect(component.close).toNotHaveBeenCalled();
+
+      editableLabel.close();
+
+      expect(component.close).toHaveBeenCalled();
+    });
+  });
 });

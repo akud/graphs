@@ -69,6 +69,13 @@ EditableLabel.prototype = {
       throw new Error('modeSwitch is required');
     }
   },
+
+  close: function() {
+    this.modeSwitch
+      .exit('display', function(displayState) { displayState.component.close(); })
+      .exit('edit', function(editState) { editState.component.close(); }) ;
+
+  },
 };
 
 EditableLabel.Factory = {

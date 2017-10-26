@@ -17,7 +17,6 @@ function Graph(options) {
   Component.apply(this, arguments);
   if (options) {
     this.adapter = options.adapter;
-    this.animator = options.animator;
     this.labelSet = options.labelSet;
     this.editMode = options.editMode;
     this.state = options.state;
@@ -109,6 +108,7 @@ Graph.prototype = Object.assign(new Component(), {
     this._setInitialState();
     this.state.reset();
     this.editMode.deactivate();
+    this.labelSet.closeAll();
   },
 
   _setNextColor: function(node) {
