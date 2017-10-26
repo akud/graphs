@@ -107,7 +107,7 @@ describe('NodeLabelSet', function() {
       expect(label.display).toNotHaveBeenCalled();
     });
 
-    it('reuses an existing label', function() {
+    it('reuses an existing label from initial data', function() {
       var node = createNode({ id: 123 });
       labelSet.initialize([
         { node: node, label: 'hello' }
@@ -121,6 +121,22 @@ describe('NodeLabelSet', function() {
       expect(label.edit).toHaveBeenCalled();
       expect(label.display).toNotHaveBeenCalled();
     });
+
+    it('reuses an existing label from a previous mode', function() {
+      var node = createNode({ id: 123 });
+
+      labelSet.display(node);
+
+      labelFactory.create.reset();
+      label.reset();
+
+      labelSet.edit(node);
+
+      expect(labelFactory.create).toNotHaveBeenCalled();
+      expect(label.edit).toHaveBeenCalled();
+      expect(label.display).toNotHaveBeenCalled();
+    });
+
   });
 
   describe('display', function() {
@@ -132,11 +148,26 @@ describe('NodeLabelSet', function() {
       expect(label.edit).toNotHaveBeenCalled();
     });
 
-    it('reuses an existing label', function() {
+    it('reuses an existing label from initial data', function() {
       var node = createNode({ id: 123 });
       labelSet.initialize([
         { node: node, label: 'hello' }
       ]);
+      labelFactory.create.reset();
+      label.reset();
+
+      labelSet.display(node);
+
+      expect(labelFactory.create).toNotHaveBeenCalled();
+      expect(label.edit).toNotHaveBeenCalled();
+      expect(label.display).toHaveBeenCalled();
+    });
+
+    it('reuses an existing label from a previous mode', function() {
+      var node = createNode({ id: 123 });
+
+      labelSet.edit(node);
+
       labelFactory.create.reset();
       label.reset();
 

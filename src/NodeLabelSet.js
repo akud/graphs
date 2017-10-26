@@ -36,6 +36,7 @@ NodeLabelSet.prototype = {
       LOG.info('reusing existing label for node ' + node.id, label);
     } else {
       label = this._createLabel(node);
+      this.labels[node.id] = label;
       LOG.info('created new label for node ' + node.id, label);
     }
     return label;
