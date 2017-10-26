@@ -22,7 +22,7 @@ EditableLabel.prototype = {
 
     this.modeSwitch.exit('edit', (function(editState) {
       this.text = editState.component.getText();
-      editState.component.remove();
+      editState.component.close();
       LOG.debug('EditableLabel: got text from input component', this.text);
     }).bind(this));
 
@@ -45,8 +45,7 @@ EditableLabel.prototype = {
     LOG.debug('EditableLabel: editing text', this.text);
     this._validate();
     this.modeSwitch.exit('display', (function(displayState) {
-      this.text = displayState.component.getText();
-      displayState.component.remove();
+      displayState.component.close();
       LOG.debug('EditableLabel: closed display component');
     }).bind(this));
 

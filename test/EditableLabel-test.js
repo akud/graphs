@@ -38,7 +38,7 @@ describe('EditableLabel', function() {
     });
 
     it('takes the text from edit component and displays it', function() {
-      var editComponent = createSpyObjectWith('getText', 'remove');
+      var editComponent = createSpyObjectWith('getText', 'close');
       editComponent.getText.andReturn('edited text');
       componentManager.insertComponent.andReturn(editComponent);
       editableLabel.edit().display();
@@ -47,7 +47,7 @@ describe('EditableLabel', function() {
         constructorArgs: { text: 'edited text' },
         pinTo: pinTo,
       });
-      expect(editComponent.remove).toHaveBeenCalled();
+      expect(editComponent.close).toHaveBeenCalled();
       expect(onChange).toHaveBeenCalledWith('edited text');
     });
   });
