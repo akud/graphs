@@ -12,6 +12,7 @@ function NodeLabelSet(opts) {
 NodeLabelSet.prototype = {
 
   initialize: function(initialData) {
+    LOG.debug('LabelSet: initializing', initialData);
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
@@ -52,6 +53,7 @@ NodeLabelSet.prototype = {
   },
 
   _createLabel: function(node, label) {
+    LOG.debug('Creating label', node);
     return this.editableLabelFactory.create({
       text: label,
       componentManager: this.componentManager,
@@ -61,6 +63,7 @@ NodeLabelSet.prototype = {
         });
       },
       onChange: (function(text) {
+        LOG.debug('saving label', node, text);
         this.state.persistNode({ id: node.id, label: text });
       }).bind(this),
     });

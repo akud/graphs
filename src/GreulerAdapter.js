@@ -63,6 +63,7 @@ GreulerAdapter.prototype = {
   },
 
   getNode: function(nodeId) {
+    LOG.debug('GreulerAdapter: retrieving node', nodeId);
     return this.getNodes(function(n) { return n.id === nodeId; })[0];
   },
 
@@ -97,9 +98,10 @@ GreulerAdapter.prototype = {
   },
 
   _getDomElement: function(node) {
-    return this.instance.nodeGroup[0][0]
-      .childNodes[node.index]
-      .getElementsByTagName('circle')[0];
+    LOG.debug('GreulerAdapter: retrieving dom element for node: ' + node.index, this.instance);
+    var childNodes = this.instance.nodeGroup[0][0].childNodes;
+    LOG.debug(childNodes);
+    return childNodes[node.index].getElementsByTagName('circle')[0];
   },
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {

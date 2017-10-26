@@ -33,6 +33,7 @@ function Graph(options) {
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
     var persistedNodes = this.state.retrievePersistedNodes();
+    LOG.debug('Graph: initializing graph with nodes', persistedNodes);
     this.adapter.initialize(
       targetElement,
       utils.optional({
@@ -50,14 +51,18 @@ Graph.prototype = Object.assign(new Component(), {
         edgeDistance: this.edgeDistance,
       })
     );
-    var labelSetData = persistedNodes.map((function(n) {
-      return {
-        node: this.adapter.getNode(n.id),
-        label: n.label,
-      };
+    this.actionQueue.defer((function() {
+      LOG.debug('Graph: initializing label set');
+      this.labelSet.initialize(
+        persistedNodes.map((function(n) {
+          return {
+            node: this.adapter.getNode(n.id),
+            label: n.label,
+          };
+        }).bind(this))
+      );
     }).bind(this));
-    this.labelSet.initialize(labelSetData);
-  },
+ },
 
   handleClick: function(event) {
     var clickTarget = this.adapter.getClickTarget(
