@@ -52,6 +52,7 @@ NodeLabelSet.prototype = {
   },
 
   _createLabel: function(node, label) {
+    LOG.debug('Creating label', node);
     return this.editableLabelFactory.create({
       text: label,
       componentManager: this.componentManager,
@@ -61,6 +62,7 @@ NodeLabelSet.prototype = {
         });
       },
       onChange: (function(text) {
+        LOG.debug('saving label', node, text);
         this.state.persistNode({ id: node.id, label: text });
       }).bind(this),
     });
