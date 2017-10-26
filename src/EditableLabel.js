@@ -24,7 +24,8 @@ EditableLabel.prototype = {
       this.text = editState.component.getText();
       editState.component.close();
       LOG.debug('EditableLabel: got text from input component', this.text);
-    }).bind(this));
+    }).bind(this))
+    .exit('display', function(displayState) { displayState.component.close(); });
 
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
@@ -47,7 +48,8 @@ EditableLabel.prototype = {
     this.modeSwitch.exit('display', (function(displayState) {
       displayState.component.close();
       LOG.debug('EditableLabel: closed display component');
-    }).bind(this));
+    }).bind(this))
+    .exit('edit', function(editState) { editState.component.close(); });
 
     this.modeSwitch.enter('edit', (function() {
        var component = this.componentManager.insertComponent({
@@ -77,7 +79,11 @@ EditableLabel.prototype = {
     this.modeSwitch
       .exit('display', function(displayState) { displayState.component.close(); })
       .exit('edit', function(editState) { editState.component.close(); }) ;
+    return this;
+  },
 
+  _closeComponent: function(state) {
+    state.component.close();
   },
 };
 

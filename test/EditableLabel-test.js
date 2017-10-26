@@ -50,6 +50,22 @@ describe('EditableLabel', function() {
       expect(editComponent.close).toHaveBeenCalled();
       expect(onChange).toHaveBeenCalledWith('edited text');
     });
+
+    it('can be called twice in a row', function() {
+      var displayComponent1 = createSpyObjectWith('close');
+      var displayComponent2 = createSpyObjectWith('close');
+      var insertCallCount = 0;
+      componentManager.insertComponent.andCall(function() {
+        return [displayComponent1, displayComponent2][(insertCallCount++)%2];
+      });
+
+      editableLabel.text = 'hello';
+      editableLabel.display();
+      editableLabel.display();
+
+      expect(displayComponent1.close).toHaveBeenCalled();
+      expect(displayComponent2.close).toNotHaveBeenCalled();
+    });
   });
 
   describe('edit', function() {
@@ -96,6 +112,22 @@ describe('EditableLabel', function() {
         pinTo: pinTo,
       });
     });
+
+    it('can be called twice in a row', function() {
+      var editComponent1 = createSpyObjectWith('close');
+      var editComponent2 = createSpyObjectWith('close');
+      var insertCallCount = 0;
+      componentManager.insertComponent.andCall(function() {
+        return [editComponent1, editComponent2][(insertCallCount++)%2];
+      });
+
+      editableLabel.edit();
+      editableLabel.edit();
+
+      expect(editComponent1.close).toHaveBeenCalled();
+      expect(editComponent2.close).toNotHaveBeenCalled();
+    });
+
   });
 
   describe('close', function() {
