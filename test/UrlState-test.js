@@ -97,6 +97,12 @@ describe('UrlState', function() {
       expect(urlSearchParams.delete).toHaveBeenCalledWith('c_FFFFFF');
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_00FF00', matchers.hexEncodedBinary('10'));
     });
+
+    it('can set the label on node 0', function() {
+      urlSearchParams.setNumericParam('n', 5);
+      state.persistNode({ id: 0, label: 'hello' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('l_0', 'hello');
+    });
   });
 
   describe('persistEdge', function() {

@@ -18,7 +18,7 @@ UrlState.prototype = {
   persistNode: function(options) {
     options = options || {};
     var nodeId;
-    if (options.id) {
+    if (options.hasOwnProperty('id') && options.id !== null && options.id !== undefined) {
       nodeId = options.id;
     } else {
       nodeId = this._getNumNodes();
