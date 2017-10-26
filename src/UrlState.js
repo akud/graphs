@@ -3,6 +3,7 @@ var utils = require('./utils');
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
+LABEL_PARAM_PREFIX = 'l_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -15,27 +16,38 @@ UrlState.prototype = {
    * Perist a node and return its id
    */
   persistNode: function(options) {
-    var nodeId = this._getNumNodes();
-    this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
-    this._persistState();
-    if (options && options.color) {
-      this.persistNodeColor(nodeId, options.color);
+    options = options || {};
+    var nodeId;
+    if (options.id) {
+      nodeId = options.id;
+    } else {
+      nodeId = this._getNumNodes();
+      this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
+    if (options.color) {
+      this._setNodeColor(nodeId, options.color);
+    }
+
+    if (options.label) {
+      this._setNodeLabel(nodeId, options.label);
+    }
+
+    this._persistState();
     return nodeId;
   },
 
-  persistNodeColor: function(nodeId, color) {
-    var bit = this._idToBit(nodeId);
-
-    this._getColorKeys().forEach((function(key) {
-      if (this._isColor({ bit: bit, colorKey: key })) {
-        this._removeColor({ bit: bit, colorKey: key });
-      }
+  retrieveNode: function(nodeId) {
+    var nodeBit = this._idToBit(nodeId);
+    var nodeColor = this._getColorKeys().find((function(param) {
+      return this._isColor({ bit: nodeBit, colorKey: param });
     }).bind(this));
-
-    this._setColor({ bit: bit, color: color });
-    this._persistState();
+    var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    return utils.optional({
+      id: nodeId,
+      color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
+      label: label && decodeURIComponent(label),
+    }, { force: 'id' });
   },
 
   persistEdge: function(sourceId, targetId) {
@@ -53,16 +65,8 @@ UrlState.prototype = {
   retrievePersistedNodes: function() {
     var nodes = [];
     if (this.urlSearchParams.has(NUM_NODES_PARAM)) {
-      var colorParams = this._getColorKeys();
       for (var i = 0 ; i < this.urlSearchParams.get(NUM_NODES_PARAM); i++) {
-        var nodeBit = this._idToBit(i);
-        var nodeColor = colorParams.find((function(param) {
-          return this._isColor({ bit: nodeBit, colorKey: param });
-        }).bind(this));
-        nodes.push(utils.optional({
-          id: i,
-          color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
-        }, { force: 'id' }));
+        nodes.push(this.retrieveNode(i));
       }
     }
     return nodes;
@@ -83,6 +87,13 @@ UrlState.prototype = {
       return edges;
     }).bind(this))
     .reduce(function(a, b) { return a.concat(b); }, []);
+  },
+
+  _setNodeLabel: function(nodeId, label) {
+    this.urlSearchParams.set(
+      LABEL_PARAM_PREFIX + nodeId,
+      encodeURIComponent(label)
+    );
   },
 
   getUrl: function() {
@@ -196,6 +207,19 @@ UrlState.prototype = {
       return 0;
     }
   },
+
+  _setNodeColor: function(nodeId, color) {
+    var bit = this._idToBit(nodeId);
+
+    this._getColorKeys().forEach((function(key) {
+      if (this._isColor({ bit: bit, colorKey: key })) {
+        this._removeColor({ bit: bit, colorKey: key });
+      }
+    }).bind(this));
+
+    this._setColor({ bit: bit, color: color });
+  },
+
 
   _persistState: function() {
     this.setUrl(this.getUrl());

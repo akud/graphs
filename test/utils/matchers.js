@@ -3,7 +3,7 @@ var isEqual = require('is-equal');
 function isEqualRespectingMatchers(expected, actual) {
   if (expected && expected._isMatcher) {
     return expected.match(actual).matches;
-  } else if (typeof expected === 'object') {
+  } else if (typeof expected === 'object' && expected !== null) {
     return Object.keys(expected).every(function(key) {
       return isEqualRespectingMatchers(expected[key], actual[key]);
     });
@@ -74,6 +74,41 @@ module.exports = {
             expected: results.map(function(r) { return r.expected; }),
             actual: results.map(function(r) { return r.actual; }),
           };
+        } else {
+          return {
+            matches: false,
+            expected: 'function',
+            actual: fn,
+          };
+        }
+      },
+      _isMatcher: true,
+    };
+  },
+
+  functionThatHasSideEffect: function(opts) {
+    opts = Object.assign({
+      arguments: undefined,
+      before: function() {},
+      after: function() {},
+      reset: function() {},
+    }, opts);
+    return {
+      match: function(fn) {
+        if (typeof fn === 'function') {
+          try {
+            opts.before();
+            var result = fn.apply(
+              null,
+              Array.isArray(opts.arguments) ? opts.arguments : [opts.arguments]
+            );
+            opts.after(result);
+            return {
+              matches: true,
+            };
+          } finally {
+            opts.reset();
+          }
         } else {
           return {
             matches: false,

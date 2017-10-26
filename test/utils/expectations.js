@@ -17,6 +17,22 @@ expect.extend({
     this.toBeA.apply(this, arguments);
   },
 
+  toEqual: function(expected) {
+    var matcher = matchers.equals(expected).match(this.actual);
+    try {
+      expect.assert(
+        matcher.matches,
+        'expected %s to equal %s',
+        this.actual,
+        expected
+      );
+    } catch(error) {
+      error.expected = expected;
+      error.actual = this.actual;
+      throw error;
+    }
+  },
+
   toHaveBeenCalledWith: function() {
     this.toHaveBeenCalled();
     var expected = Array.prototype.map.call(arguments, function(e) {

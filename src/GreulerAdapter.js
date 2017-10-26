@@ -62,6 +62,10 @@ GreulerAdapter.prototype = {
     return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
+  getNode: function(nodeId) {
+    return this.getNodes(function(n) { return n.id === nodeId; })[0];
+  },
+
   getNodes: function(filter) {
     filter = filter || function() { return true; };
     return this.graph.getNodesByFn(filter).map((function(node) {
@@ -71,6 +75,7 @@ GreulerAdapter.prototype = {
         realNode: node,
         domElement: domElement,
         color: domElement.getAttribute('fill'),
+        getCurrentBoundingBox: this._getBoundingBox.bind(this, node),
       });
     }).bind(this));
   },
@@ -99,27 +104,20 @@ GreulerAdapter.prototype = {
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {
     nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
     var point = {
       x: event.clientX,
       y: event.clientY,
     };
-    var matchingNodes = this.getNodes(function(node) {
-      return new BoundingBox({
-        left: node.bounds.x,
-        right: node.bounds.X,
-        top: node.bounds.y,
-        bottom: node.bounds.Y
-      })
+    var matchingNodes = this.getNodes((function(node) {
+      return this._getBoundingBox(node)
         .expandBy(nodeAreaFuzzFactor)
-        .translate({ x: graphElementBounds.left, y: graphElementBounds.top })
         .contains(point);
-    });
+    }).bind(this));
 
     if (matchingNodes && matchingNodes.length) {
       matchingNodes.sort(function(a, b) {
-        var distanceToA = utils.distance(center(a.realNode), point);
-        var distanceToB = utils.distance(center(b.realNode), point);
+        var distanceToA = utils.distance(a.getCenter(), point);
+        var distanceToB = utils.distance(b.getCenter(), point);
         return distanceToA - distanceToB;
       });
       return matchingNodes[0];
@@ -133,16 +131,20 @@ GreulerAdapter.prototype = {
       this.instance = this.instance.update();
     }
   },
+
+  _getBoundingBox: function(node) {
+    var graphElementBounds = this.instance.root[0][0].getBoundingClientRect();
+    return new BoundingBox({
+      left: node.bounds.x,
+      right: node.bounds.X,
+      top: node.bounds.y,
+      bottom: node.bounds.Y,
+    })
+    .translate({
+      x: graphElementBounds.left,
+      y: graphElementBounds.top
+    });
+  },
 };
-
-
-function center(node) {
-  var width = node.bounds.X - node.bounds.x;
-  var height = node.bounds.Y - node.bounds.y;
-  return {
-    x: node.bounds.x + (width / 2),
-    y: node.bounds.y + (height / 2),
-  };
-}
 
 module.exports = GreulerAdapter;

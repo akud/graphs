@@ -16,34 +16,35 @@ function Component(options) {
     this.mouseTouchSwitch = new ModeSwitch({
       actionQueue: this.actionQueue,
       timeout: 500,
+      name: 'mouseTouchSwitch',
     });
   }
 
   this.mouseDownCount = 0;
   this.mouseUpCount = 0;
   this.isInClickAndHold = false;
+  this.closeListeners = [];
 }
 
 Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
 
-
   attachTo: function(targetElement) {
     this._validateOptions();
-    var lastDownEvent = null;
+    this.element = targetElement;
 
     targetElement.addEventListener('mouseup', (function(event) {
       LOG.debug('mouseup', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('mouse', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('mouse', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchend', (function(event) {
       LOG.debug('touchend', utils.normalizeEvent(event));
-      this.mouseTouchSwitch.exit('touch', (function() {
-        this._handleMouseUp(lastDownEvent);
+      this.mouseTouchSwitch.exit('touch', (function(modeState) {
+        this._handleMouseUp(modeState.lastDownEvent);
       }).bind(this));
     }).bind(this));
 
@@ -51,21 +52,33 @@ Component.prototype = {
       event = utils.normalizeEvent(event);
       LOG.debug('mousedown', event);
       this.mouseTouchSwitch.enter('mouse', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 
     targetElement.addEventListener('touchstart', (function(event) {
-      event - utils.normalizeEvent(event);
+      event = utils.normalizeEvent(event);
       LOG.debug('touchstart', event);
       this.mouseTouchSwitch.enter('touch', (function() {
-        lastDownEvent = event;
         this._handleMouseDown(event);
+        return { lastDownEvent: event };
       }).bind(this));
     }).bind(this));
 
+    if (this.getGeneratedMarkup()) {
+      targetElement.innerHTML = this.getGeneratedMarkup();
+    }
+
     this.doAttach(targetElement);
+  },
+
+  /**
+   * subclasses can override to indicate initial markup
+   * to be set on the target element
+   */
+  getGeneratedMarkup: function() {
+    return null;
   },
 
   /**
@@ -73,6 +86,19 @@ Component.prototype = {
    */
   doAttach: function(element) {
 
+  },
+
+  onClose: function(listener) {
+    this.closeListeners.push(listener);
+    return this;
+  },
+
+  close: function() {
+    this.closeListeners.forEach((function(f) {
+      f(this);
+    }).bind(this));
+    this.element.remove();
+    LOG.debug('closed component', this);
   },
 
   _validateOptions: function() {

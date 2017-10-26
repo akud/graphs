@@ -1,17 +1,20 @@
 function BoundingBox(dimensions) {
-  this.dimensions = dimensions;
+  this.dimensions = dimensions || {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  };
 }
 
 BoundingBox.prototype = {
 
   expandBy: function(factor) {
-    var width = this.dimensions.right - this.dimensions.left;
-    var height = this.dimensions.bottom - this.dimensions.top;
     return new BoundingBox({
-      left: this.dimensions.left - width*factor,
-      right: this.dimensions.right + width*factor,
-      top: this.dimensions.top - height*factor,
-      bottom: this.dimensions.bottom + width*factor,
+      left: this.dimensions.left - this.getWidth()*factor,
+      right: this.dimensions.right + this.getWidth()*factor,
+      top: this.dimensions.top - this.getHeight()*factor,
+      bottom: this.dimensions.bottom + this.getHeight()*factor,
     });
   },
 
@@ -28,6 +31,51 @@ BoundingBox.prototype = {
     return this.dimensions.left <= point.x && point.x <= this.dimensions.right &&
            this.dimensions.top <= point.y && point.y <= this.dimensions.bottom;
 
+  },
+
+  getCenter: function() {
+    return {
+      x: this.dimensions.left + this.getWidth() / 2,
+      y: this.dimensions.top + this.getHeight() / 2,
+    };
+  },
+
+  getTopLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getTopRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getBottomLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getBottomRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getWidth: function() {
+    return this.dimensions.right - this.dimensions.left;
+  },
+
+  getHeight: function() {
+    return this.dimensions.bottom - this.dimensions.top;
   },
 
 };

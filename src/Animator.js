@@ -43,6 +43,11 @@ AlternatingAnimation.prototype = {
       }
     }).bind(this);
     execute();
+    return this;
+  },
+
+  stop: function() {
+    return this.asLongAs(function() { return false; });
   },
 };
 

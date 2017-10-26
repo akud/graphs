@@ -1,6 +1,7 @@
 function MockActionQueue() {
   this.currentTime = 0;
   this.pendingCalls = {};
+  this.mainQueueInterval = 420;
   spyOn(this, 'defer').andCallThrough();
 }
 
@@ -37,6 +38,21 @@ MockActionQueue.prototype = {
           this.pendingCalls[callTime].splice(this.pendingCalls[callTime].indexOf(callback), 1);
         }
       }).bind(this),
+    };
+  },
+
+  periodically: function(fn) {
+    var cancelable;
+    var queuedFn = (function() {
+      fn();
+      cancelable = this.defer(this.mainQueueInterval, queuedFn);
+    }).bind(this)
+
+    cancelable = this.defer(this.mainQueueInterval, queuedFn);
+    return {
+      cancel: function() {
+        cancelable.cancel();
+      },
     };
   },
 };
