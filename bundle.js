@@ -628,7 +628,8 @@ EditableLabel.prototype = {
       this.text = editState.component.getText();
       editState.component.close();
       LOG.debug('EditableLabel: got text from input component', this.text);
-    }).bind(this));
+    }).bind(this))
+    .exit('display', function(displayState) { displayState.component.close(); });
 
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
@@ -651,7 +652,8 @@ EditableLabel.prototype = {
     this.modeSwitch.exit('display', (function(displayState) {
       displayState.component.close();
       LOG.debug('EditableLabel: closed display component');
-    }).bind(this));
+    }).bind(this))
+    .exit('edit', function(editState) { editState.component.close(); });
 
     this.modeSwitch.enter('edit', (function() {
        var component = this.componentManager.insertComponent({
@@ -681,7 +683,11 @@ EditableLabel.prototype = {
     this.modeSwitch
       .exit('display', function(displayState) { displayState.component.close(); })
       .exit('edit', function(editState) { editState.component.close(); }) ;
+    return this;
+  },
 
+  _closeComponent: function(state) {
+    state.component.close();
   },
 };
 
@@ -727,6 +733,7 @@ function Graph(options) {
 Graph.prototype = Object.assign(new Component(), {
   doAttach: function(targetElement) {
     var persistedNodes = this.state.retrievePersistedNodes();
+    LOG.debug('Graph: initializing graph with nodes', persistedNodes);
     this.adapter.initialize(
       targetElement,
       utils.optional({
@@ -744,14 +751,18 @@ Graph.prototype = Object.assign(new Component(), {
         edgeDistance: this.edgeDistance,
       })
     );
-    var labelSetData = persistedNodes.map((function(n) {
-      return {
-        node: this.adapter.getNode(n.id),
-        label: n.label,
-      };
+    this.actionQueue.defer((function() {
+      LOG.debug('Graph: initializing label set');
+      this.labelSet.initialize(
+        persistedNodes.map((function(n) {
+          return {
+            node: this.adapter.getNode(n.id),
+            label: n.label,
+          };
+        }).bind(this))
+      );
     }).bind(this));
-    this.labelSet.initialize(labelSetData);
-  },
+ },
 
   handleClick: function(event) {
     var clickTarget = this.adapter.getClickTarget(
@@ -920,6 +931,7 @@ GreulerAdapter.prototype = {
   },
 
   getNode: function(nodeId) {
+    LOG.debug('GreulerAdapter: retrieving node', nodeId);
     return this.getNodes(function(n) { return n.id === nodeId; })[0];
   },
 
@@ -954,9 +966,10 @@ GreulerAdapter.prototype = {
   },
 
   _getDomElement: function(node) {
-    return this.instance.nodeGroup[0][0]
-      .childNodes[node.index]
-      .getElementsByTagName('circle')[0];
+    LOG.debug('GreulerAdapter: retrieving dom element for node: ' + node.index, this.instance);
+    var childNodes = this.instance.nodeGroup[0][0].childNodes;
+    LOG.debug(childNodes);
+    return childNodes[node.index].getElementsByTagName('circle')[0];
   },
 
   _getTargetNode: function(event, nodeAreaFuzzFactor) {
@@ -1153,6 +1166,7 @@ function NodeLabelSet(opts) {
 NodeLabelSet.prototype = {
 
   initialize: function(initialData) {
+    LOG.debug('LabelSet: initializing', initialData);
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
@@ -1193,6 +1207,7 @@ NodeLabelSet.prototype = {
   },
 
   _createLabel: function(node, label) {
+    LOG.debug('Creating label', node);
     return this.editableLabelFactory.create({
       text: label,
       componentManager: this.componentManager,
@@ -1202,6 +1217,7 @@ NodeLabelSet.prototype = {
         });
       },
       onChange: (function(text) {
+        LOG.debug('saving label', node, text);
         this.state.persistNode({ id: node.id, label: text });
       }).bind(this),
     });
@@ -1341,7 +1357,7 @@ UrlState.prototype = {
   persistNode: function(options) {
     options = options || {};
     var nodeId;
-    if (options.id) {
+    if (options.hasOwnProperty('id') && options.id !== null && options.id !== undefined) {
       nodeId = options.id;
     } else {
       nodeId = this._getNumNodes();
