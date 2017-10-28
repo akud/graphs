@@ -97,12 +97,12 @@ Component.prototype = {
 
   },
 
-  onClose: function(listener) {
+  onRemove: function(listener) {
     this.closeListeners.push(listener);
     return this;
   },
 
-  close: function() {
+  remove: function() {
     this.closeListeners.forEach((function(f) {
       f(this);
     }).bind(this));

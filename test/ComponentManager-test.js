@@ -11,7 +11,7 @@ describe('ComponentManager', function() {
   function ComponentClass(opts) {
     this.constructorArgs = opts;
     this.attachTo = createSpy();
-    this.onClose = createSpy();
+    this.onRemove = createSpy();
   }
 
   beforeEach(function() {
@@ -114,12 +114,12 @@ describe('ComponentManager', function() {
         pinTo: pinTo,
       });
 
-      expect(component.onClose).toHaveBeenCalled();
+      expect(component.onRemove).toHaveBeenCalled();
 
       actionQueue.step(actionQueue.mainQueueInterval);
       expect(element.style).toEqual('p1');
 
-      component.onClose.calls[0].arguments[0]();
+      component.onRemove.calls[0].arguments[0]();
 
       actionQueue.step(actionQueue.mainQueueInterval);
 

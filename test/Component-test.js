@@ -146,25 +146,25 @@ describe('Component', function() {
     });
   });
 
-  describe('close', function() {
+  describe('remove', function() {
     beforeEach(function() {
       component.attachTo(element);
     });
 
     it('removes the dom node', function() {
       expect(element.remove).toNotHaveBeenCalled();
-      component.close();
+      component.remove();
       expect(element.remove).toHaveBeenCalled();
     });
 
     it('calls all the close listeners', function() {
       var l1 = createSpy();
       var l2 = createSpy();
-      component.onClose(l1).onClose(l2);
+      component.onRemove(l1).onRemove(l2);
       expect(l1).toNotHaveBeenCalled();
       expect(l2).toNotHaveBeenCalled();
 
-      component.close();
+      component.remove();
 
       expect(l1).toHaveBeenCalledWith(component);
       expect(l2).toHaveBeenCalledWith(component);

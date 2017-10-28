@@ -34,7 +34,7 @@ ComponentManager.prototype = {
           height: element.offsetHeight,
         });
       }).bind(this));
-      component.onClose(positionTracker.cancel.bind(positionTracker));
+      component.onRemove(positionTracker.cancel.bind(positionTracker));
     }
     this.document.body.insertBefore(element, this.document.body.firstChild);
     component.attachTo(element);

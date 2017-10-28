@@ -38,7 +38,7 @@ describe('EditableLabel', function() {
     });
 
     it('takes the text from edit component and displays it', function() {
-      var editComponent = createSpyObjectWith('getText', 'close');
+      var editComponent = createSpyObjectWith('getText', 'remove');
       editComponent.getText.andReturn('edited text');
       componentManager.insertComponent.andReturn(editComponent);
       editableLabel.edit().display();
@@ -47,13 +47,13 @@ describe('EditableLabel', function() {
         constructorArgs: { text: 'edited text' },
         pinTo: pinTo,
       });
-      expect(editComponent.close).toHaveBeenCalled();
+      expect(editComponent.remove).toHaveBeenCalled();
       expect(onChange).toHaveBeenCalledWith('edited text');
     });
 
     it('can be called twice in a row', function() {
-      var displayComponent1 = createSpyObjectWith('close');
-      var displayComponent2 = createSpyObjectWith('close');
+      var displayComponent1 = createSpyObjectWith('remove');
+      var displayComponent2 = createSpyObjectWith('remove');
       var insertCallCount = 0;
       componentManager.insertComponent.andCall(function() {
         return [displayComponent1, displayComponent2][(insertCallCount++)%2];
@@ -63,8 +63,8 @@ describe('EditableLabel', function() {
       editableLabel.display();
       editableLabel.display();
 
-      expect(displayComponent1.close).toHaveBeenCalled();
-      expect(displayComponent2.close).toNotHaveBeenCalled();
+      expect(displayComponent1.remove).toHaveBeenCalled();
+      expect(displayComponent2.remove).toNotHaveBeenCalled();
     });
   });
 
@@ -83,7 +83,7 @@ describe('EditableLabel', function() {
     });
 
     it('enters display mode when the edit component is saved', function() {
-      var editComponent = createSpyObjectWith('getText', 'close');
+      var editComponent = createSpyObjectWith('getText', 'remove');
       editComponent.getText.andReturn('edited text');
       componentManager.insertComponent.andReturn(editComponent);
       editableLabel.text = 'foobar';
@@ -114,8 +114,8 @@ describe('EditableLabel', function() {
     });
 
     it('can be called twice in a row', function() {
-      var editComponent1 = createSpyObjectWith('close');
-      var editComponent2 = createSpyObjectWith('close');
+      var editComponent1 = createSpyObjectWith('remove');
+      var editComponent2 = createSpyObjectWith('remove');
       var insertCallCount = 0;
       componentManager.insertComponent.andCall(function() {
         return [editComponent1, editComponent2][(insertCallCount++)%2];
@@ -124,39 +124,39 @@ describe('EditableLabel', function() {
       editableLabel.edit();
       editableLabel.edit();
 
-      expect(editComponent1.close).toHaveBeenCalled();
-      expect(editComponent2.close).toNotHaveBeenCalled();
+      expect(editComponent1.remove).toHaveBeenCalled();
+      expect(editComponent2.remove).toNotHaveBeenCalled();
     });
 
   });
 
-  describe('close', function() {
+  describe('remove', function() {
     it('closes the display component if it was active', function() {
-      var component = createSpyObjectWith('close');
+      var component = createSpyObjectWith('remove');
       componentManager.insertComponent.andReturn(component);
 
       editableLabel.text = 'hello';
       editableLabel.display();
 
       expect(componentManager.insertComponent).toHaveBeenCalled();
-      expect(component.close).toNotHaveBeenCalled();
+      expect(component.remove).toNotHaveBeenCalled();
 
-      editableLabel.close();
+      editableLabel.remove();
 
-      expect(component.close).toHaveBeenCalled();
+      expect(component.remove).toHaveBeenCalled();
     });
 
     it('closes the edit component if it was active', function() {
-      var component = createSpyObjectWith('close');
+      var component = createSpyObjectWith('remove');
       componentManager.insertComponent.andReturn(component);
       editableLabel.edit();
 
       expect(componentManager.insertComponent).toHaveBeenCalled();
-      expect(component.close).toNotHaveBeenCalled();
+      expect(component.remove).toNotHaveBeenCalled();
 
-      editableLabel.close();
+      editableLabel.remove();
 
-      expect(component.close).toHaveBeenCalled();
+      expect(component.remove).toHaveBeenCalled();
     });
   });
 });

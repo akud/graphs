@@ -34,7 +34,7 @@ NodeLabelSet.prototype = {
 
   closeAll: function() {
     Object.values(this.labels).forEach(function(label) {
-      label.close();
+      label.remove();
     });
     this.labels = {};
   },

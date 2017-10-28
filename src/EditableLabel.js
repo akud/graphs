@@ -22,10 +22,10 @@ EditableLabel.prototype = {
 
     this.modeSwitch.exit('edit', (function(editState) {
       this.text = editState.component.getText();
-      editState.component.close();
+      editState.component.remove();
       LOG.debug('EditableLabel: got text from input component', this.text);
     }).bind(this))
-    .exit('display', function(displayState) { displayState.component.close(); });
+    .exit('display', function(displayState) { displayState.component.remove(); });
 
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
@@ -46,10 +46,10 @@ EditableLabel.prototype = {
     LOG.debug('EditableLabel: editing text', this.text);
     this._validate();
     this.modeSwitch.exit('display', (function(displayState) {
-      displayState.component.close();
+      displayState.component.remove();
       LOG.debug('EditableLabel: closed display component');
     }).bind(this))
-    .exit('edit', function(editState) { editState.component.close(); });
+    .exit('edit', function(editState) { editState.component.remove(); });
 
     this.modeSwitch.enter('edit', (function() {
        var component = this.componentManager.insertComponent({
@@ -75,15 +75,15 @@ EditableLabel.prototype = {
     }
   },
 
-  close: function() {
+  remove: function() {
     this.modeSwitch
-      .exit('display', function(displayState) { displayState.component.close(); })
-      .exit('edit', function(editState) { editState.component.close(); }) ;
+      .exit('display', function(displayState) { displayState.component.remove(); })
+      .exit('edit', function(editState) { editState.component.remove(); }) ;
     return this;
   },
 
   _closeComponent: function(state) {
-    state.component.close();
+    state.component.remove();
   },
 };
 
