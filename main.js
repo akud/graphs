@@ -1,6 +1,6 @@
 var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
-var Graph = require('./src/Graph');
+var GraphComponent = require('./src/GraphComponent');
 var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
@@ -53,7 +53,7 @@ if (width < 1000) {
 }
 
 
-global.graph = new Graph(Object.assign(
+global.graph = new GraphComponent(Object.assign(
   {
     adapter: adapter,
     editMode: editMode,

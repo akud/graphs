@@ -1,10 +1,10 @@
-var Graph = require('../src/Graph');
+var GraphComponent = require('../src/GraphComponent');
 var graphelements = require('../src/graphelements');
 var colors = require('../src/colors');
 var MockActionQueue = require('./utils/MockActionQueue');
 
 
-describe('Graph', function() {
+describe('GraphComponent', function() {
   var adapter;
   var targetElement;
   var state;
@@ -47,7 +47,7 @@ describe('Graph', function() {
   });
 
   function newGraph(options) {
-    return new Graph(Object.assign({
+    return new GraphComponent(Object.assign({
         adapter: adapter,
         actionQueue: actionQueue,
         state: state,
