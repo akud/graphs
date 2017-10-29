@@ -8,6 +8,7 @@ var ResetButton = require('./src/ResetButton');
 var EditMode = require('./src/EditMode');
 var NodeLabelSet = require('./src/NodeLabelSet');
 var ComponentManager = require('./src/ComponentManager');
+var Graph = require('./src/Graph');
 
 require('./src/Logger').level = global.logLevel;
 
@@ -57,23 +58,28 @@ global.graph = new GraphComponent(Object.assign(
   {
     adapter: adapter,
     editMode: editMode,
-    labelSet: labelSet,
-    state: state,
+    graph: new Graph({
+      state: state,
+      adapter: adapter,
+      actionQueue: actionQueue,
+      labelSet: labelSet,
+      initialNodes: state.retrievePersistedNodes(),
+      initialEdges: state.retrievePersistedEdges(),
+      nodeSize: nodeSize,
+      edgeDistance: edgeDistance,
+    }),
     width: width,
     height: height,
-    nodeSize: nodeSize,
-    edgeDistance: edgeDistance,
     nodeAreaFuzzFactor: 0.1,
   },
   componentServices
 ));
 
-global.resetButton = new ResetButton({
-  actionQueue: actionQueue,
+global.resetButton = new ResetButton(Object.assign({
   resettables: [
     global.graph,
   ],
-});
+}, componentServices));
 
 global.graph.attachTo(document.getElementById('main-graph'));
 global.resetButton.attachTo(document.getElementById('reset-button'));

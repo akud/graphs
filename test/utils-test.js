@@ -98,6 +98,21 @@ describe('utils', function() {
       expect(utils.isOneValuedObject({a: 'b', c: null})).toBe(true)
       expect(utils.isOneValuedObject({a: 'b', c: 'd'})).toBe(false)
     });
+  });
 
+  describe('startingAt', function() {
+    it('returns a reording of the array', function() {
+      var original = ['foo', 'bar', 'hello', 'world'];
+      var reordered = utils.startingAt(original, 'hello');
+      expect(reordered).toEqual(['hello', 'world', 'foo', 'bar']);
+      expect(original).toEqual(['foo', 'bar', 'hello', 'world']);
+    });
+
+    it('can take the last element', function() {
+      var original = ['foo', 'bar', 'hello', 'world'];
+      var reordered = utils.startingAt(original, 'world');
+      expect(reordered).toEqual(['world', 'foo', 'bar', 'hello']);
+      expect(original).toEqual(['foo', 'bar', 'hello', 'world']);
+    });
   });
 });
