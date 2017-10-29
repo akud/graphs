@@ -6,7 +6,7 @@ var LOG = require('./Logger');
 function EditMode(opts) {
   this.adapter = opts && opts.adapter;
   this.animator = opts && opts.animator;
-  this.alternateInterval = (opts && opts.alternateInterval) || 100;
+  this.alternateInterval = (opts && opts.alternateInterval) || 250;
   this.labelSet = opts && opts.labelSet;
   this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch({
     name: 'editMode',

@@ -71,7 +71,13 @@ function startingAt(array, startingItem) {
   } else {
     return array;
   }
+}
 
+function requireNonNull(obj) {
+  if (!obj) {
+    throw new Error('missing required object');
+  }
+  return obj;
 }
 
 module.exports = {
@@ -80,4 +86,5 @@ module.exports = {
   normalizeEvent: normalizeEvent,
   isOneValuedObject: isOneValuedObject,
   startingAt: startingAt,
+  requireNonNull: requireNonNull,
 };

@@ -115,4 +115,20 @@ describe('utils', function() {
       expect(original).toEqual(['foo', 'bar', 'hello', 'world']);
     });
   });
+
+  describe('requireNonNull', function() {
+    it('throws if the object is not present', function() {
+      try {
+        utils.requireNonNull(undefined);
+        fail('should have thrown');
+      } catch(err) { }
+      try {
+        utils.requireNonNull(null);
+        fail('should have thrown');
+      } catch(err) { }
+    });
+    it('returns the object if it is present', function() {
+      expect(utils.requireNonNull({ a: 'b' })).toEqual({ a: 'b' });
+    });
+  });
 });
