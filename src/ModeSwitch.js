@@ -1,4 +1,5 @@
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('ModeSwitch');
 
 function ModeSwitch(opts) {
   this.actionQueue = opts && opts.actionQueue;

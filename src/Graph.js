@@ -1,6 +1,7 @@
 var colors = require('./colors');
 var utils = require('./utils');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('Graph');
 
 function Graph(opts) {
   this.state = opts && opts.state;
@@ -18,7 +19,7 @@ function Graph(opts) {
 Graph.prototype = {
   initialize: function(opts) {
     this._validate();
-    LOG.debug('Graph: initializing graph', this);
+    LOG.debug('initializing graph', this);
 
     this.adapter.initialize(
       opts.element,
@@ -38,7 +39,7 @@ Graph.prototype = {
       })
     );
     this.actionQueue.defer((function() {
-      LOG.debug('Graph: initializing label set');
+      LOG.debug('initializing label set');
       this.labelSet.initialize(
         this.initialNodes.map((function(n) {
           return {

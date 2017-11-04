@@ -1,6 +1,7 @@
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('Component');
 
 /**
  * Component constructor

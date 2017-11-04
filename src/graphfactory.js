@@ -10,7 +10,8 @@ var ImmutableGraph = require('./ImmutableGraph');
 var NodeLabelSet = require('./NodeLabelSet');
 var utils = require('./utils');
 
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('graphfactory');
 
 module.exports = {
 

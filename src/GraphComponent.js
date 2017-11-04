@@ -1,6 +1,7 @@
 var Component = require('./Component');
 var utils = require('./utils');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('GraphComponent');
 
 
 function GraphComponent(opts) {
