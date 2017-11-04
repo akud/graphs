@@ -291,7 +291,8 @@ module.exports = ColorChangingGraph;
 },{"./Graph":12}],7:[function(require,module,exports){
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('Component');
 
 /**
  * Component constructor
@@ -497,7 +498,8 @@ module.exports = DisallowedEditMode;
 },{"./EditMode":10}],10:[function(require,module,exports){
 var ModeSwitch = require('./ModeSwitch');
 var colors = require('./colors');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('EditMode');
 
 
 function EditMode(opts) {
@@ -515,7 +517,7 @@ function EditMode(opts) {
 EditMode.prototype = {
 
   activate: function(node) {
-    LOG.info('EditMode: activating');
+    LOG.info('activating');
     this._validate();
     this.modeSwitch
       .exit('display')
@@ -545,18 +547,18 @@ EditMode.prototype = {
           otherNodes: otherNodes,
           originalColors: originalColors,
         };
-        LOG.debug('EditMode: activated', editState);
+        LOG.debug('activated', editState);
         return editState;
       }).bind(this));
   },
 
   deactivate: function() {
-    LOG.debug('EditMode: deactvating');
+    LOG.debug('deactvating');
     this._validate();
     this.modeSwitch
       .exit('edit', this._cleanUpEditState.bind(this))
       .enter('display', function() {
-        LOG.debug('EditMode: deactvated');
+        LOG.debug('deactvated');
       });
   },
 
@@ -612,7 +614,8 @@ module.exports = EditMode;
 var ModeSwitch = require('./ModeSwitch');
 var BlockText = require('./BlockText');
 var TextBox = require('./TextBox');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('EditableLabel');
 
 function EditableLabel(opts) {
   if (opts) {
@@ -628,13 +631,13 @@ function EditableLabel(opts) {
 
 EditableLabel.prototype = {
   display: function() {
-    LOG.debug('EditableLabel: displaying text', this.text);
+    LOG.debug('displaying text', this.text);
     this._validate();
 
     this.modeSwitch.exit('edit', (function(editState) {
       this.text = editState.component.getText();
       editState.component.remove();
-      LOG.debug('EditableLabel: got text from input component', this.text);
+      LOG.debug('got text from input component', this.text);
     }).bind(this))
     .exit('display', function(displayState) { displayState.component.remove(); });
 
@@ -654,11 +657,11 @@ EditableLabel.prototype = {
   },
 
   edit: function() {
-    LOG.debug('EditableLabel: editing text', this.text);
+    LOG.debug('editing text', this.text);
     this._validate();
     this.modeSwitch.exit('display', (function(displayState) {
       displayState.component.remove();
-      LOG.debug('EditableLabel: closed display component');
+      LOG.debug('closed display component');
     }).bind(this))
     .exit('edit', function(editState) { editState.component.remove(); });
 
@@ -671,7 +674,7 @@ EditableLabel.prototype = {
         },
         pinTo: this.pinTo,
       });
-      LOG.debug('EditableLabel: opened edit component');
+      LOG.debug('opened edit component');
       return { component: component };
     }).bind(this));
     return this;
@@ -700,14 +703,15 @@ EditableLabel.prototype = {
 
 EditableLabel.Factory = {
   create: function(opts) { return new EditableLabel(opts); },
-};
 
+};
 module.exports = EditableLabel;
 
 },{"./BlockText":4,"./Logger":16,"./ModeSwitch":17,"./TextBox":21}],12:[function(require,module,exports){
 var colors = require('./colors');
 var utils = require('./utils');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('Graph');
 
 function Graph(opts) {
   this.state = opts && opts.state;
@@ -725,7 +729,7 @@ function Graph(opts) {
 Graph.prototype = {
   initialize: function(opts) {
     this._validate();
-    LOG.debug('Graph: initializing graph', this);
+    LOG.debug('initializing graph', this);
 
     this.adapter.initialize(
       opts.element,
@@ -745,7 +749,7 @@ Graph.prototype = {
       })
     );
     this.actionQueue.defer((function() {
-      LOG.debug('Graph: initializing label set');
+      LOG.debug('initializing label set');
       this.labelSet.initialize(
         this.initialNodes.map((function(n) {
           return {
@@ -823,7 +827,8 @@ module.exports = Graph;
 },{"./Logger":16,"./colors":23,"./utils":26}],13:[function(require,module,exports){
 var Component = require('./Component');
 var utils = require('./utils');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('GraphComponent');
 
 
 function GraphComponent(opts) {
@@ -904,7 +909,8 @@ module.exports = GraphComponent;
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var BoundingBox = require('./BoundingBox');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('GreulerAdapter');
 
 
 function GreulerAdapter(greuler) {
@@ -966,7 +972,7 @@ GreulerAdapter.prototype = {
   },
 
   getNode: function(nodeId) {
-    LOG.debug('GreulerAdapter: retrieving node', nodeId);
+    LOG.debug('retrieving node', nodeId);
     return this.getNodes(function(n) { return n.id === nodeId; })[0];
   },
 
@@ -1001,7 +1007,7 @@ GreulerAdapter.prototype = {
   },
 
   _getDomElement: function(node) {
-    LOG.debug('GreulerAdapter: retrieving dom element for node: ' + node.index, this.instance);
+    LOG.debug('retrieving dom element for node: ' + node.index, this.instance);
     var childNodes = this.instance.nodeGroup[0][0].childNodes;
     LOG.debug(childNodes);
     return childNodes[node.index].getElementsByTagName('circle')[0];
@@ -1081,39 +1087,44 @@ var LEVEL_ORDER = [
   'ERROR',
 ];
 
-function Logger() {
-  this.level = 'WARN';
+function Logger(name) {
+  this.name = name || 'Logger';
 }
+
+Logger.level = 'WARN';
+Logger.levels = {};
 
 Logger.prototype = {
   debug: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'DEBUG'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'DEBUG', this.name].concat(Array.prototype.splice.call(arguments, 0)));
   },
   info: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'INFO'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'INFO', this.name].concat(Array.prototype.splice.call(arguments, 0)));
   },
   warn: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'WARN'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'WARN', this.name].concat(Array.prototype.splice.call(arguments, 0)));
   },
   error: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'ERROR'].concat(Array.prototype.splice.call(arguments, 0)));
+    this._log.apply(this, [new Date().getTime(), 'ERROR', this.name].concat(Array.prototype.splice.call(arguments, 0)));
   },
 
   _log: function() {
     var level = arguments[1];
-    if (LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(this.level)) {
+    var logLevel = Logger.levels[this.name] || Logger.level;
+    if (LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(logLevel)) {
       global.console.log.apply(global.console.log, arguments);
     }
   },
 };
 
 
-module.exports = new Logger();
+module.exports = Logger;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],17:[function(require,module,exports){
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('ModeSwitch');
 
 function ModeSwitch(opts) {
   this.actionQueue = opts && opts.actionQueue;
@@ -1207,7 +1218,8 @@ module.exports = ModeSwitch;
 },{"./Logger":16}],18:[function(require,module,exports){
 var Position = require('./Position');
 var EditableLabel = require('./EditableLabel');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('NodeLabelSet');
 
 function NodeLabelSet(opts) {
   this.componentManager = opts && opts.componentManager;
@@ -1219,7 +1231,7 @@ function NodeLabelSet(opts) {
 NodeLabelSet.prototype = {
 
   initialize: function(initialData) {
-    LOG.debug('LabelSet: initializing', initialData);
+    LOG.debug('initializing', initialData);
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
@@ -1230,12 +1242,12 @@ NodeLabelSet.prototype = {
   },
 
   edit: function(node) {
-    LOG.debug('LabelSet: editing label for node ' + node.id);
+    LOG.debug('editing label for node ' + node.id);
     this._getOrCreateLabel(node).edit();
   },
 
   display: function(node) {
-    LOG.debug('LabelSet: displaying label for node ' + node.id);
+    LOG.debug('displaying label for node ' + node.id);
     this._getOrCreateLabel(node).display();
   },
 
@@ -1736,7 +1748,8 @@ var ImmutableGraph = require('./ImmutableGraph');
 var NodeLabelSet = require('./NodeLabelSet');
 var utils = require('./utils');
 
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('graphfactory');
 
 module.exports = {
 
