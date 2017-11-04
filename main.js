@@ -1,45 +1,19 @@
-var greuler = global.greuler;
 var GreulerAdapter = require('./src/GreulerAdapter');
-var Graph = require('./src/Graph');
-var Animator = require('./src/Animator');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
 var ResetButton = require('./src/ResetButton');
-var EditMode = require('./src/EditMode');
-var NodeLabelSet = require('./src/NodeLabelSet');
-var ComponentManager = require('./src/ComponentManager');
+var graphfactory = require('./src/graphfactory');
 
 require('./src/Logger').level = global.logLevel;
 
-global.adapter = new GreulerAdapter(greuler);
-
 var actionQueue = new ActionQueue();
-var componentServices = {
-  actionQueue: actionQueue,
-};
-var componentManager = new ComponentManager({
-  actionQueue: actionQueue,
-  componentServices: componentServices,
-  document: document,
-});
-
+var urlSearchParams = new URLSearchParams(window.location.search);
 var state = new UrlState({
   baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname,
   setUrl: window.history.replaceState.bind(window.history, {}, ''),
-  urlSearchParams: new URLSearchParams(window.location.search),
+  urlSearchParams: urlSearchParams,
 });
 
-var labelSet = new NodeLabelSet({
-  componentManager: componentManager,
-  state: state,
-});
-
-var editMode = new EditMode({
-  adapter: adapter,
-  animator: new Animator({ actionQueue: actionQueue }),
-  labelSet: labelSet,
-  alternateInterval: 250,
-});
 
 var horizontalPadding = 20;
 var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
@@ -53,27 +27,29 @@ if (width < 1000) {
 }
 
 
-global.graph = new Graph(Object.assign(
-  {
-    adapter: adapter,
-    editMode: editMode,
-    labelSet: labelSet,
-    state: state,
-    width: width,
-    height: height,
-    nodeSize: nodeSize,
-    edgeDistance: edgeDistance,
-    nodeAreaFuzzFactor: 0.1,
-  },
-  componentServices
-));
-
-global.resetButton = new ResetButton({
+global.graphComponent = graphfactory.newGraphComponent({
+  document: global.document,
+  adapter: new GreulerAdapter(global.greuler),
   actionQueue: actionQueue,
-  resettables: [
-    global.graph,
-  ],
+  state: state,
+  width: width,
+  height: height,
+  nodeAreaFuzzFactor: 0.1,
+  edgeDistance: edgeDistance,
+  alternateInterval: 250,
+  immutable: urlSearchParams.get('immutable') === 'true',
+  onlyChangeColors: urlSearchParams.get('onlyChangeColors') === 'true',
+  initialNodes: state.retrievePersistedNodes(),
+  initialEdges: state.retrievePersistedEdges(),
 });
 
-global.graph.attachTo(document.getElementById('main-graph'));
+global.graph = global.graphComponent.graph;
+
+global.resetButton = new ResetButton(Object.assign({
+  resettables: [
+    global.graphComponent,
+  ],
+}, { actionQueue: actionQueue }));
+
+global.graphComponent.attachTo(document.getElementById('main-graph'));
 global.resetButton.attachTo(document.getElementById('reset-button'));

@@ -18,3 +18,5 @@
 * Longer content on nodes
   * Separate view for paragraph/essay-length text?
   * links
+* refactor logger to have class name as prefix in messages
+* refactor logger to have class name as prefix in messages

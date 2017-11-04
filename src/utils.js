@@ -55,7 +55,29 @@ function isOneValuedObject(obj) {
   } else {
     return false;
   }
+}
 
+function startingAt(array, startingItem) {
+  var startingIndex = array.indexOf(startingItem)
+  if (startingIndex >= 0) {
+    var returnValue = [];
+    for (var i = startingIndex; i < array.length; i++) {
+      returnValue.push(array[i]);
+    }
+    for (var i = 0; i < startingIndex; i++) {
+      returnValue.push(array[i]);
+    }
+    return returnValue;
+  } else {
+    return array;
+  }
+}
+
+function requireNonNull(obj) {
+  if (!obj) {
+    throw new Error('missing required object');
+  }
+  return obj;
 }
 
 module.exports = {
@@ -63,4 +85,6 @@ module.exports = {
   optional: optional,
   normalizeEvent: normalizeEvent,
   isOneValuedObject: isOneValuedObject,
+  startingAt: startingAt,
+  requireNonNull: requireNonNull,
 };

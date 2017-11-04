@@ -1,10 +1,9 @@
-var Graph = require('../src/Graph');
+var ColorChangingGraph = require('../src/ColorChangingGraph');
 var colors = require('../src/colors');
 var graphelements = require('../src/graphelements');
 var MockActionQueue = require('./utils/MockActionQueue');
 
-
-describe('Graph', function() {
+describe('ImmutableGraph', function() {
   var state;
   var adapter;
   var actionQueue;
@@ -38,7 +37,7 @@ describe('Graph', function() {
   });
 
   function newGraph(opts) {
-    return new Graph(Object.assign({
+    return new ColorChangingGraph(Object.assign({
       state: state,
       adapter: adapter,
       actionQueue: actionQueue,
@@ -188,88 +187,29 @@ describe('Graph', function() {
   });
 
   describe('addNode', function() {
-    it('adds a node to the adapter and state', function() {
-      var graph = newGraph();
-      var id = 0;
-      state.persistNode.andCall(function() {
-        return id++;
-      });
-
-      graph.addNode();
-
-      expect(adapter.addNode).toHaveBeenCalled();
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 0, label: '', color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-
-      graph.addNode();
-      graph.addNode();
-      graph.addNode();
-      expect(adapter.addNode.calls.length).toBe(4);
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 1, label: '', color: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 2, label: '', color: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', color: '#2980B9' });
-
-      expect(state.persistNode.calls.length).toBe(4);
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-    });
-
-    it('passes node size to adapter', function() {
-      var graph = newGraph(
-        { nodeSize: 56 }
-      );
-
-      state.persistNode.andReturn(3);
-
-      graph.addNode();
-
-      expect(adapter.addNode).toHaveBeenCalledWith(
-        { id: 3, label: '', color: '#2980B9', size: 56 }
-      );
+    it('does nothing', function() {
+      newGraph().addNode();
+      expect(adapter.addNode).toNotHaveBeenCalled();
+      expect(state.persistNode).toNotHaveBeenCalled();
     });
   });
 
   describe('addEdge', function() {
-    it('connects the two nodes', function() {
+    it('does nothing', function() {
       var originalNode = new graphelements.Node({ id: 0 });
       var otherNode = new graphelements.Node({ id: 4 });
 
-      var graph = newGraph({ edgeDistance: 456 });
-
-      graph.addEdge(originalNode, otherNode);
-
-      expect(adapter.addEdge).toHaveBeenCalledWith({
-        source: originalNode,
-        target: otherNode,
-        distance: 456,
-      });
-      expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
+      newGraph().addEdge(originalNode, otherNode);
+      expect(adapter.addEdge).toNotHaveBeenCalled();
+      expect(state.persistEdge).toNotHaveBeenCalled();
     });
   });
 
   describe('reset', function() {
-    var graph;
-    beforeEach(function() {
-      graph = newGraph();
-    });
-
-    it('resets the state', function() {
-      graph.reset();
-      expect(state.reset).toHaveBeenCalled();
-      expect(labelSet.closeAll).toHaveBeenCalled();
-    });
-
-    it('removes all the nodes', function() {
-      state.retrievePersistedNodes.andReturn([
-        { id: 0 },
-        { id: 1 },
-        { id: 2 },
-      ]);
-      graph.reset();
-      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 0 });
-      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 1 });
-      expect(adapter.removeNode).toHaveBeenCalledWith({ id: 2 });
+    it('does nothing', function() {
+      newGraph().reset();
+      expect(state.reset).toNotHaveBeenCalled();
+      expect(labelSet.closeAll).toNotHaveBeenCalled();
     });
   });
 
