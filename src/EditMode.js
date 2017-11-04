@@ -1,6 +1,7 @@
 var ModeSwitch = require('./ModeSwitch');
 var colors = require('./colors');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('EditMode');
 
 
 function EditMode(opts) {
@@ -18,7 +19,7 @@ function EditMode(opts) {
 EditMode.prototype = {
 
   activate: function(node) {
-    LOG.info('EditMode: activating');
+    LOG.info('activating');
     this._validate();
     this.modeSwitch
       .exit('display')
@@ -48,18 +49,18 @@ EditMode.prototype = {
           otherNodes: otherNodes,
           originalColors: originalColors,
         };
-        LOG.debug('EditMode: activated', editState);
+        LOG.debug('activated', editState);
         return editState;
       }).bind(this));
   },
 
   deactivate: function() {
-    LOG.debug('EditMode: deactvating');
+    LOG.debug('deactvating');
     this._validate();
     this.modeSwitch
       .exit('edit', this._cleanUpEditState.bind(this))
       .enter('display', function() {
-        LOG.debug('EditMode: deactvated');
+        LOG.debug('deactvated');
       });
   },
 

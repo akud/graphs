@@ -1,6 +1,7 @@
 var Position = require('./Position');
 var EditableLabel = require('./EditableLabel');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('NodeLabelSet');
 
 function NodeLabelSet(opts) {
   this.componentManager = opts && opts.componentManager;
@@ -12,7 +13,7 @@ function NodeLabelSet(opts) {
 NodeLabelSet.prototype = {
 
   initialize: function(initialData) {
-    LOG.debug('LabelSet: initializing', initialData);
+    LOG.debug('initializing', initialData);
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
@@ -23,12 +24,12 @@ NodeLabelSet.prototype = {
   },
 
   edit: function(node) {
-    LOG.debug('LabelSet: editing label for node ' + node.id);
+    LOG.debug('editing label for node ' + node.id);
     this._getOrCreateLabel(node).edit();
   },
 
   display: function(node) {
-    LOG.debug('LabelSet: displaying label for node ' + node.id);
+    LOG.debug('displaying label for node ' + node.id);
     this._getOrCreateLabel(node).display();
   },
 

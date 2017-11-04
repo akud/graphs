@@ -1,7 +1,8 @@
 var ModeSwitch = require('./ModeSwitch');
 var BlockText = require('./BlockText');
 var TextBox = require('./TextBox');
-var LOG = require('./Logger');
+var Logger = require('./Logger');
+var LOG = new Logger('EditableLabel');
 
 function EditableLabel(opts) {
   if (opts) {
@@ -17,13 +18,13 @@ function EditableLabel(opts) {
 
 EditableLabel.prototype = {
   display: function() {
-    LOG.debug('EditableLabel: displaying text', this.text);
+    LOG.debug('displaying text', this.text);
     this._validate();
 
     this.modeSwitch.exit('edit', (function(editState) {
       this.text = editState.component.getText();
       editState.component.remove();
-      LOG.debug('EditableLabel: got text from input component', this.text);
+      LOG.debug('got text from input component', this.text);
     }).bind(this))
     .exit('display', function(displayState) { displayState.component.remove(); });
 
@@ -43,11 +44,11 @@ EditableLabel.prototype = {
   },
 
   edit: function() {
-    LOG.debug('EditableLabel: editing text', this.text);
+    LOG.debug('editing text', this.text);
     this._validate();
     this.modeSwitch.exit('display', (function(displayState) {
       displayState.component.remove();
-      LOG.debug('EditableLabel: closed display component');
+      LOG.debug('closed display component');
     }).bind(this))
     .exit('edit', function(editState) { editState.component.remove(); });
 
@@ -60,7 +61,7 @@ EditableLabel.prototype = {
         },
         pinTo: this.pinTo,
       });
-      LOG.debug('EditableLabel: opened edit component');
+      LOG.debug('opened edit component');
       return { component: component };
     }).bind(this));
     return this;
@@ -89,6 +90,6 @@ EditableLabel.prototype = {
 
 EditableLabel.Factory = {
   create: function(opts) { return new EditableLabel(opts); },
-};
 
+};
 module.exports = EditableLabel;
