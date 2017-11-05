@@ -17,6 +17,17 @@ function EditMode(opts) {
 
 
 EditMode.prototype = {
+  className: 'EditMode',
+
+  getConstructorArgs: function() {
+    return {
+      adapter: this.adapter,
+      animator: this.animator,
+      alternateInterval: this.alternateInterval,
+      labelSet: this.labelSet,
+      modeSwitch: this.modeSwitch,
+    };
+  },
 
   activate: function(node) {
     LOG.info('activating');

@@ -11,6 +11,13 @@ function NodeLabelSet(opts) {
 }
 
 NodeLabelSet.prototype = {
+  className: 'NodeLabelSet',
+  getConstructorArgs: function() {
+    return {
+      componentManager: this.componentManager,
+      state: this.state,
+    };
+  },
 
   initialize: function(initialData) {
     LOG.debug('initializing', initialData);

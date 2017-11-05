@@ -17,6 +17,22 @@ function Graph(opts) {
 }
 
 Graph.prototype = {
+  className: 'Graph',
+
+  getConstructorArgs: function() {
+    return {
+      state: this.state,
+      adapter: this.adapter,
+      actionQueue: this.actionQueue,
+      labelSet: this.labelSet,
+      colorChoices: this.colorChoices,
+      nodeSize: this.nodeSize,
+      edgeDistance: this.edgeDistance,
+      initialNodes: this.state.retrievePersistedNodes(),
+      initialEdges: this.state.retrievePersistedEdges(),
+    };
+  },
+
   initialize: function(opts) {
     this._validate();
     LOG.debug('initializing graph', this);

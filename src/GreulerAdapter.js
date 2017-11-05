@@ -1,17 +1,24 @@
 var graphelements = require('./graphelements');;
 var utils = require('./utils');
 var BoundingBox = require('./BoundingBox');
+var Literal = require('./Literal');
 var Logger = require('./Logger');
 var LOG = new Logger('GreulerAdapter');
 
 
-function GreulerAdapter(greuler) {
-  this.greuler = greuler;
+function GreulerAdapter(opts) {
+  this.greuler = opts && opts.greuler;
   this.isInBulkOperation = false;
 }
 
 
 GreulerAdapter.prototype = {
+  className: 'GreulerAdapter',
+
+  getConstructorArgs: function() {
+    return { greuler: new Literal('global.greuler') };
+  },
+
   initialize: function(targetNode, options) {
     options = options || {};
     this.instance = this.greuler(utils.optional({

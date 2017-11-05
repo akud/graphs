@@ -1,4 +1,5 @@
 var utils = require('./utils');
+var Literal = require('./Literal');
 
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
@@ -12,6 +13,15 @@ function UrlState(options) {
 }
 
 UrlState.prototype = {
+  className: 'UrlState',
+  getConstructorArgs: function() {
+    return {
+      baseUrl: this.baseUrl,
+      setUrl: new Literal('window.history.replaceState.bind(window.history, {}, \'\')'),
+      urlSearchParams: new Literal('new URLSearchParams(window.location.search)'),
+    };
+  },
+
   /**
    * Perist a node and return its id
    */

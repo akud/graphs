@@ -1,6 +1,7 @@
 var utils = require('./utils');
 var Position = require('./Position');
 var Component = require('./Component');
+var Literal = require('./Literal');
 
 function ComponentManager(options) {
   this.document = options && options.document;
@@ -9,6 +10,16 @@ function ComponentManager(options) {
 }
 
 ComponentManager.prototype = {
+  className: 'ComponentManager',
+
+  getConstructorArgs: function() {
+    return {
+      document: new Literal('global.document'),
+      actionQueue: this.actionQueue,
+      componentServices: this.componentServices,
+    };
+  },
+
   insertComponent: function(options) {
     options = Object.assign({
       position: new Position({ topLeft: { x: 0, y: 0 }}),

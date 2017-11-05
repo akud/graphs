@@ -17,6 +17,17 @@ function EditableLabel(opts) {
 }
 
 EditableLabel.prototype = {
+  className: 'EditableLabel',
+
+  getConstructorArgs: function() {
+    return {
+      componentManager: this.componentManager,
+      text: this.text,
+      pinTo: this.pinTo,
+      onChange: this.onChange,
+    };
+  },
+
   display: function() {
     LOG.debug('displaying text', this.text);
     this._validate();

@@ -8,6 +8,9 @@ function BoundingBox(dimensions) {
 }
 
 BoundingBox.prototype = {
+  className: 'BoundingBox',
+
+  getConstructorArgs: function() { return this.dimensions; },
 
   expandBy: function(factor) {
     return new BoundingBox({

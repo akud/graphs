@@ -1,3 +1,4 @@
+var Literal = require('../src/Literal');
 var utils = require('../src/utils');
 
 describe('utils', function() {
@@ -130,5 +131,140 @@ describe('utils', function() {
     it('returns the object if it is present', function() {
       expect(utils.requireNonNull({ a: 'b' })).toEqual({ a: 'b' });
     });
+  });
+
+  describe('replaceAll', function() {
+    it('replaces all the occurences of original char', function() {
+      expect(utils.replaceAll('hello world', 'l', 'u')).toEqual('heuuo worud');
+    });
+  });
+
+  describe('toJs', function() {
+    it('returns primitives', function() {
+      expect(utils.toJs('a')).toEqual('\'a\'');
+      expect(utils.toJs(3)).toEqual('3');
+      expect(utils.toJs(0)).toBe('0');
+      expect(utils.toJs(null)).toEqual('null');
+    });
+
+    it('escapes quotes in a string', function() {
+      expect(utils.toJs("hello 'world'")).toEqual("'hello \\'world\\''");
+      expect(utils.toJs(3)).toEqual('3');
+      expect(utils.toJs(null)).toEqual('null');
+    });
+
+    it('formats arrays of primitives', function() {
+      expect(utils.toJs(['a', 'b', 'c'])).toEqual(
+        '[\n' +
+        '  \'a\',\n' +
+        '  \'b\',\n' +
+        '  \'c\',\n' +
+        ']'
+      );
+      expect(utils.toJs([1, 2, 3])).toEqual(
+        '[\n' +
+        '  1,\n' +
+        '  2,\n' +
+        '  3,\n' +
+        ']'
+     );
+     expect(utils.toJs([1, '2', 3])).toEqual(
+        '[\n' +
+        '  1,\n' +
+        '  \'2\',\n' +
+        '  3,\n' +
+        ']'
+     );
+    });
+
+    it('formats objects of primitives', function() {
+      expect(utils.toJs({a: 'b', c: 'd' })).toEqual(
+        '{\n' +
+        '  a: \'b\',\n' +
+        '  c: \'d\',\n' +
+        '}'
+      );
+      expect(utils.toJs({a: 1, c: 'd' })).toEqual(
+        '{\n' +
+        '  a: 1,\n' +
+        '  c: \'d\',\n' +
+        '}'
+      );
+    });
+
+    it('formats objects with constructor args and class names', function() {
+      var obj = {
+        className: 'CoolJsClass',
+        getConstructorArgs: function() { return { a: 'b', c: 45 }; },
+      };
+      expect(utils.toJs(obj)).toEqual(
+        'new CoolJsClass({\n' +
+        '  a: \'b\',\n' +
+        '  c: 45,\n' +
+        '})'
+      );
+    });
+
+    it('returns literal values', function() {
+      var foo = { a: new Literal('global.setTimeout') };
+      expect(utils.toJs(foo)).toEqual(
+        '{\n' +
+        '  a: global.setTimeout,\n' +
+        '}'
+      );
+    });
+
+    it('handles objects inside arrays', function() {
+      var foo = [ { a: 'b' }, { c: 'd' } ];
+      expect(utils.toJs(foo)).toEqual(
+        '[\n' +
+        '  {\n' +
+        '    a: \'b\',\n' +
+        '  },\n' +
+        '  {\n' +
+        '    c: \'d\',\n' +
+        '  },\n' +
+        ']'
+      );
+    });
+
+    it('handles everything recursively', function() {
+      var obj = {
+        className: 'TopLevelClass',
+        getConstructorArgs: function() {
+          return {
+            a: 'b',
+            c: [45, { d: 123 }],
+            d: {
+              className: 'NestedClass',
+              getConstructorArgs: function() {
+                return { e: [21, 34], f: { foo: 'bar' } };
+              },
+            },
+          };
+        },
+      };
+      expect(utils.toJs(obj)).toEqual(
+        'new TopLevelClass({\n' +
+        '  a: \'b\',\n' +
+        '  c: [\n' +
+        '    45,\n' +
+        '    {\n' +
+        '      d: 123,\n' +
+        '    },\n' +
+        '  ],\n' +
+        '  d: new NestedClass({\n' +
+        '    e: [\n' +
+        '      21,\n' +
+        '      34,\n' +
+        '    ],\n' +
+        '    f: {\n' +
+        '      foo: \'bar\',\n' +
+        '    },\n' +
+        '  }),\n' +
+        '})'
+      );
+    });
+
   });
 });

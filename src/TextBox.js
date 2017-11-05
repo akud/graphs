@@ -7,6 +7,8 @@ function TextBox(options) {
 }
 
 TextBox.prototype = Object.assign(new Component(), {
+  className: 'TextBox',
+
   getGeneratedMarkup: function() {
     return '<input type="text"' +
     ' value="' + this.initialText + '"' +

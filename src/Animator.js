@@ -3,9 +3,15 @@ function Animator(options) {
 }
 
 Animator.prototype = {
+  className: 'Animator',
+
   alternate: function() {
     this._checkDependencies();
     return new AlternatingAnimation(this.actionQueue, Array.prototype.slice.call(arguments));
+  },
+
+  getConstructorArgs: function() {
+    return { actionQueue: this.actionQueue };
   },
 
   _checkDependencies: function() {

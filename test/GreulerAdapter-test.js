@@ -63,7 +63,7 @@ describe('GreulerAdapter', function() {
   }
 
   it('does nothing when constructed', function() {
-    new GreulerAdapter(greuler);
+    new GreulerAdapter({ greuler: greuler });
     expect(greuler).toNotHaveBeenCalled();
   });
 
@@ -71,7 +71,7 @@ describe('GreulerAdapter', function() {
     var adapter;
     var element;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       element = new MockDomNode({ id: 'asdkfwer' });
     });
 
@@ -161,7 +161,7 @@ describe('GreulerAdapter', function() {
   describe('add node', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
@@ -207,7 +207,7 @@ describe('GreulerAdapter', function() {
   describe('addEdge', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
@@ -259,7 +259,7 @@ describe('GreulerAdapter', function() {
     var domElements;
 
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
       domElements = [
         new MockDomNode(),
@@ -408,7 +408,7 @@ describe('GreulerAdapter', function() {
   describe('setNodeColor', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
@@ -426,7 +426,7 @@ describe('GreulerAdapter', function() {
   describe('getNodes', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
@@ -588,7 +588,7 @@ describe('GreulerAdapter', function() {
   describe('getNode', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
@@ -627,7 +627,7 @@ describe('GreulerAdapter', function() {
   describe('performInBulk', function() {
     var adapter;
     beforeEach(function() {
-      adapter = new GreulerAdapter(greuler);
+      adapter = new GreulerAdapter({ greuler: greuler });
       adapter.initialize(new MockDomNode());
     });
 
