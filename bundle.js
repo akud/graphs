@@ -41,6 +41,8 @@ global.graphComponent = graphfactory.newGraphComponent({
   alternateInterval: 250,
   immutable: urlSearchParams.get('immutable') === 'true',
   onlyChangeColors: urlSearchParams.get('onlyChangeColors') === 'true',
+  colorChoices: urlSearchParams.has('colorChoices') &&
+    urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
   initialNodes: state.retrievePersistedNodes(),
   initialEdges: state.retrievePersistedEdges(),
 });
@@ -1774,6 +1776,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
@@ -1797,6 +1800,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
@@ -1820,6 +1824,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
