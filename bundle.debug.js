@@ -1,5 +1,31 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
+global.graphelements = require('./src/graphelements');
+global.utils = require('./src/utils');
+global.ImmutableGraph = require('./src/ImmutableGraph');
+global.ActionQueue = require('./src/ActionQueue');
+global.Position = require('./src/Position');
+global.Logger = require('./src/Logger');
+global.UrlState = require('./src/UrlState');
+global.BoundingBox = require('./src/BoundingBox');
+global.graphfactory = require('./src/graphfactory');
+global.DisallowedEditMode = require('./src/DisallowedEditMode');
+global.Component = require('./src/Component');
+global.TextBox = require('./src/TextBox');
+global.NodeLabelSet = require('./src/NodeLabelSet');
+global.Literal = require('./src/Literal');
+global.GraphComponent = require('./src/GraphComponent');
+global.Graph = require('./src/Graph');
+global.GreulerAdapter = require('./src/GreulerAdapter');
+global.ModeSwitch = require('./src/ModeSwitch');
+global.Animator = require('./src/Animator');
+global.EditMode = require('./src/EditMode');
+global.BlockText = require('./src/BlockText');
+global.EditableLabel = require('./src/EditableLabel');
+global.ResetButton = require('./src/ResetButton');
+global.ComponentManager = require('./src/ComponentManager');
+global.ColorChangingGraph = require('./src/ColorChangingGraph');
+global.colors = require('./src/colors');
 var GreulerAdapter = require('./src/GreulerAdapter');
 var UrlState = require('./src/UrlState');
 var ActionQueue = require('./src/ActionQueue');
@@ -60,7 +86,7 @@ global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/GreulerAdapter":14,"./src/Logger":17,"./src/ResetButton":21,"./src/UrlState":23,"./src/graphfactory":26}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/BlockText":4,"./src/BoundingBox":5,"./src/ColorChangingGraph":6,"./src/Component":7,"./src/ComponentManager":8,"./src/DisallowedEditMode":9,"./src/EditMode":10,"./src/EditableLabel":11,"./src/Graph":12,"./src/GraphComponent":13,"./src/GreulerAdapter":14,"./src/ImmutableGraph":15,"./src/Literal":16,"./src/Logger":17,"./src/ModeSwitch":18,"./src/NodeLabelSet":19,"./src/Position":20,"./src/ResetButton":21,"./src/TextBox":22,"./src/UrlState":23,"./src/colors":24,"./src/graphelements":25,"./src/graphfactory":26,"./src/utils":27}],2:[function(require,module,exports){
 (function (global){
 var Literal = require('./Literal');
 
@@ -2163,4 +2189,4 @@ module.exports = {
 };
 
 },{"./Literal":16}]},{},[1])
-//# sourceMappingURL=bundle.map.js
+//# sourceMappingURL=bundle.debug.map.js
