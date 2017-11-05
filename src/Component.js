@@ -19,6 +19,7 @@ function Component(options) {
       timeout: 500,
       name: 'mouseTouchSwitch',
     });
+    this.constructorArgs = options;
   }
 
   this.mouseDownCount = 0;
@@ -31,6 +32,9 @@ Component.prototype = {
   handleClick: function() {},
   handleClickAndHold: function() {},
   handleEnter: function() {},
+  className: '',
+
+  getConstructorArgs: function() { return this.constructorArgs; },
 
   attachTo: function(targetElement) {
     this._validateOptions();
@@ -114,6 +118,9 @@ Component.prototype = {
   _validateOptions: function() {
     if (!this.actionQueue) {
       throw Error('actionQueue is required');
+    }
+    if (!this.className) {
+      throw new Error('Must override className');
     }
   },
 

@@ -11,6 +11,8 @@ function ResetButton(options) {
 }
 
 ResetButton.prototype = Object.assign(new Component(), {
+  className: 'ResetButton',
+
   handleClick: function(event) {
     this.resettables.forEach(function(resettable) {
       resettable.reset();

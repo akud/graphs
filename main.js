@@ -29,7 +29,7 @@ if (width < 1000) {
 
 global.graphComponent = graphfactory.newGraphComponent({
   document: global.document,
-  adapter: new GreulerAdapter(global.greuler),
+  adapter: new GreulerAdapter({ greuler: global.greuler }),
   actionQueue: actionQueue,
   state: state,
   width: width,

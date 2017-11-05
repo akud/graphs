@@ -18,6 +18,9 @@ function Position(opts) {
 
 
 Position.prototype = {
+  className: 'Position',
+  getConstructorArgs: function() { return this; },
+
   getStyle: function(opts) {
     opts = Object.assign({
       width: 0,

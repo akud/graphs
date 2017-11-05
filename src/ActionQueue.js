@@ -1,3 +1,5 @@
+var Literal = require('./Literal');
+
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
   this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
@@ -7,6 +9,8 @@ function ActionQueue(options) {
 }
 
 ActionQueue.prototype = {
+  className: 'ActionQueue',
+
   defer: function(timeout, fn) {
     if (arguments.length == 1) {
       fn = timeout;
@@ -45,6 +49,14 @@ ActionQueue.prototype = {
       }).bind(this);
       queueFn();
       this.hasStartedPeriodicActions = true;
+  },
+
+  getConstructorArgs: function() {
+    return {
+      setTimeout: new Literal('global.setTimeout.bind(global)'),
+      clearTimeout: new Literal('global.clearTimeout.bind(global)'),
+      actionInterval: this.actionInterval,
+    };
   },
 };
 

@@ -1,3 +1,5 @@
+var Literal = require('./Literal');
+
 /**
  * Compute the cartesian distance between two vectors
  */
@@ -80,11 +82,60 @@ function requireNonNull(obj) {
   return obj;
 }
 
+function toJs(value, indentLevel) {
+  indentLevel = indentLevel || 0;
+  function indentOutro(line) {
+    return ' '.repeat(indentLevel) + line;
+  }
+  function indentNestedLine(line) {
+    return ' '.repeat(indentLevel + 2) + line;
+  }
+  if (value instanceof Literal) {
+    return value.value;
+  } else if (Array.isArray(value)) {
+    return '[\n' +
+      value.map(function(a) { return toJs(a, indentLevel + 2) + ','; })
+      .map(indentNestedLine)
+      .join('\n') +
+      '\n' +
+      indentOutro(']');
+  } else if (value && value.className && value.getConstructorArgs) {
+    return 'new ' + value.className + '({\n' +
+      Object.keys(value.getConstructorArgs())
+      .map(function(k) { return k +': ' + toJs(value.getConstructorArgs()[k], indentLevel + 2) + ','; })
+      .map(indentNestedLine)
+      .join('\n') +
+      '\n' +
+      indentOutro('})');
+  } else if (value && typeof value === 'object') {
+    return '{\n' +
+      Object.keys(value).map(function(k) {
+        return k + ': ' + toJs(value[k], indentLevel + 2) + ',';
+      })
+      .map(indentNestedLine)
+      .join('\n') +
+      '\n' +
+      indentOutro('}');
+  } else if (value && typeof value === 'string') {
+    return '\'' + replaceAll(value, "'", "\\'") + '\'';
+  } else if (value || value === 0) {
+    return value.toString();
+  } else {
+    return 'null';
+  }
+}
+
+function replaceAll(str, original, replacement) {
+  return str.split(original).join(replacement);
+}
+
 module.exports = {
   distance: distance,
   optional: optional,
   normalizeEvent: normalizeEvent,
   isOneValuedObject: isOneValuedObject,
   startingAt: startingAt,
+  toJs: toJs,
+  replaceAll: replaceAll,
   requireNonNull: requireNonNull,
 };

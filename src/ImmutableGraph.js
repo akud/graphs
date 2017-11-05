@@ -5,6 +5,7 @@ function ImmutableGraph() {
 }
 
 ImmutableGraph.prototype = Object.assign(new Graph(), {
+  className: 'ImmutableGraph',
 
   addNode: function() {},
   changeColor: function() {},

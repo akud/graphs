@@ -16,6 +16,8 @@ function GraphComponent(opts) {
 
 
 GraphComponent.prototype = Object.assign(new Component(), {
+  className: 'GraphComponent',
+
   doAttach: function(targetElement) {
     this.graph.initialize({
       element: targetElement,

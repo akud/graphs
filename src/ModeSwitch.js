@@ -12,6 +12,16 @@ function ModeSwitch(opts) {
 }
 
 ModeSwitch.prototype = {
+  className: 'ModeSwitch',
+  getConstructorArgs: function() {
+    return {
+      actionQueue: this.actionQueue,
+      timeout: this.timeout,
+      initialStates: this.modeStates,
+      name: this.name,
+    };
+  },
+
   enter: function(mode, fn) {
     this._validate();
     if (this._isPermitted(mode)) {

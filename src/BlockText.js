@@ -6,6 +6,8 @@ function BlockText(opts) {
 }
 
 BlockText.prototype = Object.assign(new Component(), {
+  className: 'BlockText',
+
   getGeneratedMarkup: function() {
     return this.text && ('<p>'  + this.text + '</p>');
   },

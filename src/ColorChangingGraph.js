@@ -5,6 +5,7 @@ function ColorChangingGraph() {
 }
 
 ColorChangingGraph.prototype = Object.assign(new Graph(), {
+  className: 'ColorChangingGraph',
 
   addNode: function() {},
   addEdge: function() {},

@@ -14,6 +14,7 @@ describe('Component', function() {
       actionQueue: actionQueue,
       holdTime: 100,
     });
+    component.className = 'TestComponent';
     element = new MockDomNode();
   });
 
