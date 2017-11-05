@@ -42,12 +42,14 @@ describe('GraphFactory', function() {
         initialEdges: initialEdges,
         nodeSize: 123,
         edgeDistance: 456,
+        colorChoices: ['#FF00FF', '#FFFFFF'],
       });
       expect(graph.initialNodes).toEqual(initialNodes);
       expect(graph.initialEdges).toEqual(initialEdges);
       expect(graph.nodeSize).toBe(123)
       expect(graph.edgeDistance).toBe(456)
       expect(graph.adapter).toBe(adapter);
+      expect(graph.colorChoices).toEqual(['#FF00FF', '#FFFFFF']);
     });
   });
 
@@ -74,12 +76,14 @@ describe('GraphFactory', function() {
         initialEdges: initialEdges,
         nodeSize: 123,
         edgeDistance: 456,
+        colorChoices: ['#FF00FF', '#FFFFFF'],
       });
       expect(graph.initialNodes).toEqual(initialNodes);
       expect(graph.initialEdges).toEqual(initialEdges);
       expect(graph.nodeSize).toBe(123)
       expect(graph.edgeDistance).toBe(456)
       expect(graph.adapter).toBe(adapter);
+      expect(graph.colorChoices).toEqual(['#FF00FF', '#FFFFFF']);
     });
 
   });
@@ -107,12 +111,14 @@ describe('GraphFactory', function() {
         initialEdges: initialEdges,
         nodeSize: 123,
         edgeDistance: 456,
+        colorChoices: ['#FF00FF', '#FFFFFF'],
       });
       expect(graph.initialNodes).toEqual(initialNodes);
       expect(graph.initialEdges).toEqual(initialEdges);
       expect(graph.nodeSize).toBe(123)
       expect(graph.edgeDistance).toBe(456)
       expect(graph.adapter).toBe(adapter);
+      expect(graph.colorChoices).toEqual(['#FF00FF', '#FFFFFF']);
     });
   });
 

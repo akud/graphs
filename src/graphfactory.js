@@ -36,6 +36,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
@@ -59,6 +60,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
@@ -82,6 +84,7 @@ module.exports = {
       initialEdges: opts.initialEdges,
       nodeSize: opts.nodeSize,
       edgeDistance: opts.edgeDistance,
+      colorChoices: opts.colorChoices,
     });
   },
 
