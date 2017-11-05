@@ -1,2 +1,4 @@
 /node_modules
-bundle.*
+debug.js
+export_all.js
+#bundle.*
