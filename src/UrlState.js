@@ -1,5 +1,7 @@
 var utils = require('./utils');
 var Literal = require('./Literal');
+var Logger = require('./Logger');
+var LOG = new Logger('UrlState');
 
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
@@ -111,6 +113,7 @@ UrlState.prototype = {
   },
 
   reset: function() {
+    LOG.debug('resetting');
     this._getKeys().forEach((function(key) {
       this.urlSearchParams.delete(key);
     }).bind(this));

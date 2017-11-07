@@ -88,9 +88,16 @@ EditableLabel.prototype = {
   },
 
   remove: function() {
+    LOG.debug('removing', this);
     this.modeSwitch
-      .exit('display', function(displayState) { displayState.component.remove(); })
-      .exit('edit', function(editState) { editState.component.remove(); }) ;
+      .exit('display', function(displayState) {
+        displayState.component.remove();
+        LOG.debug('closed display component');
+      })
+      .exit('edit', function(editState) {
+        editState.component.remove();
+        LOG.debug('closed edit component');
+      }) ;
     return this;
   },
 

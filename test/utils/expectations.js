@@ -33,6 +33,29 @@ expect.extend({
     }
   },
 
+  toEqualWithoutOrder: function(expected) {
+    var matcher = matchers.equals(expected).match(this.actual);
+    try {
+      expect.assert(Array.isArray(this.actual), 'expected an array');
+      this.actual.sort();
+      expected.sort();
+      expect.assert(
+        expected
+        .map((function(e, i) {
+          return matchers.equals(e).match(this.actual[i]);
+        }).bind(this))
+        .every(function(m) { return m.matches }),
+        'expected %s to equal %s (without order)',
+        this.actual,
+        expected
+      );
+    } catch(error) {
+      error.expected = expected;
+      error.actual = this.actual;
+      throw error;
+    }
+  },
+
   toHaveBeenCalledWith: function() {
     this.toHaveBeenCalled();
     var expected = Array.prototype.map.call(arguments, function(e) {

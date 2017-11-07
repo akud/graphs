@@ -41,6 +41,7 @@ NodeLabelSet.prototype = {
   },
 
   closeAll: function() {
+    LOG.debug('closing all labels', this.labels);
     Object.values(this.labels).forEach(function(label) {
       label.remove();
     });

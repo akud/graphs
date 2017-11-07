@@ -97,6 +97,7 @@ Graph.prototype = {
   },
 
   reset: function() {
+    LOG.debug('resetting');
     this.adapter.performInBulk((function() {
       this.state.retrievePersistedNodes().forEach((function(node) {
         this.adapter.removeNode(node);
