@@ -1,5 +1,5 @@
 var Component = require('../src/Component');
-var MockActionQueue = require('./utils/MockActionQueue');
+var MockActionQueue = require('./test_utils/MockActionQueue');
 
 
 describe('Component', function() {

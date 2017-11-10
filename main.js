@@ -1,8 +1,8 @@
-var GreulerAdapter = require('./src/GreulerAdapter');
-var UrlState = require('./src/UrlState');
+var GreulerAdapter = require('./src/graphs/GreulerAdapter');
+var UrlState = require('./src/state/UrlState');
 var ActionQueue = require('./src/ActionQueue');
-var ResetButton = require('./src/ResetButton');
-var graphfactory = require('./src/graphfactory');
+var ResetButton = require('./src/components/ResetButton');
+var graphfactory = require('./src/graphs/graphfactory');
 
 require('./src/Logger').level = global.logLevel;
 

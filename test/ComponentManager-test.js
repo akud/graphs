@@ -1,5 +1,5 @@
 var ComponentManager = require('../src/ComponentManager');
-var MockActionQueue = require('./utils/MockActionQueue');
+var MockActionQueue = require('./test_utils/MockActionQueue');
 
 describe('ComponentManager', function() {
   var componentManager;

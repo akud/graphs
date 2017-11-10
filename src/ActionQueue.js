@@ -1,4 +1,4 @@
-var Literal = require('./Literal');
+var Literal = require('./utils/Literal');
 
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);

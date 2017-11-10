@@ -1,4 +1,5 @@
 var Logger = require('./Logger');
+
 var LOG = new Logger('ModeSwitch');
 
 function ModeSwitch(opts) {

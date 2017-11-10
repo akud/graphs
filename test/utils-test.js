@@ -1,4 +1,4 @@
-var Literal = require('../src/Literal');
+var Literal = require('../src/utils/Literal');
 var utils = require('../src/utils');
 
 describe('utils', function() {

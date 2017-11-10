@@ -1,5 +1,5 @@
 var ModeSwitch = require('../src/ModeSwitch');
-var MockActionQueue = require('./utils/MockActionQueue');
+var MockActionQueue = require('./test_utils/MockActionQueue');
 
 describe('ModeSwitch', function() {
   var modeSwitch;
