@@ -3,7 +3,7 @@ var colors = require('../../src/colors');
 var graphelements = require('../../src/graphs/graphelements');
 var MockActionQueue = require('../test_utils/MockActionQueue');
 
-describe('ImmutableGraph', function() {
+describe('ColorChangingGraph', function() {
   var state;
   var adapter;
   var actionQueue;
