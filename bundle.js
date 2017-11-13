@@ -1,10 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
-var GreulerAdapter = require('./src/GreulerAdapter');
-var UrlState = require('./src/UrlState');
+var GreulerAdapter = require('./src/graphs/GreulerAdapter');
+var UrlState = require('./src/state/UrlState');
 var ActionQueue = require('./src/ActionQueue');
-var ResetButton = require('./src/ResetButton');
-var graphfactory = require('./src/graphfactory');
+var ResetButton = require('./src/components/ResetButton');
+var graphfactory = require('./src/graphs/graphfactory');
 
 require('./src/Logger').level = global.logLevel;
 
@@ -28,6 +28,13 @@ if (width < 1000) {
   edgeDistance = 200;
 }
 
+var immutable = urlSearchParams.get('immutable') === 'true';
+var allowAddNodes = urlSearchParams.get('allowAddNodes') !== 'false';
+var allowAddEdges = urlSearchParams.get('allowAddEdges') !== 'false';
+var allowEdit = urlSearchParams.get('allowEdit') !== 'false';
+var allowChangeColors = urlSearchParams.get('allowChangeColors') !== 'false';
+var allowLabels = urlSearchParams.get('allowLabels') !== 'false';
+
 
 global.graphComponent = graphfactory.newGraphComponent({
   document: global.document,
@@ -39,8 +46,12 @@ global.graphComponent = graphfactory.newGraphComponent({
   nodeAreaFuzzFactor: 0.1,
   edgeDistance: edgeDistance,
   alternateInterval: 250,
-  immutable: urlSearchParams.get('immutable') === 'true',
-  onlyChangeColors: urlSearchParams.get('onlyChangeColors') === 'true',
+  immutable: immutable,
+  allowAddNodes: allowAddNodes,
+  allowAddEdges: allowAddEdges,
+  allowChangeColors: allowChangeColors,
+  allowEdit: allowEdit,
+  allowLabels: allowLabels,
   colorChoices: urlSearchParams.has('colorChoices') &&
     urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
   initialNodes: state.retrievePersistedNodes(),
@@ -60,9 +71,9 @@ global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/GreulerAdapter":14,"./src/Logger":17,"./src/ResetButton":21,"./src/UrlState":23,"./src/graphfactory":26}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Logger":6,"./src/components/ResetButton":11,"./src/graphs/GreulerAdapter":18,"./src/graphs/graphfactory":24,"./src/state/UrlState":31}],2:[function(require,module,exports){
 (function (global){
-var Literal = require('./Literal');
+var Literal = require('./utils/Literal');
 
 function ActionQueue(options) {
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
@@ -128,7 +139,7 @@ module.exports = ActionQueue;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./Literal":16}],3:[function(require,module,exports){
+},{"./utils/Literal":33}],3:[function(require,module,exports){
 function Animator(options) {
   this.actionQueue = (options && options.actionQueue);
 }
@@ -191,133 +202,10 @@ AlternatingAnimation.prototype = {
 module.exports = Animator;
 
 },{}],4:[function(require,module,exports){
-var Component = require('./Component');
-
-function BlockText(opts) {
-  Component.apply(this, arguments);
-  this.text = opts && opts.text;
-}
-
-BlockText.prototype = Object.assign(new Component(), {
-  className: 'BlockText',
-
-  getGeneratedMarkup: function() {
-    return this.text && ('<p>'  + this.text + '</p>');
-  },
-});
-
-module.exports = BlockText;
-
-},{"./Component":7}],5:[function(require,module,exports){
-function BoundingBox(dimensions) {
-  this.dimensions = dimensions || {
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-  };
-}
-
-BoundingBox.prototype = {
-  className: 'BoundingBox',
-
-  getConstructorArgs: function() { return this.dimensions; },
-
-  expandBy: function(factor) {
-    return new BoundingBox({
-      left: this.dimensions.left - this.getWidth()*factor,
-      right: this.dimensions.right + this.getWidth()*factor,
-      top: this.dimensions.top - this.getHeight()*factor,
-      bottom: this.dimensions.bottom + this.getHeight()*factor,
-    });
-  },
-
-  translate: function(vector) {
-    return new BoundingBox({
-      left: this.dimensions.left + vector.x,
-      right: this.dimensions.right + vector.x,
-      top: this.dimensions.top + vector.y,
-      bottom: this.dimensions.bottom + vector.y,
-    });
-  },
-
-  contains: function(point) {
-    return this.dimensions.left <= point.x && point.x <= this.dimensions.right &&
-           this.dimensions.top <= point.y && point.y <= this.dimensions.bottom;
-
-  },
-
-  getCenter: function() {
-    return {
-      x: this.dimensions.left + this.getWidth() / 2,
-      y: this.dimensions.top + this.getHeight() / 2,
-    };
-  },
-
-  getTopLeft: function() {
-    return {
-      x: this.dimensions.left,
-      y: this.dimensions.top,
-    };
-  },
-
-
-  getTopRight: function() {
-    return {
-      x: this.dimensions.right,
-      y: this.dimensions.top,
-    };
-  },
-
-
-  getBottomLeft: function() {
-    return {
-      x: this.dimensions.left,
-      y: this.dimensions.bottom,
-    };
-  },
-
-  getBottomRight: function() {
-    return {
-      x: this.dimensions.right,
-      y: this.dimensions.bottom,
-    };
-  },
-
-  getWidth: function() {
-    return this.dimensions.right - this.dimensions.left;
-  },
-
-  getHeight: function() {
-    return this.dimensions.bottom - this.dimensions.top;
-  },
-
-};
-
-module.exports = BoundingBox;
-
-},{}],6:[function(require,module,exports){
-var Graph = require('./Graph');
-
-function ColorChangingGraph() {
-  Graph.apply(this, arguments);
-}
-
-ColorChangingGraph.prototype = Object.assign(new Graph(), {
-  className: 'ColorChangingGraph',
-
-  addNode: function() {},
-  addEdge: function() {},
-  reset: function() {},
-
-});
-
-module.exports = ColorChangingGraph;
-
-},{"./Graph":12}],7:[function(require,module,exports){
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
 var Logger = require('./Logger');
+
 var LOG = new Logger('Component');
 
 /**
@@ -467,11 +355,11 @@ Component.prototype = {
 
 module.exports = Component;
 
-},{"./Logger":17,"./ModeSwitch":18,"./utils":27}],8:[function(require,module,exports){
+},{"./Logger":6,"./ModeSwitch":7,"./utils":32}],5:[function(require,module,exports){
 var utils = require('./utils');
-var Position = require('./Position');
+var Position = require('./geometry/Position');
 var Component = require('./Component');
-var Literal = require('./Literal');
+var Literal = require('./utils/Literal');
 
 function ComponentManager(options) {
   this.document = options && options.document;
@@ -525,393 +413,207 @@ ComponentManager.prototype = {
 
 module.exports = ComponentManager;
 
-},{"./Component":7,"./Literal":16,"./Position":20,"./utils":27}],9:[function(require,module,exports){
-var EditMode = require('./EditMode');
+},{"./Component":4,"./geometry/Position":14,"./utils":32,"./utils/Literal":33}],6:[function(require,module,exports){
+(function (global){
+var LEVEL_ORDER = [
+  'DEBUG',
+  'INFO',
+  'WARN',
+  'ERROR',
+];
 
-function DisallowedEditMode() {
-  EditMode.apply(this, arguments);
+function Logger(name) {
+  this.name = name || 'Logger';
 }
 
-DisallowedEditMode.prototype = Object.assign(new EditMode(), {
-  className: 'DisallowedEditMode',
+Logger.level = 'WARN';
+Logger.levels = {};
 
-  activate: function() {},
-  _validate: function() {},
+Logger.prototype = {
+  debug: function(msg, objs) {
+    this._log.apply(this, [new Date().getTime(), 'DEBUG', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+  },
+  info: function(msg, objs) {
+    this._log.apply(this, [new Date().getTime(), 'INFO', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+  },
+  warn: function(msg, objs) {
+    this._log.apply(this, [new Date().getTime(), 'WARN', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+  },
+  error: function(msg, objs) {
+    this._log.apply(this, [new Date().getTime(), 'ERROR', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+  },
+
+  _log: function() {
+    var level = arguments[1];
+    var logLevel = Logger.levels[this.name] || Logger.level;
+    if (LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(logLevel)) {
+      global.console.log.apply(global.console.log, arguments);
+    }
+  },
+};
+
+
+module.exports = Logger;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],7:[function(require,module,exports){
+var Logger = require('./Logger');
+
+var LOG = new Logger('ModeSwitch');
+
+function ModeSwitch(opts) {
+  this.actionQueue = opts && opts.actionQueue;
+  this.timeout = (opts && opts.timeout) || 0;
+  this.modeStates = (opts && opts.initialStates) || {};
+  this.name = (opts && opts.name) || 'ModeSwitch';
+  this.currentMode = null;
+  this.resetModeFuture = null;
+  LOG.debug('Initialized ' + this.name, this);
+}
+
+ModeSwitch.prototype = {
+  className: 'ModeSwitch',
+  getConstructorArgs: function() {
+    return {
+      actionQueue: this.actionQueue,
+      timeout: this.timeout,
+      initialStates: this.modeStates,
+      name: this.name,
+    };
+  },
+
+  enter: function(mode, fn) {
+    this._validate();
+    if (this._isPermitted(mode)) {
+      LOG.debug(this.name + ': Entering \'' + mode + '\'', this);
+      var state = (fn || function() {})();
+      this.modeStates[mode] = state;
+      this.currentMode = mode;
+      this._cancelModeReset();
+    } else {
+      LOG.debug(this.name + ': Not entering \'' + mode + '\';'
+                + ' active mode is ' + this.currentMode, this);
+    }
+    return this;
+  },
+
+  exit: function(mode, fn) {
+    this._validate();
+    if(this._isActive(mode)) {
+      LOG.debug(this.name + ': Exiting ' + mode, this);
+      (fn || function() {})(this.modeStates[mode]);
+      this._scheduleModeReset();
+    } else {
+      LOG.debug(this.name + ': Not exiting \'' + mode + '\';'
+                + ' active mode is ' + this.currentMode, this);
+    }
+    return this;
+  },
+
+  ifActive: function(callbackObj) {
+    var activeMode = this.currentMode || 'default';
+    var callback = callbackObj[activeMode];
+    if (callback) {
+      LOG.debug(this.name + ': Found callback for active mode', activeMode, callbackObj);
+      var modeState = this.modeStates[this.currentMode || 'default'];
+      callback(modeState);
+    } else {
+      LOG.debug(this.name + ': No callback for active mode', activeMode, callbackObj);
+    }
+    return this;
+  },
+
+  _isPermitted: function(mode) {
+    return !this.currentMode || this._isActive(mode);
+  },
+
+  _isActive: function(mode) {
+    return this.currentMode === mode;
+  },
+
+  _cancelModeReset: function() {
+    this.resetModeFuture && this.resetModeFuture.cancel();
+  },
+
+  _scheduleModeReset: function() {
+    var resetFunction = (function() {
+      delete this.modeStates[this.currentMode];
+      this.currentMode = null;
+    }).bind(this);
+
+    this._cancelModeReset();
+    if (this.timeout) {
+      this.resetModeFuture = this.actionQueue.defer(
+        this.timeout, resetFunction
+      );
+    } else {
+      resetFunction();
+    }
+  },
+
+  _validate: function() {
+    if(this.timeout && !this.actionQueue) {
+      throw new Error('action queue is required if a timeout is specified');
+    }
+  },
+};
+
+module.exports = ModeSwitch;
+
+},{"./Logger":6}],8:[function(require,module,exports){
+var RED = '#db190f';
+var ORANGE = '#f76402';
+var YELLOW = '#fbff14';
+var GREEN = '#28b92b';
+var BLUE = '#2826b5';
+var INDIGO = '#2980B9';
+var VIOLET = '#8c28b7';
+var NEON = '#00FF00';
+
+module.exports = {
+  RED: RED,
+  ORANGE: ORANGE,
+  YELLOW: YELLOW,
+  GREEN: GREEN,
+  BLUE: BLUE,
+  INDIGO: INDIGO,
+  VIOLET: VIOLET,
+  NEON: NEON,
+  RAINBOW: [
+    RED,
+    ORANGE,
+    YELLOW,
+    GREEN,
+    BLUE,
+    INDIGO,
+    VIOLET,
+  ],
+};
+
+},{}],9:[function(require,module,exports){
+var Component = require('../Component');
+
+function BlockText(opts) {
+  Component.apply(this, arguments);
+  this.text = opts && opts.text;
+}
+
+BlockText.prototype = Object.assign(new Component(), {
+  className: 'BlockText',
+
+  getGeneratedMarkup: function() {
+    return this.text && ('<p>'  + this.text + '</p>');
+  },
 });
 
-module.exports = DisallowedEditMode;
+module.exports = BlockText;
 
-},{"./EditMode":10}],10:[function(require,module,exports){
-var ModeSwitch = require('./ModeSwitch');
-var colors = require('./colors');
-var Logger = require('./Logger');
-var LOG = new Logger('EditMode');
+},{"../Component":4}],10:[function(require,module,exports){
+var Component = require('../Component');
+var utils = require('../utils');
+var Logger = require('../Logger');
 
-
-function EditMode(opts) {
-  this.adapter = opts && opts.adapter;
-  this.animator = opts && opts.animator;
-  this.alternateInterval = (opts && opts.alternateInterval) || 250;
-  this.labelSet = opts && opts.labelSet;
-  this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch({
-    name: 'editMode',
-  });
-  this.modeSwitch.enter('display');
-}
-
-
-EditMode.prototype = {
-  className: 'EditMode',
-
-  getConstructorArgs: function() {
-    return {
-      adapter: this.adapter,
-      animator: this.animator,
-      alternateInterval: this.alternateInterval,
-      labelSet: this.labelSet,
-      modeSwitch: this.modeSwitch,
-    };
-  },
-
-  activate: function(node) {
-    LOG.info('activating');
-    this._validate();
-    this.modeSwitch
-      .exit('display')
-      .exit('edit', this._cleanUpEditState.bind(this))
-      .enter('edit', (function() {
-        var otherNodes = this.adapter.getNodes(function(n) {
-          return n.id !== node.id;
-        });
-        var originalColors = otherNodes.reduce(function(accum, node) {
-          accum[node.id] = node.color;
-          return accum;
-        }, {});
-
-        var animation = this.animator
-          .alternate(
-            this._setNeon.bind(this, otherNodes),
-            this._setOriginalColors.bind(this, otherNodes, originalColors)
-          )
-          .every(this.alternateInterval)
-          .play();
-
-        this.labelSet.edit(node);
-
-        var editState = {
-          node: node,
-          animation: animation,
-          otherNodes: otherNodes,
-          originalColors: originalColors,
-        };
-        LOG.debug('activated', editState);
-        return editState;
-      }).bind(this));
-  },
-
-  deactivate: function() {
-    LOG.debug('deactvating');
-    this._validate();
-    this.modeSwitch
-      .exit('edit', this._cleanUpEditState.bind(this))
-      .enter('display', function() {
-        LOG.debug('deactvated');
-      });
-  },
-
-  perform: function(opts) {
-    opts = Object.assign({
-      ifActive: function() {},
-      ifNotActive: function() {},
-    }, opts);
-    this._validate();
-
-    this.modeSwitch.ifActive({
-      edit: function(editState) { opts.ifActive(editState.node); },
-      display: opts.ifNotActive,
-    });
-  },
-
-  _setNeon: function(otherNodes) {
-    otherNodes.forEach((function(n) {
-      this.adapter.setNodeColor(n, colors.NEON);
-    }).bind(this));
-  },
-
-  _setOriginalColors: function(otherNodes, originalColors) {
-    otherNodes.forEach((function(n) {
-      this.adapter.setNodeColor(n, originalColors[n.id]);
-    }).bind(this));
-  },
-
-  _cleanUpEditState: function(editState) {
-    LOG.debug('cleaning up edit mode state', editState);
-    editState.animation.stop();
-    this.labelSet.display(editState.node);
-    this._setOriginalColors(editState.otherNodes, editState.originalColors);
-  },
-
-  _validate: function() {
-    if (!this.adapter) {
-      throw new Error('adapter is required');
-    }
-    if (!this.animator) {
-      throw new Error('animator is required');
-    }
-    if (!this.modeSwitch) {
-      throw new Error('modeSwitch is required');
-    }
-  }
-
-};
-
-module.exports = EditMode;
-
-},{"./Logger":17,"./ModeSwitch":18,"./colors":24}],11:[function(require,module,exports){
-var ModeSwitch = require('./ModeSwitch');
-var BlockText = require('./BlockText');
-var TextBox = require('./TextBox');
-var Logger = require('./Logger');
-var LOG = new Logger('EditableLabel');
-
-function EditableLabel(opts) {
-  if (opts) {
-    this.componentManager = opts.componentManager;
-    this.text = opts.text;
-    this.pinTo = opts.pinTo;
-    this.modeSwitch = new ModeSwitch({
-      name: 'EditableLabel({ text: \'' + this.text + '\'})'
-    });
-    this.onChange = opts.onChange || function() {};
-  }
-}
-
-EditableLabel.prototype = {
-  className: 'EditableLabel',
-
-  getConstructorArgs: function() {
-    return {
-      componentManager: this.componentManager,
-      text: this.text,
-      pinTo: this.pinTo,
-      onChange: this.onChange,
-    };
-  },
-
-  display: function() {
-    LOG.debug('displaying text', this.text);
-    this._validate();
-
-    this.modeSwitch.exit('edit', (function(editState) {
-      this.text = editState.component.getText();
-      editState.component.remove();
-      LOG.debug('got text from input component', this.text);
-    }).bind(this))
-    .exit('display', function(displayState) { displayState.component.remove(); });
-
-    if (this.text) {
-      this.modeSwitch.enter('display', (function() {
-        var component = this.componentManager.insertComponent({
-          class: BlockText,
-          constructorArgs: { text: this.text },
-          pinTo: this.pinTo,
-        });
-        this.onChange(this.text);
-        LOG.debug('EditableLabel: displaying component with text', this.text);
-        return { component: component };
-      }).bind(this));
-    }
-    return this;
-  },
-
-  edit: function() {
-    LOG.debug('editing text', this.text);
-    this._validate();
-    this.modeSwitch.exit('display', (function(displayState) {
-      displayState.component.remove();
-      LOG.debug('closed display component');
-    }).bind(this))
-    .exit('edit', function(editState) { editState.component.remove(); });
-
-    this.modeSwitch.enter('edit', (function() {
-       var component = this.componentManager.insertComponent({
-        class: TextBox,
-        constructorArgs: {
-          text: this.text,
-          onSave: this.display.bind(this),
-        },
-        pinTo: this.pinTo,
-      });
-      LOG.debug('opened edit component');
-      return { component: component };
-    }).bind(this));
-    return this;
-  },
-
-  _validate: function() {
-    if(!this.componentManager) {
-      throw new Error('componentManager is required');
-    }
-    if(!this.modeSwitch) {
-      throw new Error('modeSwitch is required');
-    }
-  },
-
-  remove: function() {
-    this.modeSwitch
-      .exit('display', function(displayState) { displayState.component.remove(); })
-      .exit('edit', function(editState) { editState.component.remove(); }) ;
-    return this;
-  },
-
-  _closeComponent: function(state) {
-    state.component.remove();
-  },
-};
-
-EditableLabel.Factory = {
-  create: function(opts) { return new EditableLabel(opts); },
-
-};
-module.exports = EditableLabel;
-
-},{"./BlockText":4,"./Logger":17,"./ModeSwitch":18,"./TextBox":22}],12:[function(require,module,exports){
-var colors = require('./colors');
-var utils = require('./utils');
-var Logger = require('./Logger');
-var LOG = new Logger('Graph');
-
-function Graph(opts) {
-  this.state = opts && opts.state;
-  this.adapter = opts && opts.adapter;
-  this.actionQueue = opts && opts.actionQueue;
-  this.labelSet = opts && opts.labelSet;
-
-  this.colorChoices = (opts && opts.colorChoices) || utils.startingAt(colors.RAINBOW, colors.INDIGO);
-  this.nodeSize = opts && opts.nodeSize;
-  this.edgeDistance = opts && opts.edgeDistance;
-  this.initialNodes = (opts && opts.initialNodes) || [];
-  this.initialEdges = (opts && opts.initialEdges) || [];
-}
-
-Graph.prototype = {
-  className: 'Graph',
-
-  getConstructorArgs: function() {
-    return {
-      state: this.state,
-      adapter: this.adapter,
-      actionQueue: this.actionQueue,
-      labelSet: this.labelSet,
-      colorChoices: this.colorChoices,
-      nodeSize: this.nodeSize,
-      edgeDistance: this.edgeDistance,
-      initialNodes: this.state.retrievePersistedNodes(),
-      initialEdges: this.state.retrievePersistedEdges(),
-    };
-  },
-
-  initialize: function(opts) {
-    this._validate();
-    LOG.debug('initializing graph', this);
-
-    this.adapter.initialize(
-      opts.element,
-      utils.optional({
-        width: opts.width,
-        height: opts.height,
-        nodes: this.initialNodes.map((function(n) {
-          return utils.optional({
-            id: n.id,
-            color: n.color || this.colorChoices[0],
-            label: '',
-            size: this.nodeSize,
-          }, { force: ['id', 'label'] });
-        }).bind(this)),
-        edges: this.initialEdges,
-        edgeDistance: this.edgeDistance,
-      })
-    );
-    this.actionQueue.defer((function() {
-      LOG.debug('initializing label set');
-      this.labelSet.initialize(
-        this.initialNodes.map((function(n) {
-          return {
-            node: this.adapter.getNode(n.id),
-            label: n.label,
-          };
-        }).bind(this))
-      );
-    }).bind(this));
-  },
-
-  addNode: function() {
-    var nodeId = this.state.persistNode({
-      color: this.colorChoices[0],
-    });
-    var node = utils.optional({
-      id: nodeId,
-      color: this.colorChoices[0],
-      label: '',
-      size: this.nodeSize,
-    }, { force: ['id', 'label'] });
-    this.adapter.addNode(node);
-  },
-
-  changeColor: function(node) {
-    var colorIndex = this._getNextColorIndex(node);
-    var newColor = this.colorChoices[colorIndex];
-    this.adapter.setNodeColor(node, newColor);
-    this.state.persistNode({ id: node.id, color: newColor });
-  },
-
-  addEdge: function(source, target) {
-    this.adapter.addEdge({
-      source: source,
-      target: target,
-      distance: this.edgeDistance,
-    });
-    this.state.persistEdge(source.id, target.id);
-  },
-
-  reset: function() {
-    this.adapter.performInBulk((function() {
-      this.state.retrievePersistedNodes().forEach((function(node) {
-        this.adapter.removeNode(node);
-      }).bind(this));
-    }).bind(this));
-
-    this.state.reset();
-    this.labelSet.closeAll();
-  },
-
-  _getNextColorIndex: function(node) {
-    var colorIndex = this.colorChoices.indexOf(node.color);
-    return (colorIndex + 1) % this.colorChoices.length;
-  },
-
-  _validate: function() {
-    if (!this.state) {
-      throw new Error('state is required');
-    }
-    if (!this.adapter) {
-      throw new Error('adapter is required');
-    }
-    if (!this.actionQueue) {
-      throw new Error('actionQueue is required');
-    }
-    if (!this.labelSet) {
-      throw new Error('labelSet is required');
-    }
-  },
-};
-
-module.exports = Graph;
-
-},{"./Logger":17,"./colors":24,"./utils":27}],13:[function(require,module,exports){
-var Component = require('./Component');
-var utils = require('./utils');
-var Logger = require('./Logger');
 var LOG = new Logger('GraphComponent');
 
 
@@ -991,12 +693,405 @@ GraphComponent.prototype = Object.assign(new Component(), {
 
 module.exports = GraphComponent;
 
-},{"./Component":7,"./Logger":17,"./utils":27}],14:[function(require,module,exports){
+},{"../Component":4,"../Logger":6,"../utils":32}],11:[function(require,module,exports){
+var Component = require('../Component');
+
+function ResetButton(options) {
+  Component.apply(this, arguments);
+  if (options) {
+    this.resettables = options.resettables;
+  } else {
+    this.resettables = [];
+  }
+
+}
+
+ResetButton.prototype = Object.assign(new Component(), {
+  className: 'ResetButton',
+
+  handleClick: function(event) {
+    this.resettables.forEach(function(resettable) {
+      resettable.reset();
+    });
+  },
+});
+
+module.exports = ResetButton;
+
+},{"../Component":4}],12:[function(require,module,exports){
+var Component = require('../Component');
+
+function TextBox(options) {
+  Component.apply(this, arguments);
+  this.initialText = (options && options.text) || '';
+  this.onSave = (options && options.onSave) || function() {};
+}
+
+TextBox.prototype = Object.assign(new Component(), {
+  className: 'TextBox',
+
+  getGeneratedMarkup: function() {
+    return '<input type="text"' +
+    ' value="' + this.initialText + '"' +
+    '></input>';
+  },
+
+  getText: function() {
+    return this.element.getElementsByTagName('input')[0].value;
+  },
+
+  handleEnter: function(event) {
+    this.onSave();
+  },
+});
+
+module.exports = TextBox;
+
+},{"../Component":4}],13:[function(require,module,exports){
+function BoundingBox(dimensions) {
+  this.dimensions = dimensions || {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  };
+}
+
+BoundingBox.prototype = {
+  className: 'BoundingBox',
+
+  getConstructorArgs: function() { return this.dimensions; },
+
+  expandBy: function(factor) {
+    return new BoundingBox({
+      left: this.dimensions.left - this.getWidth()*factor,
+      right: this.dimensions.right + this.getWidth()*factor,
+      top: this.dimensions.top - this.getHeight()*factor,
+      bottom: this.dimensions.bottom + this.getHeight()*factor,
+    });
+  },
+
+  translate: function(vector) {
+    return new BoundingBox({
+      left: this.dimensions.left + vector.x,
+      right: this.dimensions.right + vector.x,
+      top: this.dimensions.top + vector.y,
+      bottom: this.dimensions.bottom + vector.y,
+    });
+  },
+
+  contains: function(point) {
+    return this.dimensions.left <= point.x && point.x <= this.dimensions.right &&
+           this.dimensions.top <= point.y && point.y <= this.dimensions.bottom;
+
+  },
+
+  getCenter: function() {
+    return {
+      x: this.dimensions.left + this.getWidth() / 2,
+      y: this.dimensions.top + this.getHeight() / 2,
+    };
+  },
+
+  getTopLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getTopRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.top,
+    };
+  },
+
+
+  getBottomLeft: function() {
+    return {
+      x: this.dimensions.left,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getBottomRight: function() {
+    return {
+      x: this.dimensions.right,
+      y: this.dimensions.bottom,
+    };
+  },
+
+  getWidth: function() {
+    return this.dimensions.right - this.dimensions.left;
+  },
+
+  getHeight: function() {
+    return this.dimensions.bottom - this.dimensions.top;
+  },
+
+};
+
+module.exports = BoundingBox;
+
+},{}],14:[function(require,module,exports){
+var utils = require('../utils');
+
+function Position(opts) {
+  /* opts -
+   * {
+    topLeft: { x: 0, y: 0 },
+    topRight: undefined,
+    bottomLeft: undefined,
+    bottomRight: undefined,
+    }
+   */
+  if (!utils.isOneValuedObject(opts)) {
+    throw new Error('invalid position object ' + opts);
+  }
+
+  Object.assign(this, opts);
+}
+
+
+Position.prototype = {
+  className: 'Position',
+  getConstructorArgs: function() { return this; },
+
+  getStyle: function(opts) {
+    opts = Object.assign({
+      width: 0,
+      height: 0,
+    }, opts);
+
+    if (this.topLeft) {
+        return 'position: absolute;' +
+        ' left: ' + this.topLeft.x + ';' +
+        ' top: ' + this.topLeft.y + ';';
+    } else if (this.topRight) {
+      return 'position: absolute;' +
+        ' left: ' + (this.topRight.x - opts.width) + ';' +
+        ' top: ' + this.topRight.y + ';';
+    } else if (this.bottomLeft) {
+      return 'position: absolute;' +
+        ' left: ' + this.bottomLeft.x + ';' +
+        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
+    } else if (this.bottomRight) {
+      return 'position: absolute;' +
+        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
+        ' top: ' + (this.bottomRight.y - opts.height) + ';';
+    } else {
+      throw new Error('invalid position object: ' + this);
+    }
+  },
+};
+
+module.exports = Position;
+
+},{"../utils":32}],15:[function(require,module,exports){
+var utils = require('../utils');
+
+function ColorChanger() {
+
+}
+
+ColorChanger.prototype = {
+  className: 'ColorChanger',
+  getConstructorArgs: function() { return {}; },
+
+  setColor: function(opts) {
+    var adapter = utils.requireNonNull(opts.adapter);
+    var state = utils.requireNonNull(opts.state);
+    var node = utils.requireNonNull(opts.node);
+    var color = utils.requireNonNull(opts.color);
+
+    adapter.setNodeColor(node, color);
+    state.persistNode({ id: node.id, color: color });
+  },
+};
+
+module.exports = ColorChanger;
+
+},{"../utils":32}],16:[function(require,module,exports){
+var utils = require('../utils');
+
+function EdgeCreator() {
+
+}
+
+EdgeCreator.prototype = {
+  className: 'EdgeCreator',
+  getConstructorArgs: function() { return {}; },
+
+  addEdge: function(opts) {
+    var adapter = utils.requireNonNull(opts.adapter);
+    var state = utils.requireNonNull(opts.state);
+    var source = utils.requireNonNull(opts.source);
+    var target = utils.requireNonNull(opts.target);
+    var edgeDistance = opts.edgeDistance;
+
+    adapter.addEdge({
+      source: source,
+      target: target,
+      distance: edgeDistance,
+    });
+    state.persistEdge(source.id, target.id);
+  },
+
+};
+
+module.exports = EdgeCreator;
+
+},{"../utils":32}],17:[function(require,module,exports){
+var colors = require('../colors');
+var utils = require('../utils');
+var Logger = require('../Logger');
+var NodeCreator = require('./NodeCreator');
+var EdgeCreator = require('./EdgeCreator');
+var ColorChanger = require('./ColorChanger');
+
+var LOG = new Logger('Graph');
+
+function Graph(opts) {
+  this.state = opts && opts.state;
+  this.adapter = opts && opts.adapter;
+  this.actionQueue = opts && opts.actionQueue;
+  this.labelSet = opts && opts.labelSet;
+  this.nodeCreator = (opts && opts.nodeCreator) || new NodeCreator();
+  this.edgeCreator = (opts && opts.edgeCreator) || new EdgeCreator();
+  this.colorChanger = (opts && opts.colorChanger) || new ColorChanger();
+
+  this.colorChoices = (opts && opts.colorChoices) || utils.startingAt(colors.RAINBOW, colors.INDIGO);
+  this.nodeSize = opts && opts.nodeSize;
+  this.edgeDistance = opts && opts.edgeDistance;
+  this.initialNodes = (opts && opts.initialNodes) || [];
+  this.initialEdges = (opts && opts.initialEdges) || [];
+  this.constructorArgs = opts;
+}
+
+Graph.prototype = {
+  className: 'Graph',
+
+  getConstructorArgs: function() {
+    return Object.assign({
+      initialNodes: this.state.retrievePersistedNodes(),
+      initialEdges: this.state.retrievePersistedEdges(),
+    }, this.constructorArgs);
+  },
+
+  initialize: function(opts) {
+    this._validate();
+    LOG.debug('initializing graph', this);
+
+    this.adapter.initialize(
+      opts.element,
+      utils.optional({
+        width: opts.width,
+        height: opts.height,
+        nodes: this.initialNodes.map((function(n) {
+          return utils.optional({
+            id: n.id,
+            color: n.color || this.colorChoices[0],
+            label: '',
+            size: this.nodeSize,
+          }, { force: ['id', 'label'] });
+        }).bind(this)),
+        edges: this.initialEdges,
+        edgeDistance: this.edgeDistance,
+      })
+    );
+    this.actionQueue.defer((function() {
+      LOG.debug('initializing label set');
+      this.labelSet.initialize(
+        this.initialNodes.map((function(n) {
+          return {
+            node: this.adapter.getNode(n.id),
+            label: n.label,
+          };
+        }).bind(this))
+      );
+    }).bind(this));
+  },
+
+  addNode: function() {
+    this.nodeCreator.addNode({
+      state: this.state,
+      adapter: this.adapter,
+      color: this.colorChoices[0],
+      nodeSize: this.nodeSize,
+    });
+  },
+
+  changeColor: function(node) {
+    var colorIndex = this._getNextColorIndex(node);
+    var newColor = this.colorChoices[colorIndex];
+    this.colorChanger.setColor({
+      adapter: this.adapter,
+      state: this.state,
+      node: node,
+      color: newColor,
+    });
+  },
+
+  addEdge: function(source, target) {
+    this.edgeCreator.addEdge({
+      source: source,
+      target: target,
+      adapter: this.adapter,
+      state: this.state,
+      edgeDistance: this.edgeDistance,
+    });
+ },
+
+  reset: function() {
+    LOG.debug('resetting');
+    this.adapter.performInBulk((function() {
+      this.state.retrievePersistedNodes().forEach((function(node) {
+        this.adapter.removeNode(node);
+      }).bind(this));
+    }).bind(this));
+
+    this.state.reset();
+    this.labelSet.closeAll();
+  },
+
+  _getNextColorIndex: function(node) {
+    var colorIndex = this.colorChoices.indexOf(node.color);
+    return (colorIndex + 1) % this.colorChoices.length;
+  },
+
+  _validate: function() {
+    if (!this.state) {
+      throw new Error('state is required');
+    }
+    if (!this.adapter) {
+      throw new Error('adapter is required');
+    }
+    if (!this.actionQueue) {
+      throw new Error('actionQueue is required');
+    }
+    if (!this.labelSet) {
+      throw new Error('labelSet is required');
+    }
+    if (!this.nodeCreator) {
+      throw new Error('nodeCreator is required');
+    }
+    if (!this.edgeCreator) {
+      throw new Error('edgeCreator is required');
+    }
+  },
+};
+
+module.exports = Graph;
+
+},{"../Logger":6,"../colors":8,"../utils":32,"./ColorChanger":15,"./EdgeCreator":16,"./NodeCreator":22}],18:[function(require,module,exports){
 var graphelements = require('./graphelements');;
-var utils = require('./utils');
-var BoundingBox = require('./BoundingBox');
-var Literal = require('./Literal');
-var Logger = require('./Logger');
+var utils = require('../utils');
+var BoundingBox = require('../geometry/BoundingBox');
+var Literal = require('../utils/Literal');
+var Logger = require('../Logger');
+
 var LOG = new Logger('GreulerAdapter');
 
 
@@ -1153,183 +1248,436 @@ GreulerAdapter.prototype = {
 
 module.exports = GreulerAdapter;
 
-},{"./BoundingBox":5,"./Literal":16,"./Logger":17,"./graphelements":25,"./utils":27}],15:[function(require,module,exports){
-var Graph = require('./Graph');
+},{"../Logger":6,"../geometry/BoundingBox":13,"../utils":32,"../utils/Literal":33,"./graphelements":23}],19:[function(require,module,exports){
+function NoOpColorChanger() {
 
-function ImmutableGraph() {
-  Graph.apply(this, arguments);
 }
 
-ImmutableGraph.prototype = Object.assign(new Graph(), {
-  className: 'ImmutableGraph',
+NoOpColorChanger.prototype = {
+  className: 'NoOpColorChanger',
 
-  addNode: function() {},
-  changeColor: function() {},
+  getConstructorArgs: function() { return {}; },
+  setColor: function() {},
+};
+
+module.exports = NoOpColorChanger;
+
+},{}],20:[function(require,module,exports){
+function NoOpEdgeCreator() {
+
+}
+
+NoOpEdgeCreator.prototype = {
+  className: 'NoOpEdgeCreator',
+  getConstructorArgs: function() { return {}; },
+
   addEdge: function() {},
-  reset: function() {},
+
+};
+
+module.exports = NoOpEdgeCreator;
+
+},{}],21:[function(require,module,exports){
+function NoOpNodeCreator() {
+
+}
+
+NoOpNodeCreator.prototype = {
+  className: 'NoOpNodeCreator',
+  getConstructorArgs: function() { return {}; },
+  addNode: function() {},
+};
+
+module.exports = NoOpNodeCreator;
+
+},{}],22:[function(require,module,exports){
+var utils = require('../utils');
+
+function NodeCreator() {
+}
+
+NodeCreator.prototype = {
+  className: 'NodeCreator',
+  getConstructorArgs: function() { return {}; },
+
+  addNode: function(opts) {
+    var state = utils.requireNonNull(opts.state);
+    var adapter = utils.requireNonNull(opts.adapter);
+    var color = utils.requireNonNull(opts.color);
+    var nodeSize = opts.nodeSize;
+
+    var nodeId = state.persistNode({
+      color: color,
+    });
+    var node = utils.optional({
+      id: nodeId,
+      color: color,
+      label: '',
+      size: nodeSize,
+    }, { force: ['id', 'label'] });
+    adapter.addNode(node);
+  },
+};
+
+module.exports = NodeCreator;
+
+},{"../utils":32}],23:[function(require,module,exports){
+function GraphElement(options) {
+  if (options) {
+    this.id = options.id;
+    this.domElement = options.domElement;
+  }
+}
+
+GraphElement.prototype = {
+  isNode: function() {
+    return false;
+  },
+  isEdge: function() {
+    return false;
+  },
+};
+
+function Node(options) {
+  GraphElement.apply(this, arguments);
+  if (options) {
+    this.realNode = options.realNode;
+    this.color = options.color;
+    this.getCurrentBoundingBox = options.getCurrentBoundingBox;
+  }
+}
+
+Node.prototype = Object.assign(new GraphElement(), {
+  isNode: function() { return true; },
+
+  getCenter: function() {
+    return this.getCurrentBoundingBox().getCenter();
+  },
+
+  getTopLeft: function() {
+    return this.getCurrentBoundingBox().getTopLeft();
+  },
+
+  getTopRight: function() {
+    return this.getCurrentBoundingBox().getTopRight();
+  },
+
+  getBottomLeft: function() {
+    return this.getCurrentBoundingBox().getBottomLeft();
+  },
+
+  getBottomRight: function() {
+    return this.getCurrentBoundingBox().getBottomRight();
+  },
+});
+
+
+function Edge() {
+  GraphElement.apply(this, arguments);
+}
+
+Edge.prototype = Object.assign(new GraphElement(), {
+  isEdge: function() { return true; },
+});
+
+function None() {
+  GraphElement.apply(this, arguments);
+}
+
+None.prototype = Object.assign(new GraphElement(), {
 
 });
 
-module.exports = ImmutableGraph;
+module.exports = {
+  Node: Node,
+  Edge: Edge,
+  NONE: new None(),
+};
 
-},{"./Graph":12}],16:[function(require,module,exports){
-function Literal(value) {
-  this.value = value;
-}
+},{}],24:[function(require,module,exports){
 
-module.exports = Literal;
+var GreulerAdapter = require('./GreulerAdapter');
+var ColorChanger = require('./ColorChanger');
+var EdgeCreator = require('./EdgeCreator');
+var NodeCreator = require('./NodeCreator');
+var NoOpColorChanger = require('./NoOpColorChanger');
+var NoOpEdgeCreator = require('./NoOpEdgeCreator');
+var NoOpNodeCreator = require('./NoOpNodeCreator');
+var Graph = require('./Graph');
 
-},{}],17:[function(require,module,exports){
-(function (global){
-var LEVEL_ORDER = [
-  'DEBUG',
-  'INFO',
-  'WARN',
-  'ERROR',
-];
+var DisallowedEditMode = require('../modes/DisallowedEditMode');
+var EditMode = require('../modes/EditMode');
+var NonAnimatingEditMode = require('../modes/NonAnimatingEditMode');
 
-function Logger(name) {
-  this.name = name || 'Logger';
-}
+var EmptyLabelSet = require('../labels/EmptyLabelSet');
+var NodeLabelSet = require('../labels/NodeLabelSet');
 
-Logger.level = 'WARN';
-Logger.levels = {};
+var GraphComponent = require('../components/GraphComponent');
 
-Logger.prototype = {
-  debug: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'DEBUG', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+var Animator = require('../Animator');
+var ComponentManager = require('../ComponentManager');
+var utils = require('../utils');
+var Logger = require('../Logger');
+
+var LOG = new Logger('graphfactory');
+
+module.exports = {
+  newGraph: function(opts) {
+    opts = Object.assign({
+      immutable: false,
+      allowAddNodes: true,
+      allowAddEdges: true,
+      allowChangeColors: true,
+      allowLabels: true,
+    }, opts);
+    LOG.debug('instantiating graph', opts);
+
+
+    return new Graph({
+      actionQueue: utils.requireNonNull(opts.actionQueue),
+      adapter: utils.requireNonNull(opts.adapter),
+      colorChoices: opts.colorChoices,
+      colorChanger: this._getColorChanger(opts),
+      edgeCreator: this._getEdgeCreator(opts),
+      edgeDistance: opts.edgeDistance,
+      initialNodes: opts.initialNodes,
+      initialEdges: opts.initialEdges,
+      labelSet: this._getLabelSet(opts),
+      nodeCreator: this._getNodeCreator(opts),
+      nodeSize: opts.nodeSize,
+      state: utils.requireNonNull(opts.state),
+    });
   },
-  info: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'INFO', this.name].concat(Array.prototype.splice.call(arguments, 0)));
-  },
-  warn: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'WARN', this.name].concat(Array.prototype.splice.call(arguments, 0)));
-  },
-  error: function(msg, objs) {
-    this._log.apply(this, [new Date().getTime(), 'ERROR', this.name].concat(Array.prototype.splice.call(arguments, 0)));
+
+  newGraphComponent: function(opts) {
+    opts = Object.assign({
+      immutable: false,
+      allowAddNodes: true,
+      allowAddEdges: true,
+      allowChangeColors: true,
+      allowLabels: true,
+      allowEdit: true,
+    }, opts);
+    LOG.debug('instantiating graph component', opts);
+
+    var labelSet = this._getLabelSet(opts);
+
+    return new GraphComponent(Object.assign({
+      graph: this.newGraph(Object.assign({ labelSet: labelSet }, opts)),
+      adapter: utils.requireNonNull(opts.adapter),
+      editMode: this._getEditMode(opts, labelSet),
+      width: opts.width,
+      height: opts.height,
+      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
+    }, this._getComponentServices(opts)));
   },
 
-  _log: function() {
-    var level = arguments[1];
-    var logLevel = Logger.levels[this.name] || Logger.level;
-    if (LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(logLevel)) {
-      global.console.log.apply(global.console.log, arguments);
+  _newComponentManager: function(opts) {
+    return new ComponentManager({
+      actionQueue: utils.requireNonNull(opts.actionQueue),
+      componentServices: this._getComponentServices(opts),
+      document: utils.requireNonNull(opts.document),
+    });
+  },
+
+  _getComponentServices: function(opts) {
+    var actionQueue = utils.requireNonNull(opts.actionQueue);
+    return { actionQueue: actionQueue };
+  },
+
+  _getColorChanger: function(opts) {
+    if (opts.immutable || !opts.allowChangeColors) {
+      return new NoOpColorChanger();
+    } else {
+      return new ColorChanger();
+    }
+  },
+
+  _getEdgeCreator: function(opts) {
+    if (opts.immutable || !opts.allowAddEdges) {
+      return new NoOpEdgeCreator();
+    } else {
+      return new EdgeCreator();
+    }
+  },
+
+  _getNodeCreator: function(opts) {
+    if (opts.immutable || !opts.allowAddNodes) {
+      return new NoOpNodeCreator();
+    } else {
+      return new NodeCreator();
+    }
+  },
+
+  _getEditMode: function(opts, labelSet) {
+    if (opts.immutable || !opts.allowEdit) {
+      return new DisallowedEditMode();
+    } else if (!opts.allowAddEdges) {
+      return new NonAnimatingEditMode({
+        adapter: utils.requireNonNull(opts.adapter),
+        labelSet: labelSet,
+        alternateInterval: opts.alternateInterval,
+      });
+    } else {
+      return new EditMode({
+        adapter: utils.requireNonNull(opts.adapter),
+        animator: new Animator({ actionQueue: utils.requireNonNull(opts.actionQueue) }),
+        labelSet: labelSet,
+        alternateInterval: opts.alternateInterval,
+      });
+    }
+  },
+
+  _getLabelSet: function(opts) {
+    if (!opts.allowLabels) {
+      return new EmptyLabelSet();
+    } else {
+      return new NodeLabelSet({
+        componentManager: opts.componentManager || this._newComponentManager(opts),
+        state: opts.state,
+      });
     }
   },
 };
 
+},{"../Animator":3,"../ComponentManager":5,"../Logger":6,"../components/GraphComponent":10,"../labels/EmptyLabelSet":26,"../labels/NodeLabelSet":27,"../modes/DisallowedEditMode":28,"../modes/EditMode":29,"../modes/NonAnimatingEditMode":30,"../utils":32,"./ColorChanger":15,"./EdgeCreator":16,"./Graph":17,"./GreulerAdapter":18,"./NoOpColorChanger":19,"./NoOpEdgeCreator":20,"./NoOpNodeCreator":21,"./NodeCreator":22}],25:[function(require,module,exports){
+var ModeSwitch = require('../ModeSwitch');
+var BlockText = require('../components/BlockText');
+var TextBox = require('../components/TextBox');
+var Logger = require('../Logger');
 
-module.exports = Logger;
+var LOG = new Logger('EditableLabel');
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],18:[function(require,module,exports){
-var Logger = require('./Logger');
-var LOG = new Logger('ModeSwitch');
-
-function ModeSwitch(opts) {
-  this.actionQueue = opts && opts.actionQueue;
-  this.timeout = (opts && opts.timeout) || 0;
-  this.modeStates = (opts && opts.initialStates) || {};
-  this.name = (opts && opts.name) || 'ModeSwitch';
-  this.currentMode = null;
-  this.resetModeFuture = null;
-  LOG.debug('Initialized ' + this.name, this);
+function EditableLabel(opts) {
+  if (opts) {
+    this.componentManager = opts.componentManager;
+    this.text = opts.text;
+    this.pinTo = opts.pinTo;
+    this.modeSwitch = new ModeSwitch({
+      name: 'EditableLabel({ text: \'' + this.text + '\'})'
+    });
+    this.onChange = opts.onChange || function() {};
+  }
 }
 
-ModeSwitch.prototype = {
-  className: 'ModeSwitch',
+EditableLabel.prototype = {
+  className: 'EditableLabel',
+
   getConstructorArgs: function() {
     return {
-      actionQueue: this.actionQueue,
-      timeout: this.timeout,
-      initialStates: this.modeStates,
-      name: this.name,
+      componentManager: this.componentManager,
+      text: this.text,
+      pinTo: this.pinTo,
+      onChange: this.onChange,
     };
   },
 
-  enter: function(mode, fn) {
+  display: function() {
+    LOG.debug('displaying text', this.text);
     this._validate();
-    if (this._isPermitted(mode)) {
-      LOG.debug(this.name + ': Entering \'' + mode + '\'', this);
-      var state = (fn || function() {})();
-      this.modeStates[mode] = state;
-      this.currentMode = mode;
-      this._cancelModeReset();
-    } else {
-      LOG.debug(this.name + ': Not entering \'' + mode + '\';'
-                + ' active mode is ' + this.currentMode, this);
+
+    this.modeSwitch.exit('edit', (function(editState) {
+      this.text = editState.component.getText();
+      editState.component.remove();
+      LOG.debug('got text from input component', this.text);
+    }).bind(this))
+    .exit('display', function(displayState) { displayState.component.remove(); });
+
+    if (this.text) {
+      this.modeSwitch.enter('display', (function() {
+        var component = this.componentManager.insertComponent({
+          class: BlockText,
+          constructorArgs: { text: this.text },
+          pinTo: this.pinTo,
+        });
+        this.onChange(this.text);
+        LOG.debug('EditableLabel: displaying component with text', this.text);
+        return { component: component };
+      }).bind(this));
     }
     return this;
   },
 
-  exit: function(mode, fn) {
+  edit: function() {
+    LOG.debug('editing text', this.text);
     this._validate();
-    if(this._isActive(mode)) {
-      LOG.debug(this.name + ': Exiting ' + mode, this);
-      (fn || function() {})(this.modeStates[mode]);
-      this._scheduleModeReset();
-    } else {
-      LOG.debug(this.name + ': Not exiting \'' + mode + '\';'
-                + ' active mode is ' + this.currentMode, this);
-    }
+    this.modeSwitch.exit('display', (function(displayState) {
+      displayState.component.remove();
+      LOG.debug('closed display component');
+    }).bind(this))
+    .exit('edit', function(editState) { editState.component.remove(); });
+
+    this.modeSwitch.enter('edit', (function() {
+       var component = this.componentManager.insertComponent({
+        class: TextBox,
+        constructorArgs: {
+          text: this.text,
+          onSave: this.display.bind(this),
+        },
+        pinTo: this.pinTo,
+      });
+      LOG.debug('opened edit component');
+      return { component: component };
+    }).bind(this));
     return this;
-  },
-
-  ifActive: function(callbackObj) {
-    var activeMode = this.currentMode || 'default';
-    var callback = callbackObj[activeMode];
-    if (callback) {
-      LOG.debug(this.name + ': Found callback for active mode', activeMode, callbackObj);
-      var modeState = this.modeStates[this.currentMode || 'default'];
-      callback(modeState);
-    } else {
-      LOG.debug(this.name + ': No callback for active mode', activeMode, callbackObj);
-    }
-    return this;
-  },
-
-  _isPermitted: function(mode) {
-    return !this.currentMode || this._isActive(mode);
-  },
-
-  _isActive: function(mode) {
-    return this.currentMode === mode;
-  },
-
-  _cancelModeReset: function() {
-    this.resetModeFuture && this.resetModeFuture.cancel();
-  },
-
-  _scheduleModeReset: function() {
-    var resetFunction = (function() {
-      delete this.modeStates[this.currentMode];
-      this.currentMode = null;
-    }).bind(this);
-
-    this._cancelModeReset();
-    if (this.timeout) {
-      this.resetModeFuture = this.actionQueue.defer(
-        this.timeout, resetFunction
-      );
-    } else {
-      resetFunction();
-    }
   },
 
   _validate: function() {
-    if(this.timeout && !this.actionQueue) {
-      throw new Error('action queue is required if a timeout is specified');
+    if(!this.componentManager) {
+      throw new Error('componentManager is required');
     }
+    if(!this.modeSwitch) {
+      throw new Error('modeSwitch is required');
+    }
+  },
+
+  remove: function() {
+    LOG.debug('removing', this);
+    this.modeSwitch
+      .exit('display', function(displayState) {
+        displayState.component.remove();
+        LOG.debug('closed display component');
+      })
+      .exit('edit', function(editState) {
+        editState.component.remove();
+        LOG.debug('closed edit component');
+      }) ;
+    return this;
+  },
+
+  _closeComponent: function(state) {
+    state.component.remove();
   },
 };
 
-module.exports = ModeSwitch;
+EditableLabel.Factory = {
+  create: function(opts) { return new EditableLabel(opts); },
 
-},{"./Logger":17}],19:[function(require,module,exports){
-var Position = require('./Position');
+};
+module.exports = EditableLabel;
+
+},{"../Logger":6,"../ModeSwitch":7,"../components/BlockText":9,"../components/TextBox":12}],26:[function(require,module,exports){
+function EmptyLabelSet() {
+
+}
+
+EmptyLabelSet.prototype = {
+  className: 'EmptyLabelSet',
+  getConstructorArgs: function() { return {}; },
+
+  initialize: function() {},
+  edit: function() {},
+  display: function() {},
+  closeAll: function() {},
+};
+
+module.exports = EmptyLabelSet;
+
+},{}],27:[function(require,module,exports){
+var Position = require('../geometry/Position');
 var EditableLabel = require('./EditableLabel');
-var Logger = require('./Logger');
+var Logger = require('../Logger');
+
 var LOG = new Logger('NodeLabelSet');
 
 function NodeLabelSet(opts) {
@@ -1370,6 +1718,7 @@ NodeLabelSet.prototype = {
   },
 
   closeAll: function() {
+    LOG.debug('closing all labels', this.labels);
     Object.values(this.labels).forEach(function(label) {
       label.remove();
     });
@@ -1418,117 +1767,191 @@ NodeLabelSet.prototype = {
 
 module.exports = NodeLabelSet;
 
-},{"./EditableLabel":11,"./Logger":17,"./Position":20}],20:[function(require,module,exports){
-var utils = require('./utils');
+},{"../Logger":6,"../geometry/Position":14,"./EditableLabel":25}],28:[function(require,module,exports){
+var EditMode = require('./EditMode');
 
-function Position(opts) {
-  /* opts -
-   * {
-    topLeft: { x: 0, y: 0 },
-    topRight: undefined,
-    bottomLeft: undefined,
-    bottomRight: undefined,
-    }
-   */
-  if (!utils.isOneValuedObject(opts)) {
-    throw new Error('invalid position object ' + opts);
-  }
+function DisallowedEditMode() {
+  EditMode.apply(this, arguments);
+}
 
-  Object.assign(this, opts);
+DisallowedEditMode.prototype = Object.assign(new EditMode(), {
+  className: 'DisallowedEditMode',
+
+  activate: function() {},
+  _validate: function() {},
+});
+
+module.exports = DisallowedEditMode;
+
+},{"./EditMode":29}],29:[function(require,module,exports){
+var ModeSwitch = require('../ModeSwitch');
+var colors = require('../colors');
+var Logger = require('../Logger');
+
+var LOG = new Logger('EditMode');
+
+
+function EditMode(opts) {
+  this.adapter = opts && opts.adapter;
+  this.animator = opts && opts.animator;
+  this.alternateInterval = (opts && opts.alternateInterval) || 250;
+  this.labelSet = opts && opts.labelSet;
+  this.modeSwitch = (opts && opts.modeSwitch) || new ModeSwitch({
+    name: 'editMode',
+  });
+  this.modeSwitch.enter('display');
 }
 
 
-Position.prototype = {
-  className: 'Position',
-  getConstructorArgs: function() { return this; },
+EditMode.prototype = {
+  className: 'EditMode',
 
-  getStyle: function(opts) {
-    opts = Object.assign({
-      width: 0,
-      height: 0,
-    }, opts);
-
-    if (this.topLeft) {
-        return 'position: absolute;' +
-        ' left: ' + this.topLeft.x + ';' +
-        ' top: ' + this.topLeft.y + ';';
-    } else if (this.topRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.topRight.x - opts.width) + ';' +
-        ' top: ' + this.topRight.y + ';';
-    } else if (this.bottomLeft) {
-      return 'position: absolute;' +
-        ' left: ' + this.bottomLeft.x + ';' +
-        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
-    } else if (this.bottomRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
-        ' top: ' + (this.bottomRight.y - opts.height) + ';';
-    } else {
-      throw new Error('invalid position object: ' + this);
-    }
+  getConstructorArgs: function() {
+    return {
+      adapter: this.adapter,
+      animator: this.animator,
+      alternateInterval: this.alternateInterval,
+      labelSet: this.labelSet,
+      modeSwitch: this.modeSwitch,
+    };
   },
-};
 
-module.exports = Position;
+  activate: function(node) {
+    LOG.info('activating');
+    this._validate();
+    this.modeSwitch
+      .exit('display')
+      .exit('edit', this._cleanUpEditState.bind(this))
+      .enter('edit', (function() {
+        var otherNodes = this.adapter.getNodes(function(n) {
+          return n.id !== node.id;
+        });
+        var originalColors = otherNodes.reduce(function(accum, node) {
+          accum[node.id] = node.color;
+          return accum;
+        }, {});
 
-},{"./utils":27}],21:[function(require,module,exports){
-var Component = require('./Component');
+        var animation = this._startEditAnimation(otherNodes, originalColors);
 
-function ResetButton(options) {
-  Component.apply(this, arguments);
-  if (options) {
-    this.resettables = options.resettables;
-  } else {
-    this.resettables = [];
-  }
+        this.labelSet.edit(node);
 
-}
+        var editState = {
+          node: node,
+          animation: animation,
+          otherNodes: otherNodes,
+          originalColors: originalColors,
+        };
+        LOG.debug('activated', editState);
+        return editState;
+      }).bind(this));
+  },
 
-ResetButton.prototype = Object.assign(new Component(), {
-  className: 'ResetButton',
+  deactivate: function() {
+    LOG.debug('deactvating');
+    this._validate();
+    this.modeSwitch
+      .exit('edit', this._cleanUpEditState.bind(this))
+      .enter('display', function() {
+        LOG.debug('deactvated');
+      });
+  },
 
-  handleClick: function(event) {
-    this.resettables.forEach(function(resettable) {
-      resettable.reset();
+  perform: function(opts) {
+    opts = Object.assign({
+      ifActive: function() {},
+      ifNotActive: function() {},
+    }, opts);
+    this._validate();
+
+    this.modeSwitch.ifActive({
+      edit: function(editState) { opts.ifActive(editState.node); },
+      display: opts.ifNotActive,
     });
   },
-});
 
-module.exports = ResetButton;
+  _setNeon: function(otherNodes) {
+    otherNodes.forEach((function(n) {
+      this.adapter.setNodeColor(n, colors.NEON);
+    }).bind(this));
+  },
 
-},{"./Component":7}],22:[function(require,module,exports){
-var Component = require('./Component');
+  _setOriginalColors: function(otherNodes, originalColors) {
+    otherNodes.forEach((function(n) {
+      this.adapter.setNodeColor(n, originalColors[n.id]);
+    }).bind(this));
+  },
 
-function TextBox(options) {
-  Component.apply(this, arguments);
-  this.initialText = (options && options.text) || '';
-  this.onSave = (options && options.onSave) || function() {};
+  _cleanUpEditState: function(editState) {
+    LOG.debug('cleaning up edit mode state', editState);
+    editState.animation.stop();
+    this.labelSet.display(editState.node);
+    this._setOriginalColors(editState.otherNodes, editState.originalColors);
+  },
+
+  _startEditAnimation: function(otherNodes, originalColors) {
+    return this.animator
+    .alternate(
+      this._setNeon.bind(this, otherNodes),
+      this._setOriginalColors.bind(this, otherNodes, originalColors)
+    )
+    .every(this.alternateInterval)
+    .play();
+  },
+
+  _validate: function() {
+    if (!this.adapter) {
+      throw new Error('adapter is required');
+    }
+    if (!this.animator) {
+      throw new Error('animator is required');
+    }
+    if (!this.modeSwitch) {
+      throw new Error('modeSwitch is required');
+    }
+  }
+
+};
+
+module.exports = EditMode;
+
+},{"../Logger":6,"../ModeSwitch":7,"../colors":8}],30:[function(require,module,exports){
+var EditMode = require('./EditMode');
+var Logger = require('../Logger');
+
+var LOG = new Logger('NonAnimatingEditMode');
+
+
+function NonAnimatingEditMode() {
+  EditMode.apply(this, arguments);
 }
 
-TextBox.prototype = Object.assign(new Component(), {
-  className: 'TextBox',
 
-  getGeneratedMarkup: function() {
-    return '<input type="text"' +
-    ' value="' + this.initialText + '"' +
-    '></input>';
+NonAnimatingEditMode.prototype = Object.assign(new EditMode(), {
+  className: 'NonAnimatingEditMode',
+
+  _startEditAnimation: function() {
+    LOG.debug('not animating for edit mode');
+    return { stop: function() {} };
   },
 
-  getText: function() {
-    return this.element.getElementsByTagName('input')[0].value;
-  },
-
-  handleEnter: function(event) {
-    this.onSave();
+  _validate: function() {
+    if (!this.adapter) {
+      throw new Error('adapter is required');
+    }
+    if (!this.modeSwitch) {
+      throw new Error('modeSwitch is required');
+    }
   },
 });
 
-module.exports = TextBox;
+module.exports = NonAnimatingEditMode;
 
-},{"./Component":7}],23:[function(require,module,exports){
-var utils = require('./utils');
-var Literal = require('./Literal');
+},{"../Logger":6,"./EditMode":29}],31:[function(require,module,exports){
+var utils = require('../utils');
+var Literal = require('../utils/Literal');
+var Logger = require('../Logger');
+
+var LOG = new Logger('UrlState');
 
 NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
@@ -1640,6 +2063,7 @@ UrlState.prototype = {
   },
 
   reset: function() {
+    LOG.debug('resetting');
     this._getKeys().forEach((function(key) {
       this.urlSearchParams.delete(key);
     }).bind(this));
@@ -1767,260 +2191,8 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"./Literal":16,"./utils":27}],24:[function(require,module,exports){
-var RED = '#db190f';
-var ORANGE = '#f76402';
-var YELLOW = '#fbff14';
-var GREEN = '#28b92b';
-var BLUE = '#2826b5';
-var INDIGO = '#2980B9';
-var VIOLET = '#8c28b7';
-var NEON = '#00FF00';
-
-module.exports = {
-  RED: RED,
-  ORANGE: ORANGE,
-  YELLOW: YELLOW,
-  GREEN: GREEN,
-  BLUE: BLUE,
-  INDIGO: INDIGO,
-  VIOLET: VIOLET,
-  NEON: NEON,
-  RAINBOW: [
-    RED,
-    ORANGE,
-    YELLOW,
-    GREEN,
-    BLUE,
-    INDIGO,
-    VIOLET,
-  ],
-};
-
-},{}],25:[function(require,module,exports){
-function GraphElement(options) {
-  if (options) {
-    this.id = options.id;
-    this.domElement = options.domElement;
-  }
-}
-
-GraphElement.prototype = {
-  isNode: function() {
-    return false;
-  },
-  isEdge: function() {
-    return false;
-  },
-};
-
-function Node(options) {
-  GraphElement.apply(this, arguments);
-  if (options) {
-    this.realNode = options.realNode;
-    this.color = options.color;
-    this.getCurrentBoundingBox = options.getCurrentBoundingBox;
-  }
-}
-
-Node.prototype = Object.assign(new GraphElement(), {
-  isNode: function() { return true; },
-
-  getCenter: function() {
-    return this.getCurrentBoundingBox().getCenter();
-  },
-
-  getTopLeft: function() {
-    return this.getCurrentBoundingBox().getTopLeft();
-  },
-
-  getTopRight: function() {
-    return this.getCurrentBoundingBox().getTopRight();
-  },
-
-  getBottomLeft: function() {
-    return this.getCurrentBoundingBox().getBottomLeft();
-  },
-
-  getBottomRight: function() {
-    return this.getCurrentBoundingBox().getBottomRight();
-  },
-});
-
-
-function Edge() {
-  GraphElement.apply(this, arguments);
-}
-
-Edge.prototype = Object.assign(new GraphElement(), {
-  isEdge: function() { return true; },
-});
-
-function None() {
-  GraphElement.apply(this, arguments);
-}
-
-None.prototype = Object.assign(new GraphElement(), {
-
-});
-
-module.exports = {
-  Node: Node,
-  Edge: Edge,
-  NONE: new None(),
-};
-
-},{}],26:[function(require,module,exports){
-var Animator = require('./Animator');
-var ColorChangingGraph = require('./ColorChangingGraph');
-var ComponentManager = require('./ComponentManager');
-var DisallowedEditMode = require('./DisallowedEditMode');
-var EditMode = require('./EditMode');
-var Graph = require('./Graph');
-var GraphComponent = require('./GraphComponent');
-var GreulerAdapter = require('./GreulerAdapter');
-var ImmutableGraph = require('./ImmutableGraph');
-var NodeLabelSet = require('./NodeLabelSet');
-var utils = require('./utils');
-
-var Logger = require('./Logger');
-var LOG = new Logger('graphfactory');
-
-module.exports = {
-
-  newImmutableGraph: function(opts) {
-    LOG.debug('instantiating immmutable graph', opts);
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
-    var state = utils.requireNonNull(opts.state);
-    var adapter = utils.requireNonNull(opts.adapter);
-
-    var labelSet = opts.labelSet || new NodeLabelSet({
-      componentManager: opts.componentManager || this._newComponentManager(opts),
-      state: state,
-    });
-
-
-    return new ImmutableGraph({
-      state: state,
-      adapter: adapter,
-      actionQueue: actionQueue,
-      labelSet: labelSet,
-      initialNodes: opts.initialNodes,
-      initialEdges: opts.initialEdges,
-      nodeSize: opts.nodeSize,
-      edgeDistance: opts.edgeDistance,
-      colorChoices: opts.colorChoices,
-    });
-  },
-
-  newColorChangingGraph: function(opts) {
-    LOG.debug('instantiating color changing graph', opts);
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
-    var state = utils.requireNonNull(opts.state);
-    var adapter = utils.requireNonNull(opts.adapter);
-
-    var labelSet = opts.labelSet || new NodeLabelSet({
-      componentManager: opts.componentManager || this._newComponentManager(opts),
-      state: state,
-    });
-
-    return new ColorChangingGraph({
-      state: state,
-      adapter: adapter,
-      actionQueue: actionQueue,
-      labelSet: labelSet,
-      initialNodes: opts.initialNodes,
-      initialEdges: opts.initialEdges,
-      nodeSize: opts.nodeSize,
-      edgeDistance: opts.edgeDistance,
-      colorChoices: opts.colorChoices,
-    });
-  },
-
-  newMutableGraph: function(opts) {
-    LOG.debug('instantiating mutable graph', opts);
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
-    var state = utils.requireNonNull(opts.state);
-    var adapter = utils.requireNonNull(opts.adapter);
-
-    var labelSet = opts.labelSet || new NodeLabelSet({
-      componentManager: opts.componentManager || this._newComponentManager(opts),
-      state: state,
-    });
-
-    return new Graph({
-      state: state,
-      adapter: adapter,
-      actionQueue: actionQueue,
-      labelSet: labelSet,
-      initialNodes: opts.initialNodes,
-      initialEdges: opts.initialEdges,
-      nodeSize: opts.nodeSize,
-      edgeDistance: opts.edgeDistance,
-      colorChoices: opts.colorChoices,
-    });
-  },
-
-  newGraph: function(opts) {
-    if (opts.immutable) {
-      return this.newImmutableGraph(opts);
-    } else if (opts.onlyChangeColors) {
-      return this.newColorChangingGraph(opts);
-    } else {
-      return this.newMutableGraph(opts);
-    }
-  },
-
-  newGraphComponent: function(opts) {
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
-    var adapter = utils.requireNonNull(opts.adapter);
-    var state = utils.requireNonNull(opts.state);
-    var componentManager = opts.componentManager = this._newComponentManager(opts);
-    var labelSet = new NodeLabelSet({
-      componentManager: componentManager,
-      state: state,
-    });
-
-    var editMode;
-
-    if (opts.immutable || opts.onlyChangeColors) {
-      editMode = new DisallowedEditMode();
-    } else {
-      editMode = new EditMode({
-        adapter: adapter,
-        animator: new Animator({ actionQueue: actionQueue }),
-        labelSet: labelSet,
-        alternateInterval: opts.alternateInterval,
-      });
-    }
-
-
-    return new GraphComponent(Object.assign({
-      graph: this.newGraph(opts),
-      adapter: adapter,
-      editMode: editMode,
-      width: opts.width,
-      height: opts.height,
-      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
-    }, this._getComponentServices(opts)));
-  },
-
-  _newComponentManager: function(opts) {
-    return new ComponentManager({
-      actionQueue: utils.requireNonNull(opts.actionQueue),
-      componentServices: this._getComponentServices(opts),
-      document: utils.requireNonNull(opts.document),
-    });
-  },
-
-  _getComponentServices: function(opts) {
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
-    return { actionQueue: actionQueue };
-  },
-};
-
-},{"./Animator":3,"./ColorChangingGraph":6,"./ComponentManager":8,"./DisallowedEditMode":9,"./EditMode":10,"./Graph":12,"./GraphComponent":13,"./GreulerAdapter":14,"./ImmutableGraph":15,"./Logger":17,"./NodeLabelSet":19,"./utils":27}],27:[function(require,module,exports){
-var Literal = require('./Literal');
+},{"../Logger":6,"../utils":32,"../utils/Literal":33}],32:[function(require,module,exports){
+var Literal = require('./utils/Literal');
 
 /**
  * Compute the cartesian distance between two vectors
@@ -2162,5 +2334,12 @@ module.exports = {
   requireNonNull: requireNonNull,
 };
 
-},{"./Literal":16}]},{},[1])
+},{"./utils/Literal":33}],33:[function(require,module,exports){
+function Literal(value) {
+  this.value = value;
+}
+
+module.exports = Literal;
+
+},{}]},{},[1])
 //# sourceMappingURL=bundle.map.js
