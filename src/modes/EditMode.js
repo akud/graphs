@@ -45,13 +45,7 @@ EditMode.prototype = {
           return accum;
         }, {});
 
-        var animation = this.animator
-          .alternate(
-            this._setNeon.bind(this, otherNodes),
-            this._setOriginalColors.bind(this, otherNodes, originalColors)
-          )
-          .every(this.alternateInterval)
-          .play();
+        var animation = this._startEditAnimation(otherNodes, originalColors);
 
         this.labelSet.edit(node);
 
@@ -106,6 +100,16 @@ EditMode.prototype = {
     editState.animation.stop();
     this.labelSet.display(editState.node);
     this._setOriginalColors(editState.otherNodes, editState.originalColors);
+  },
+
+  _startEditAnimation: function(otherNodes, originalColors) {
+    return this.animator
+    .alternate(
+      this._setNeon.bind(this, otherNodes),
+      this._setOriginalColors.bind(this, otherNodes, originalColors)
+    )
+    .every(this.alternateInterval)
+    .play();
   },
 
   _validate: function() {

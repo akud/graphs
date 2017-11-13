@@ -9,6 +9,9 @@ describe('Graph', function() {
   var adapter;
   var actionQueue;
   var labelSet;
+  var nodeCreator;
+  var edgeCreator;
+  var colorChanger;
 
   beforeEach(function() {
     state = createSpyObjectWith(
@@ -35,6 +38,9 @@ describe('Graph', function() {
       }
     );
     actionQueue = new MockActionQueue();
+    nodeCreator = createSpyObjectWith('addNode');
+    edgeCreator = createSpyObjectWith('addEdge');
+    colorChanger = createSpyObjectWith('setColor');
   });
 
   function newGraph(opts) {
@@ -43,6 +49,9 @@ describe('Graph', function() {
       adapter: adapter,
       actionQueue: actionQueue,
       labelSet: labelSet,
+      nodeCreator: nodeCreator,
+      edgeCreator: edgeCreator,
+      colorChanger: colorChanger,
     }, opts));
   }
 
@@ -182,56 +191,32 @@ describe('Graph', function() {
     });
 
     function expectColorToHaveBeenSet(node, color) {
-      expect(adapter.setNodeColor).toHaveBeenCalledWith(node, color);
-      expect(state.persistNode).toHaveBeenCalledWith({ id: node.id, color: color });
+      expect(colorChanger.setColor).toHaveBeenCalledWith({
+        adapter: adapter,
+        state: state,
+        node: node,
+        color: color,
+      });
     }
   });
 
   describe('addNode', function() {
-    it('adds a node to the adapter and state', function() {
-      var graph = newGraph();
-      var id = 0;
-      state.persistNode.andCall(function() {
-        return id++;
+    it('delegates to the node creator', function() {
+      newGraph({
+        colorChoices: [colors.RED, colors.BLUE],
+        nodeSize: 22
+      }).addNode();
+      expect(nodeCreator.addNode).toHaveBeenCalledWith({
+        state: state,
+        adapter: adapter,
+        color: colors.RED,
+        nodeSize: 22,
       });
-
-      graph.addNode();
-
-      expect(adapter.addNode).toHaveBeenCalled();
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 0, label: '', color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-
-      graph.addNode();
-      graph.addNode();
-      graph.addNode();
-      expect(adapter.addNode.calls.length).toBe(4);
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 1, label: '', color: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 2, label: '', color: '#2980B9' });
-      expect(adapter.addNode).toHaveBeenCalledWith({ id: 3, label: '', color: '#2980B9' });
-
-      expect(state.persistNode.calls.length).toBe(4);
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-      expect(state.persistNode).toHaveBeenCalledWith({ color: '#2980B9' });
-    });
-
-    it('passes node size to adapter', function() {
-      var graph = newGraph(
-        { nodeSize: 56 }
-      );
-
-      state.persistNode.andReturn(3);
-
-      graph.addNode();
-
-      expect(adapter.addNode).toHaveBeenCalledWith(
-        { id: 3, label: '', color: '#2980B9', size: 56 }
-      );
     });
   });
 
   describe('addEdge', function() {
-    it('connects the two nodes', function() {
+    it('delegates to the edge creator', function() {
       var originalNode = new graphelements.Node({ id: 0 });
       var otherNode = new graphelements.Node({ id: 4 });
 
@@ -239,12 +224,13 @@ describe('Graph', function() {
 
       graph.addEdge(originalNode, otherNode);
 
-      expect(adapter.addEdge).toHaveBeenCalledWith({
+      expect(edgeCreator.addEdge).toHaveBeenCalledWith({
         source: originalNode,
         target: otherNode,
-        distance: 456,
+        edgeDistance: 456,
+        state: state,
+        adapter: adapter,
       });
-      expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
     });
   });
 
