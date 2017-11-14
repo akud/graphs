@@ -1,8 +1,8 @@
-var GreulerAdapter = require('./src/GreulerAdapter');
-var UrlState = require('./src/UrlState');
+var GreulerAdapter = require('./src/graphs/GreulerAdapter');
+var UrlState = require('./src/state/UrlState');
 var ActionQueue = require('./src/ActionQueue');
-var ResetButton = require('./src/ResetButton');
-var graphfactory = require('./src/graphfactory');
+var ResetButton = require('./src/components/ResetButton');
+var graphfactory = require('./src/graphs/graphfactory');
 
 require('./src/Logger').level = global.logLevel;
 
@@ -26,6 +26,13 @@ if (width < 1000) {
   edgeDistance = 200;
 }
 
+var immutable = urlSearchParams.get('immutable') === 'true';
+var allowAddNodes = urlSearchParams.get('allowAddNodes') !== 'false';
+var allowAddEdges = urlSearchParams.get('allowAddEdges') !== 'false';
+var allowEdit = urlSearchParams.get('allowEdit') !== 'false';
+var allowChangeColors = urlSearchParams.get('allowChangeColors') !== 'false';
+var allowLabels = urlSearchParams.get('allowLabels') !== 'false';
+
 
 global.graphComponent = graphfactory.newGraphComponent({
   document: global.document,
@@ -37,8 +44,12 @@ global.graphComponent = graphfactory.newGraphComponent({
   nodeAreaFuzzFactor: 0.1,
   edgeDistance: edgeDistance,
   alternateInterval: 250,
-  immutable: urlSearchParams.get('immutable') === 'true',
-  onlyChangeColors: urlSearchParams.get('onlyChangeColors') === 'true',
+  immutable: immutable,
+  allowAddNodes: allowAddNodes,
+  allowAddEdges: allowAddEdges,
+  allowChangeColors: allowChangeColors,
+  allowEdit: allowEdit,
+  allowLabels: allowLabels,
   colorChoices: urlSearchParams.has('colorChoices') &&
     urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
   initialNodes: state.retrievePersistedNodes(),

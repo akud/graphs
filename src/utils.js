@@ -1,4 +1,4 @@
-var Literal = require('./Literal');
+var Literal = require('./utils/Literal');
 
 /**
  * Compute the cartesian distance between two vectors

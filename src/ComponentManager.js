@@ -1,7 +1,7 @@
 var utils = require('./utils');
-var Position = require('./Position');
+var Position = require('./geometry/Position');
 var Component = require('./Component');
-var Literal = require('./Literal');
+var Literal = require('./utils/Literal');
 
 function ComponentManager(options) {
   this.document = options && options.document;

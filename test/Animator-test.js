@@ -1,5 +1,5 @@
 var Animator = require('../src/Animator');
-var MockActionQueue = require('./utils/MockActionQueue');
+var MockActionQueue = require('./test_utils/MockActionQueue');
 
 describe('Animator', function() {
   var animator;
