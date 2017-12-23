@@ -8,9 +8,9 @@ NodeCreator.prototype = {
   getConstructorArgs: function() { return {}; },
 
   addNode: function(opts) {
-    var state = utils.requireNonNull(opts.state);
-    var adapter = utils.requireNonNull(opts.adapter);
-    var color = utils.requireNonNull(opts.color);
+    var state = utils.requireNonNull(opts, 'state');
+    var adapter = utils.requireNonNull(opts, 'adapter');
+    var color = utils.requireNonNull(opts, 'color');
     var nodeSize = opts.nodeSize;
 
     var nodeId = state.persistNode({
