@@ -37,8 +37,8 @@ module.exports = {
 
 
     return new Graph({
-      actionQueue: utils.requireNonNull(opts.actionQueue),
-      adapter: utils.requireNonNull(opts.adapter),
+      actionQueue: utils.requireNonNull(opts, 'actionQueue'),
+      adapter: utils.requireNonNull(opts, 'adapter'),
       colorChoices: opts.colorChoices,
       colorChanger: this._getColorChanger(opts),
       edgeCreator: this._getEdgeCreator(opts),
@@ -48,7 +48,7 @@ module.exports = {
       labelSet: this._getLabelSet(opts),
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
-      state: utils.requireNonNull(opts.state),
+      state: utils.requireNonNull(opts, 'state'),
     });
   },
 
@@ -67,7 +67,7 @@ module.exports = {
 
     return new GraphComponent(Object.assign({
       graph: this.newGraph(Object.assign({ labelSet: labelSet }, opts)),
-      adapter: utils.requireNonNull(opts.adapter),
+      adapter: utils.requireNonNull(opts, 'adapter'),
       editMode: this._getEditMode(opts, labelSet),
       width: opts.width,
       height: opts.height,
@@ -77,14 +77,14 @@ module.exports = {
 
   _newComponentManager: function(opts) {
     return new ComponentManager({
-      actionQueue: utils.requireNonNull(opts.actionQueue),
+      actionQueue: utils.requireNonNull(opts, 'actionQueue'),
       componentServices: this._getComponentServices(opts),
-      document: utils.requireNonNull(opts.document),
+      document: utils.requireNonNull(opts, 'document'),
     });
   },
 
   _getComponentServices: function(opts) {
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
+    var actionQueue = utils.requireNonNull(opts, 'actionQueue');
     return { actionQueue: actionQueue };
   },
 
@@ -117,14 +117,14 @@ module.exports = {
       return new DisallowedEditMode();
     } else if (!opts.allowAddEdges) {
       return new NonAnimatingEditMode({
-        adapter: utils.requireNonNull(opts.adapter),
+        adapter: utils.requireNonNull(opts, 'adapter'),
         labelSet: labelSet,
         alternateInterval: opts.alternateInterval,
       });
     } else {
       return new EditMode({
-        adapter: utils.requireNonNull(opts.adapter),
-        animator: new Animator({ actionQueue: utils.requireNonNull(opts.actionQueue) }),
+        adapter: utils.requireNonNull(opts, 'adapter'),
+        animator: new Animator({ actionQueue: utils.requireNonNull(opts, 'actionQueue') }),
         labelSet: labelSet,
         alternateInterval: opts.alternateInterval,
       });

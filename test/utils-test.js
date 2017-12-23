@@ -118,18 +118,18 @@ describe('utils', function() {
   });
 
   describe('requireNonNull', function() {
-    it('throws if the object is not present', function() {
+    it('throws if the property is not present', function() {
       try {
-        utils.requireNonNull(undefined);
+        utils.requireNonNull({}, 'a');
         fail('should have thrown');
       } catch(err) { }
       try {
-        utils.requireNonNull(null);
+        utils.requireNonNull({ 'a': null }, 'a');
         fail('should have thrown');
       } catch(err) { }
     });
-    it('returns the object if it is present', function() {
-      expect(utils.requireNonNull({ a: 'b' })).toEqual({ a: 'b' });
+    it('returns the property if it is present', function() {
+      expect(utils.requireNonNull({ a: 'b' }, 'a')).toEqual('b');
     });
   });
 

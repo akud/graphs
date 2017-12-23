@@ -75,11 +75,11 @@ function startingAt(array, startingItem) {
   }
 }
 
-function requireNonNull(obj) {
-  if (!obj) {
-    throw new Error('missing required object');
+function requireNonNull(container, property) {
+  if (!container[property]) {
+    throw new Error('missing required property ' + property);
   }
-  return obj;
+  return container[property];
 }
 
 function toJs(value, indentLevel) {
