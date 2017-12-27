@@ -24,6 +24,8 @@ var Logger = require('../Logger');
 
 var LOG = new Logger('graphfactory');
 
+var SMALL_SCREEN_THRESHOLD = 700;
+
 module.exports = {
   newGraph: function(opts) {
     opts = Object.assign({
@@ -52,6 +54,26 @@ module.exports = {
     });
   },
 
+  /**
+   * document: global.document,
+   * screen: global.screen,
+   * window: window,
+   * size: 'fullscreen'|'large'|'wide'|'small'|undefined
+   * adapter: new GreulerAdapter({ greuler: global.greuler }),
+   * actionQueue: actionQueue,
+   * state: state,
+   * nodeAreaFuzzFactor: 0.1,
+   * alternateInterval: 250,
+   * immutable: boolean,
+   * allowAddNodes: boolean,
+   * allowAddEdges: boolean,
+   * allowChangeColors: boolean,
+   * allowEdit: boolean,
+   * allowLabels: boolean,
+   * colorChoices: Array<String>
+   * initialNodes: Array<Node>
+   * initialEdges: Array<Edge>
+   */
   newGraphComponent: function(opts) {
     opts = Object.assign({
       immutable: false,
@@ -60,19 +82,29 @@ module.exports = {
       allowChangeColors: true,
       allowLabels: true,
       allowEdit: true,
+      nodeAreaFuzzFactor: 0.1,
+      alternateInterval: 250,
+      size: 'large',
     }, opts);
     LOG.debug('instantiating graph component', opts);
+    var sizing = this._getSizing(opts);
 
     var labelSet = this._getLabelSet(opts);
 
     return new GraphComponent(Object.assign({
-      graph: this.newGraph(Object.assign({ labelSet: labelSet }, opts)),
-      adapter: utils.requireNonNull(opts, 'adapter'),
-      editMode: this._getEditMode(opts, labelSet),
-      width: opts.width,
-      height: opts.height,
-      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
-    }, this._getComponentServices(opts)));
+        graph: this.newGraph(Object.assign({
+          labelSet: labelSet,
+          nodeSize: sizing.nodeSize,
+          edgeDistance: sizing.edgeDistance,
+        }, opts)),
+        adapter: utils.requireNonNull(opts, 'adapter'),
+        editMode: this._getEditMode(opts, labelSet),
+        width: sizing.width,
+        height: sizing.height,
+        nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
+      },
+      this._getComponentServices(opts)
+    ));
   },
 
   _newComponentManager: function(opts) {
@@ -140,5 +172,88 @@ module.exports = {
         state: opts.state,
       });
     }
+  },
+
+  _getSizing: function(opts) {
+    var customSize = opts.width && opts.height;
+    if (!customSize && opts.size == 'fullscreen') {
+      return this._getFullScreenSizing(opts);
+    } else if (!customSize && opts.size === 'large') {
+      return this._getLargeSizing(opts);
+    } else if (!customSize && opts.size === 'wide') {
+      return this._getWideSizing(opts);
+    } else if (!customSize && opts.size === 'small') {
+      return this._getSmallSizing(opts);
+    } else {
+      return {
+        width: utils.requireNonNull(opts, 'width'),
+        height: utils.requireNonNull(opts, 'height'),
+        nodeSize: opts.nodeSize || 10,
+        edgeDistance: opts.edgeDistance || 100,
+      };
+    }
+  },
+
+  _getFullScreenSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    return {
+      width: screenWidth,
+      height: screenHeight,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getLargeSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    var width = screenWidth > SMALL_SCREEN_THRESHOLD ? 700 : 300;
+    return {
+      width: width,
+      height: opts.height || width,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getWideSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    var width = screenWidth < 1000 ? screenWidth : 1000;
+    return {
+      width: width,
+      height: opts.height || width / 2,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+
+  _getSmallSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    return {
+      width: 300,
+      height: opts.height || 500,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getNodeSize: function(screenWidth, screenHeight) {
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 18);
+  },
+
+  _getEdgeDistance: function(screenWidth) {
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 200;
   },
 };

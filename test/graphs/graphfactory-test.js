@@ -18,12 +18,16 @@ describe('GraphFactory', function() {
   var adapter;
   var state;
   var document;
+  var screen;
+  var window;
 
   beforeEach(function() {
     actionQueue = createSpyObjectWith();
     adapter = createSpyObjectWith();
     state = createSpyObjectWith();
     document = createSpyObjectWith();
+    screen = createSpyObjectWith();
+    window = createSpyObjectWith();
   });
 
 
@@ -241,5 +245,246 @@ describe('GraphFactory', function() {
       }, opts));
     });
 
+    describe('fullscreen sizing', function() {
+      var opts;
+      beforeEach(function() {
+        opts = {
+          state: state,
+          actionQueue: actionQueue,
+          adapter: adapter,
+          document: document,
+          window: window,
+          screen: screen,
+        };
+      });
+
+      it('takes size from window innerWidth/innerHeight if present', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'fullscreen' },
+          opts
+        ));
+        expect(component.width).toBe(1024);
+        expect(component.height).toBe(2048);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 10,
+          edgeDistance: 100,
+        }));
+      });
+
+      it('takes size from screen if window size is not present', function() {
+        window.innerWidth = undefined;
+        window.innerHeight = undefined;
+        screen.width = 1024;
+        screen.height = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'fullscreen' },
+          opts
+        ));
+        expect(component.width).toBe(1024);
+        expect(component.height).toBe(2048);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 10,
+          edgeDistance: 100,
+        }));
+      });
+
+      it('uses bigger nodes and longer edges on small screens', function() {
+        window.innerWidth = 396;
+        window.innerHeight = 700;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'fullscreen' },
+          opts
+        ));
+        expect(component.width).toBe(396);
+        expect(component.height).toBe(700);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 22,
+          edgeDistance: 200,
+        }));
+      });
+    });
+
+    describe('large sizing', function() {
+      var opts;
+      beforeEach(function() {
+        opts = {
+          state: state,
+          actionQueue: actionQueue,
+          adapter: adapter,
+          document: document,
+          window: window,
+          screen: screen,
+        };
+      });
+
+      it('uses a large component size', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'large' },
+          opts
+        ));
+        expect(component.width).toBe(700);
+        expect(component.height).toBe(700);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 10,
+          edgeDistance: 100,
+        }));
+      });
+
+      it('allows overriding the height', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign({
+          size: 'large',
+          height: 900,
+        }, opts));
+        expect(component.height).toBe(900);
+      });
+
+      it('uses a smaller size on small screens', function() {
+        window.innerWidth = undefined;
+        window.innerHeight = undefined;
+        screen.width = 396;
+        screen.height = 800;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'large' },
+          opts
+        ));
+        expect(component.width).toBe(300);
+        expect(component.height).toBe(300);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 22,
+          edgeDistance: 200,
+        }));
+      });
+    });
+
+    describe('wide sizing', function() {
+      var opts;
+      beforeEach(function() {
+        opts = {
+          state: state,
+          actionQueue: actionQueue,
+          adapter: adapter,
+          document: document,
+          window: window,
+          screen: screen,
+        };
+      });
+
+      it('creates a wide graph', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'wide' },
+          opts
+        ));
+        expect(component.width).toBe(1000);
+        expect(component.height).toBe(500);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 10,
+          edgeDistance: 100,
+        }));
+      });
+
+      it('allows overriding the height', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign({
+          size: 'wide',
+          height: 900,
+        }, opts));
+        expect(component.height).toBe(900);
+      });
+
+      it('does not make width greater than the screen width', function() {
+        window.innerWidth = undefined;
+        window.innerHeight = undefined;
+        screen.width = 900;
+        screen.height = 800;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'wide' },
+          opts
+        ));
+        expect(component.width).toBe(900);
+        expect(component.height).toBe(450);
+      });
+
+      it('uses bigger nodes and longer edges on small screens', function() {
+        window.innerWidth = undefined;
+        window.innerHeight = undefined;
+        screen.width = 450;
+        screen.height = 800;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'wide' },
+          opts
+        ));
+        expect(component.width).toBe(450);
+        expect(component.height).toBe(225);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 25,
+          edgeDistance: 200,
+        }));
+      });
+    });
+
+    describe('small sizing', function() {
+      var opts;
+      beforeEach(function() {
+        opts = {
+          state: state,
+          actionQueue: actionQueue,
+          adapter: adapter,
+          document: document,
+          window: window,
+          screen: screen,
+        };
+      });
+
+      it('creates a small graph', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'small' },
+          opts
+        ));
+        expect(component.width).toBe(300);
+        expect(component.height).toBe(500);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 10,
+          edgeDistance: 100,
+        }));
+      });
+
+      it('allows overriding the height', function() {
+        window.innerWidth = 1024;
+        window.innerHeight = 2048;
+        var component = graphfactory.newGraphComponent(Object.assign({
+          size: 'small',
+          height: 400,
+        }, opts));
+        expect(component.height).toBe(400);
+      });
+
+      it('uses bigger nodes and longer edges on small screens', function() {
+        window.innerWidth = undefined;
+        window.innerHeight = undefined;
+        screen.width = 450;
+        screen.height = 800;
+        var component = graphfactory.newGraphComponent(Object.assign(
+          { size: 'small' },
+          opts
+        ));
+        expect(component.width).toBe(300);
+        expect(component.height).toBe(500);
+        expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
+          nodeSize: 25,
+          edgeDistance: 200,
+        }));
+      });
+    });
   });
 });
