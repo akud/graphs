@@ -1612,8 +1612,8 @@ module.exports = {
     var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
     var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
     return {
-      width: screenWidth,
-      height: screenHeight,
+      width: screenWidth - 10,
+      height: screenHeight - 10,
       nodeSize: this._getNodeSize(screenWidth, screenHeight),
       edgeDistance: this._getEdgeDistance(screenWidth),
     };
@@ -1662,11 +1662,11 @@ module.exports = {
   },
 
   _getNodeSize: function(screenWidth, screenHeight) {
-    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 18);
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 20);
   },
 
   _getEdgeDistance: function(screenWidth) {
-    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 200;
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 250;
   },
 };
 
