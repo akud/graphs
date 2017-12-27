@@ -17,17 +17,6 @@ var state = new UrlState({
 });
 
 
-var horizontalPadding = 20;
-var width = Math.floor(((window.innerWidth > 0) ? window.innerWidth : screen.width) - (2 * horizontalPadding));
-var height = Math.floor(( 3/4 ) * ((window.innerHeight > 0) ? window.innerHeight : screen.height));
-var nodeSize;
-var edgeDistance;
-
-if (width < 1000) {
-  nodeSize = Math.floor(Math.min(width, height) * (1/18));
-  edgeDistance = 200;
-}
-
 var immutable = urlSearchParams.get('immutable') === 'true';
 var allowAddNodes = urlSearchParams.get('allowAddNodes') !== 'false';
 var allowAddEdges = urlSearchParams.get('allowAddEdges') !== 'false';
@@ -38,13 +27,13 @@ var allowLabels = urlSearchParams.get('allowLabels') !== 'false';
 
 global.graphComponent = graphfactory.newGraphComponent({
   document: global.document,
+  screen: global.screen,
+  window: window,
+  size: 'fullscreen',
   adapter: new GreulerAdapter({ greuler: global.greuler }),
   actionQueue: actionQueue,
   state: state,
-  width: width,
-  height: height,
   nodeAreaFuzzFactor: 0.1,
-  edgeDistance: edgeDistance,
   alternateInterval: 250,
   immutable: immutable,
   allowAddNodes: allowAddNodes,
@@ -60,14 +49,7 @@ global.graphComponent = graphfactory.newGraphComponent({
 
 global.graph = global.graphComponent.graph;
 
-global.resetButton = new ResetButton(Object.assign({
-  resettables: [
-    global.graphComponent,
-  ],
-}, { actionQueue: actionQueue }));
-
 global.graphComponent.attachTo(document.getElementById('main-graph'));
-global.resetButton.attachTo(document.getElementById('reset-button'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
@@ -901,10 +883,10 @@ ColorChanger.prototype = {
   getConstructorArgs: function() { return {}; },
 
   setColor: function(opts) {
-    var adapter = utils.requireNonNull(opts.adapter);
-    var state = utils.requireNonNull(opts.state);
-    var node = utils.requireNonNull(opts.node);
-    var color = utils.requireNonNull(opts.color);
+    var adapter = utils.requireNonNull(opts, 'adapter');
+    var state = utils.requireNonNull(opts, 'state');
+    var node = utils.requireNonNull(opts, 'node');
+    var color = utils.requireNonNull(opts, 'color');
 
     adapter.setNodeColor(node, color);
     state.persistNode({ id: node.id, color: color });
@@ -925,10 +907,10 @@ EdgeCreator.prototype = {
   getConstructorArgs: function() { return {}; },
 
   addEdge: function(opts) {
-    var adapter = utils.requireNonNull(opts.adapter);
-    var state = utils.requireNonNull(opts.state);
-    var source = utils.requireNonNull(opts.source);
-    var target = utils.requireNonNull(opts.target);
+    var adapter = utils.requireNonNull(opts, 'adapter');
+    var state = utils.requireNonNull(opts, 'state');
+    var source = utils.requireNonNull(opts, 'source');
+    var target = utils.requireNonNull(opts, 'target');
     var edgeDistance = opts.edgeDistance;
 
     adapter.addEdge({
@@ -954,6 +936,7 @@ var ColorChanger = require('./ColorChanger');
 var LOG = new Logger('Graph');
 
 function Graph(opts) {
+  debugger;
   this.state = opts && opts.state;
   this.adapter = opts && opts.adapter;
   this.actionQueue = opts && opts.actionQueue;
@@ -1301,9 +1284,9 @@ NodeCreator.prototype = {
   getConstructorArgs: function() { return {}; },
 
   addNode: function(opts) {
-    var state = utils.requireNonNull(opts.state);
-    var adapter = utils.requireNonNull(opts.adapter);
-    var color = utils.requireNonNull(opts.color);
+    var state = utils.requireNonNull(opts, 'state');
+    var adapter = utils.requireNonNull(opts, 'adapter');
+    var color = utils.requireNonNull(opts, 'color');
     var nodeSize = opts.nodeSize;
 
     var nodeId = state.persistNode({
@@ -1421,6 +1404,8 @@ var Logger = require('../Logger');
 
 var LOG = new Logger('graphfactory');
 
+var SMALL_SCREEN_THRESHOLD = 700;
+
 module.exports = {
   newGraph: function(opts) {
     opts = Object.assign({
@@ -1434,8 +1419,8 @@ module.exports = {
 
 
     return new Graph({
-      actionQueue: utils.requireNonNull(opts.actionQueue),
-      adapter: utils.requireNonNull(opts.adapter),
+      actionQueue: utils.requireNonNull(opts, 'actionQueue'),
+      adapter: utils.requireNonNull(opts, 'adapter'),
       colorChoices: opts.colorChoices,
       colorChanger: this._getColorChanger(opts),
       edgeCreator: this._getEdgeCreator(opts),
@@ -1445,10 +1430,30 @@ module.exports = {
       labelSet: this._getLabelSet(opts),
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
-      state: utils.requireNonNull(opts.state),
+      state: utils.requireNonNull(opts, 'state'),
     });
   },
 
+  /**
+   * document: global.document,
+   * screen: global.screen,
+   * window: window,
+   * size: 'fullscreen'|'large'|'wide'|'small'|undefined
+   * adapter: new GreulerAdapter({ greuler: global.greuler }),
+   * actionQueue: actionQueue,
+   * state: state,
+   * nodeAreaFuzzFactor: 0.1,
+   * alternateInterval: 250,
+   * immutable: boolean,
+   * allowAddNodes: boolean,
+   * allowAddEdges: boolean,
+   * allowChangeColors: boolean,
+   * allowEdit: boolean,
+   * allowLabels: boolean,
+   * colorChoices: Array<String>
+   * initialNodes: Array<Node>
+   * initialEdges: Array<Edge>
+   */
   newGraphComponent: function(opts) {
     opts = Object.assign({
       immutable: false,
@@ -1457,31 +1462,41 @@ module.exports = {
       allowChangeColors: true,
       allowLabels: true,
       allowEdit: true,
+      nodeAreaFuzzFactor: 0.1,
+      alternateInterval: 250,
+      size: 'large',
     }, opts);
     LOG.debug('instantiating graph component', opts);
+    var sizing = this._getSizing(opts);
 
     var labelSet = this._getLabelSet(opts);
 
     return new GraphComponent(Object.assign({
-      graph: this.newGraph(Object.assign({ labelSet: labelSet }, opts)),
-      adapter: utils.requireNonNull(opts.adapter),
-      editMode: this._getEditMode(opts, labelSet),
-      width: opts.width,
-      height: opts.height,
-      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
-    }, this._getComponentServices(opts)));
+        graph: this.newGraph(Object.assign({
+          labelSet: labelSet,
+          nodeSize: sizing.nodeSize,
+          edgeDistance: sizing.edgeDistance,
+        }, opts)),
+        adapter: utils.requireNonNull(opts, 'adapter'),
+        editMode: this._getEditMode(opts, labelSet),
+        width: sizing.width,
+        height: sizing.height,
+        nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
+      },
+      this._getComponentServices(opts)
+    ));
   },
 
   _newComponentManager: function(opts) {
     return new ComponentManager({
-      actionQueue: utils.requireNonNull(opts.actionQueue),
+      actionQueue: utils.requireNonNull(opts, 'actionQueue'),
       componentServices: this._getComponentServices(opts),
-      document: utils.requireNonNull(opts.document),
+      document: utils.requireNonNull(opts, 'document'),
     });
   },
 
   _getComponentServices: function(opts) {
-    var actionQueue = utils.requireNonNull(opts.actionQueue);
+    var actionQueue = utils.requireNonNull(opts, 'actionQueue');
     return { actionQueue: actionQueue };
   },
 
@@ -1514,14 +1529,14 @@ module.exports = {
       return new DisallowedEditMode();
     } else if (!opts.allowAddEdges) {
       return new NonAnimatingEditMode({
-        adapter: utils.requireNonNull(opts.adapter),
+        adapter: utils.requireNonNull(opts, 'adapter'),
         labelSet: labelSet,
         alternateInterval: opts.alternateInterval,
       });
     } else {
       return new EditMode({
-        adapter: utils.requireNonNull(opts.adapter),
-        animator: new Animator({ actionQueue: utils.requireNonNull(opts.actionQueue) }),
+        adapter: utils.requireNonNull(opts, 'adapter'),
+        animator: new Animator({ actionQueue: utils.requireNonNull(opts, 'actionQueue') }),
         labelSet: labelSet,
         alternateInterval: opts.alternateInterval,
       });
@@ -1537,6 +1552,89 @@ module.exports = {
         state: opts.state,
       });
     }
+  },
+
+  _getSizing: function(opts) {
+    var customSize = opts.width && opts.height;
+    if (!customSize && opts.size == 'fullscreen') {
+      return this._getFullScreenSizing(opts);
+    } else if (!customSize && opts.size === 'large') {
+      return this._getLargeSizing(opts);
+    } else if (!customSize && opts.size === 'wide') {
+      return this._getWideSizing(opts);
+    } else if (!customSize && opts.size === 'small') {
+      return this._getSmallSizing(opts);
+    } else {
+      return {
+        width: utils.requireNonNull(opts, 'width'),
+        height: utils.requireNonNull(opts, 'height'),
+        nodeSize: opts.nodeSize || 10,
+        edgeDistance: opts.edgeDistance || 100,
+      };
+    }
+  },
+
+  _getFullScreenSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    return {
+      width: screenWidth,
+      height: screenHeight,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getLargeSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    var width = screenWidth > SMALL_SCREEN_THRESHOLD ? 700 : 300;
+    return {
+      width: width,
+      height: opts.height || width,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getWideSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    var width = screenWidth < 1000 ? screenWidth : 1000;
+    return {
+      width: width,
+      height: opts.height || width / 2,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+
+  _getSmallSizing: function(opts) {
+    var window = utils.requireNonNull(opts, 'window');
+    var screen = utils.requireNonNull(opts, 'screen');
+    var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+    return {
+      width: 300,
+      height: opts.height || 500,
+      nodeSize: this._getNodeSize(screenWidth, screenHeight),
+      edgeDistance: this._getEdgeDistance(screenWidth),
+    };
+  },
+
+  _getNodeSize: function(screenWidth, screenHeight) {
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 18);
+  },
+
+  _getEdgeDistance: function(screenWidth) {
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 200;
   },
 };
 
@@ -2269,11 +2367,11 @@ function startingAt(array, startingItem) {
   }
 }
 
-function requireNonNull(obj) {
-  if (!obj) {
-    throw new Error('missing required object');
+function requireNonNull(container, property) {
+  if (!container[property]) {
+    throw new Error('missing required property ' + property);
   }
-  return obj;
+  return container[property];
 }
 
 function toJs(value, indentLevel) {
