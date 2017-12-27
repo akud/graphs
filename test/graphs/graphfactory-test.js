@@ -376,14 +376,14 @@ describe('GraphFactory', function() {
       });
 
       it('creates a wide graph', function() {
-        window.innerWidth = 1024;
-        window.innerHeight = 2048;
+        window.innerWidth = 2048;
+        window.innerHeight = 1024;
         var component = graphfactory.newGraphComponent(Object.assign(
           { size: 'wide' },
           opts
         ));
-        expect(component.width).toBe(1000);
-        expect(component.height).toBe(500);
+        expect(component.width).toBe(1200);
+        expect(component.height).toBe(600);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
           nodeSize: 10,
           edgeDistance: 100,
@@ -391,7 +391,7 @@ describe('GraphFactory', function() {
       });
 
       it('allows overriding the height', function() {
-        window.innerWidth = 1024;
+        window.innerWidth = 2048;
         window.innerHeight = 2048;
         var component = graphfactory.newGraphComponent(Object.assign({
           size: 'wide',

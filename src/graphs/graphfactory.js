@@ -24,7 +24,7 @@ var Logger = require('../Logger');
 
 var LOG = new Logger('graphfactory');
 
-var SMALL_SCREEN_THRESHOLD = 700;
+var SMALL_SCREEN_THRESHOLD = 1000;
 
 module.exports = {
   newGraph: function(opts) {
@@ -226,7 +226,7 @@ module.exports = {
     var screen = utils.requireNonNull(opts, 'screen');
     var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
     var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
-    var width = screenWidth < 1000 ? screenWidth : 1000;
+    var width = screenWidth < 1200 ? screenWidth : 1200;
     return {
       width: width,
       height: opts.height || width / 2,
