@@ -265,8 +265,8 @@ describe('GraphFactory', function() {
           { size: 'fullscreen' },
           opts
         ));
-        expect(component.width).toBe(1024);
-        expect(component.height).toBe(2048);
+        expect(component.width).toBe(1014);
+        expect(component.height).toBe(2038);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
           nodeSize: 10,
           edgeDistance: 100,
@@ -282,8 +282,8 @@ describe('GraphFactory', function() {
           { size: 'fullscreen' },
           opts
         ));
-        expect(component.width).toBe(1024);
-        expect(component.height).toBe(2048);
+        expect(component.width).toBe(1014);
+        expect(component.height).toBe(2038);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
           nodeSize: 10,
           edgeDistance: 100,
@@ -297,8 +297,8 @@ describe('GraphFactory', function() {
           { size: 'fullscreen' },
           opts
         ));
-        expect(component.width).toBe(980);
-        expect(component.height).toBe(1400);
+        expect(component.width).toBe(970);
+        expect(component.height).toBe(1390);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
           nodeSize: 49,
           edgeDistance: 250,

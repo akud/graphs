@@ -200,8 +200,8 @@ module.exports = {
     var screenWidth = (window.innerWidth > 0) ? window.innerWidth : screen.width;
     var screenHeight = (window.innerHeight > 0) ? window.innerHeight : screen.height;
     return {
-      width: screenWidth,
-      height: screenHeight,
+      width: screenWidth - 10,
+      height: screenHeight - 10,
       nodeSize: this._getNodeSize(screenWidth, screenHeight),
       edgeDistance: this._getEdgeDistance(screenWidth),
     };
