@@ -8,7 +8,6 @@ var ColorChanger = require('./ColorChanger');
 var LOG = new Logger('Graph');
 
 function Graph(opts) {
-  debugger;
   this.state = opts && opts.state;
   this.adapter = opts && opts.adapter;
   this.actionQueue = opts && opts.actionQueue;
