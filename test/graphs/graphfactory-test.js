@@ -291,17 +291,17 @@ describe('GraphFactory', function() {
       });
 
       it('uses bigger nodes and longer edges on small screens', function() {
-        window.innerWidth = 396;
-        window.innerHeight = 700;
+        window.innerWidth = 980;
+        window.innerHeight = 1400;
         var component = graphfactory.newGraphComponent(Object.assign(
           { size: 'fullscreen' },
           opts
         ));
-        expect(component.width).toBe(396);
-        expect(component.height).toBe(700);
+        expect(component.width).toBe(980);
+        expect(component.height).toBe(1400);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
-          nodeSize: 22,
-          edgeDistance: 200,
+          nodeSize: 49,
+          edgeDistance: 250,
         }));
       });
     });
@@ -347,8 +347,8 @@ describe('GraphFactory', function() {
       it('uses a smaller size on small screens', function() {
         window.innerWidth = undefined;
         window.innerHeight = undefined;
-        screen.width = 396;
-        screen.height = 800;
+        screen.width = 980;
+        screen.height = 1400;
         var component = graphfactory.newGraphComponent(Object.assign(
           { size: 'large' },
           opts
@@ -356,8 +356,8 @@ describe('GraphFactory', function() {
         expect(component.width).toBe(300);
         expect(component.height).toBe(300);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
-          nodeSize: 22,
-          edgeDistance: 200,
+          nodeSize: 49,
+          edgeDistance: 250,
         }));
       });
     });
@@ -416,17 +416,17 @@ describe('GraphFactory', function() {
       it('uses bigger nodes and longer edges on small screens', function() {
         window.innerWidth = undefined;
         window.innerHeight = undefined;
-        screen.width = 450;
+        screen.width = 800;
         screen.height = 800;
         var component = graphfactory.newGraphComponent(Object.assign(
           { size: 'wide' },
           opts
         ));
-        expect(component.width).toBe(450);
-        expect(component.height).toBe(225);
+        expect(component.width).toBe(800);
+        expect(component.height).toBe(400);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
-          nodeSize: 25,
-          edgeDistance: 200,
+          nodeSize: 40,
+          edgeDistance: 250,
         }));
       });
     });
@@ -472,8 +472,8 @@ describe('GraphFactory', function() {
       it('uses bigger nodes and longer edges on small screens', function() {
         window.innerWidth = undefined;
         window.innerHeight = undefined;
-        screen.width = 450;
-        screen.height = 800;
+        screen.width = 980;
+        screen.height = 1400;
         var component = graphfactory.newGraphComponent(Object.assign(
           { size: 'small' },
           opts
@@ -481,8 +481,8 @@ describe('GraphFactory', function() {
         expect(component.width).toBe(300);
         expect(component.height).toBe(500);
         expect(graphfactory.newGraph).toHaveBeenCalledWith(matchers.objectThatHas({
-          nodeSize: 25,
-          edgeDistance: 200,
+          nodeSize: 49,
+          edgeDistance: 250,
         }));
       });
     });

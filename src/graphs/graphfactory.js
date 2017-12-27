@@ -250,10 +250,10 @@ module.exports = {
   },
 
   _getNodeSize: function(screenWidth, screenHeight) {
-    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 18);
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 10 : (Math.min(screenWidth, screenHeight) / 20);
   },
 
   _getEdgeDistance: function(screenWidth) {
-    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 200;
+    return screenWidth > SMALL_SCREEN_THRESHOLD ? 100 : 250;
   },
 };
