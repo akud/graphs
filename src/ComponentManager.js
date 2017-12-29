@@ -36,20 +36,27 @@ ComponentManager.prototype = {
 
     var element = this.document.createElement('div');
     if (options.position) {
-      element.style = options.position.getStyle();
+      this._setPositionOnElement(options.position, element);
     }
     if (typeof options.pinTo === 'function') {
       var positionTracker = this.actionQueue.periodically((function() {
-        element.style = options.pinTo().getStyle({
-          width: element.offsetWidth,
-          height: element.offsetHeight,
-        });
+        this._setPositionOnElement(options.pinTo(), element);
       }).bind(this));
       component.onRemove(positionTracker.cancel.bind(positionTracker));
     }
     this.document.body.insertBefore(element, this.document.body.firstChild);
     component.attachTo(element);
     return component;
+  },
+
+  _setPositionOnElement: function(position, element) {
+    var elementPosition = position.getElementPosition({
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    });
+    element.style.position = 'fixed';
+    element.style.top = elementPosition.top + 'px';;
+    element.style.left = elementPosition.left + 'px';;
   },
 };
 
