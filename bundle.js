@@ -376,20 +376,27 @@ ComponentManager.prototype = {
 
     var element = this.document.createElement('div');
     if (options.position) {
-      element.style = options.position.getStyle();
+      this._setPositionOnElement(options.position, element);
     }
     if (typeof options.pinTo === 'function') {
       var positionTracker = this.actionQueue.periodically((function() {
-        element.style = options.pinTo().getStyle({
-          width: element.offsetWidth,
-          height: element.offsetHeight,
-        });
+        this._setPositionOnElement(options.pinTo(), element);
       }).bind(this));
       component.onRemove(positionTracker.cancel.bind(positionTracker));
     }
     this.document.body.insertBefore(element, this.document.body.firstChild);
     component.attachTo(element);
     return component;
+  },
+
+  _setPositionOnElement: function(position, element) {
+    var elementPosition = position.getElementPosition({
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    });
+    element.style.position = 'fixed';
+    element.style.top = elementPosition.top + 'px';;
+    element.style.left = elementPosition.left + 'px';;
   },
 };
 
@@ -841,28 +848,32 @@ Position.prototype = {
   className: 'Position',
   getConstructorArgs: function() { return this; },
 
-  getStyle: function(opts) {
-    opts = Object.assign({
+  getElementPosition: function(elementSize) {
+    elementSize = Object.assign({
       width: 0,
       height: 0,
-    }, opts);
+    }, elementSize);
 
     if (this.topLeft) {
-        return 'position: absolute;' +
-        ' left: ' + this.topLeft.x + ';' +
-        ' top: ' + this.topLeft.y + ';';
+      return {
+        left: this.topLeft.x,
+        top: this.topLeft.y,
+      };
     } else if (this.topRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.topRight.x - opts.width) + ';' +
-        ' top: ' + this.topRight.y + ';';
+      return {
+        left: this.topRight.x - elementSize.width,
+        top: this.topRight.y,
+      };
     } else if (this.bottomLeft) {
-      return 'position: absolute;' +
-        ' left: ' + this.bottomLeft.x + ';' +
-        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
+      return {
+        left: this.bottomLeft.x,
+        top: this.bottomLeft.y - elementSize.height,
+      };
     } else if (this.bottomRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
-        ' top: ' + (this.bottomRight.y - opts.height) + ';';
+      return {
+        left: this.bottomRight.x  - elementSize.width,
+        top: this.bottomRight.y - elementSize.height,
+      }
     } else {
       throw new Error('invalid position object: ' + this);
     }

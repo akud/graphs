@@ -23,6 +23,7 @@ function MockDomNode(options) {
     this.id = 'node-' + Math.floor(Math.random() * 100)
   }
 
+  this.style = {};
   this.listeners = {};
   spyOn(this, 'addEventListener').andCallThrough();
 }

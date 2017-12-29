@@ -21,28 +21,32 @@ Position.prototype = {
   className: 'Position',
   getConstructorArgs: function() { return this; },
 
-  getStyle: function(opts) {
-    opts = Object.assign({
+  getElementPosition: function(elementSize) {
+    elementSize = Object.assign({
       width: 0,
       height: 0,
-    }, opts);
+    }, elementSize);
 
     if (this.topLeft) {
-        return 'position: absolute;' +
-        ' left: ' + this.topLeft.x + ';' +
-        ' top: ' + this.topLeft.y + ';';
+      return {
+        left: this.topLeft.x,
+        top: this.topLeft.y,
+      };
     } else if (this.topRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.topRight.x - opts.width) + ';' +
-        ' top: ' + this.topRight.y + ';';
+      return {
+        left: this.topRight.x - elementSize.width,
+        top: this.topRight.y,
+      };
     } else if (this.bottomLeft) {
-      return 'position: absolute;' +
-        ' left: ' + this.bottomLeft.x + ';' +
-        ' top: ' + (this.bottomLeft.y - opts.height) + ';';
+      return {
+        left: this.bottomLeft.x,
+        top: this.bottomLeft.y - elementSize.height,
+      };
     } else if (this.bottomRight) {
-      return 'position: absolute;' +
-        ' left: ' + (this.bottomRight.x  - opts.width)+ ';' +
-        ' top: ' + (this.bottomRight.y - opts.height) + ';';
+      return {
+        left: this.bottomRight.x  - elementSize.width,
+        top: this.bottomRight.y - elementSize.height,
+      }
     } else {
       throw new Error('invalid position object: ' + this);
     }

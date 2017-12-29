@@ -56,21 +56,40 @@ describe('ComponentManager', function() {
 
     it('sets the position on the element', function() {
       var position = createSpyObjectWith({
-        'getStyle.returnValue': 'foobar',
+        'getElementPosition.returnValue': { top: 123, left: 456 },
       });
 
       componentManager.insertComponent({
         class: ComponentClass,
         position: position,
       });
-      expect(element.style).toEqual('foobar');
+      expect(element.style).toEqual({
+        position: 'fixed',
+        top: '123px',
+        left: '456px',
+      });
     });
 
     it('pins the element to the result of the supplied function', function() {
       var n = 0;
-      var p1 = createSpyObjectWith({'getStyle.returnValue': 'position1'});
-      var p2 = createSpyObjectWith({'getStyle.returnValue': 'position2'});
-      var p3 = createSpyObjectWith({'getStyle.returnValue': 'position3'});
+      var p1 = createSpyObjectWith({
+        'getElementPosition.returnValue': {
+          left: 1,
+          top: 2,
+        },
+      });
+      var p2 = createSpyObjectWith({
+        'getElementPosition.returnValue': {
+          left: 3,
+          top: 4,
+        },
+      });
+      var p3 = createSpyObjectWith({
+        'getElementPosition.returnValue': {
+          left: 5,
+          top: 6,
+        },
+      });
       var pinTo = createSpy().andCall(function() {
         return [p1, p2, p3][(n++)%3];
       });
@@ -81,22 +100,22 @@ describe('ComponentManager', function() {
       });
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual('position1');
-      expect(p1.getStyle).toHaveBeenCalledWith({
+      expect(element.style).toEqual({ position: 'fixed', left: '1px', top: '2px' });
+      expect(p1.getElementPosition).toHaveBeenCalledWith({
         width: element.offsetWidth,
         height: element.offsetHeight,
       });
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual('position2');
-      expect(p2.getStyle).toHaveBeenCalledWith({
+      expect(element.style).toEqual({ position: 'fixed', left: '3px', top: '4px' });
+      expect(p2.getElementPosition).toHaveBeenCalledWith({
         width: element.offsetWidth,
         height: element.offsetHeight,
       });
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual('position3');
-      expect(p3.getStyle).toHaveBeenCalledWith({
+      expect(element.style).toEqual({ position: 'fixed', left: '5px', top: '6px' });
+      expect(p3.getElementPosition).toHaveBeenCalledWith({
         width: element.offsetWidth,
         height: element.offsetHeight,
       });
@@ -106,7 +125,12 @@ describe('ComponentManager', function() {
 
     it('cancels the position tracking when the component is closed', function() {
       var pinTo = createSpy().andReturn(
-        createSpyObjectWith({ 'getStyle.returnValue': 'p1' })
+        createSpyObjectWith({
+          'getElementPosition.returnValue': {
+            left: 56,
+            top: 234,
+          },
+        })
       );
 
       var component = componentManager.insertComponent({
@@ -117,7 +141,11 @@ describe('ComponentManager', function() {
       expect(component.onRemove).toHaveBeenCalled();
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual('p1');
+      expect(element.style).toEqual({
+        position: 'fixed',
+        left: '56px',
+        top: '234px',
+      });
 
       component.onRemove.calls[0].arguments[0]();
 
