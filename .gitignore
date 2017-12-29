@@ -1,4 +1,5 @@
 /node_modules
 debug.js
 export_all.js
+bundle.export_all.*
 #bundle.*

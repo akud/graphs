@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "Online graph builder",
   "scripts": {
-    "build:export_all": "rm -f export_all.js && for f in $(find src/ -name '*.js'); do echo \"global.$(basename $f | sed s/.js//) = require('./$(echo $f | sed s/.js//)')\" >> export_all.js; done",
+    "export_all": "rm -f export_all.js && for f in $(find src/ -name '*.js'); do echo \"global.$(basename $f | sed s/.js//) = require('./$(echo $f | sed s/.js//)')\" >> export_all.js; done",
+    "build:export_all": "npm run export_all && browserify --debug export_all.js | exorcist bundle.export_all.map.js > bundle.export_all.js && uglifyjs bundle.export_all.js --compress --mangle --mangle-props --output bundle.export_all.min.js",
     "build:debug": "npm run build:export_all && cat export_all.js main.js > debug.js && browserify --debug debug.js | exorcist bundle.debug.map.js > bundle.debug.js",
     "build:main": "browserify --debug main.js | exorcist bundle.map.js > bundle.js && uglifyjs bundle.js --compress --mangle --mangle-props --output bundle.min.js",
     "build": "npm run build:debug && npm run build:main",
