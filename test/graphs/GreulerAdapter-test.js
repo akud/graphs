@@ -55,13 +55,6 @@ describe('GreulerAdapter', function() {
     }, options);
   };
 
-  function makeEvent(options) {
-    return createSpyObjectWith(Object.assign({
-      clientX: 0,
-      clientY: 0,
-    }, options));
-  }
-
   it('does nothing when constructed', function() {
     new GreulerAdapter({ greuler: greuler });
     expect(greuler).toNotHaveBeenCalled();
@@ -254,7 +247,7 @@ describe('GreulerAdapter', function() {
     });
   });
 
-  describe('getClickTarget', function() {
+  describe('getNearestElement', function() {
     var adapter;
     var domElements;
 
@@ -278,21 +271,18 @@ describe('GreulerAdapter', function() {
     });
 
     it('returns NONE if no target', function() {
-      var event = makeEvent({ explicitOriginalTarget: null });
       graph.getNodesByFn.andReturn([]);
-      expect(adapter.getClickTarget(event)).toBe(graphelements.NONE);
+      expect(adapter.getNearestElement({ point: { x: 12, y: 34 } })).toBe(graphelements.NONE);
     });
 
     it('compares node position to click position', function() {
       var realNode = makeNode({ id: 345, index: 2 })
-      var event = makeEvent({
-        clientX: 125,
-        clientY: 130,
-      });
-
       graph.getNodesByFn.andReturn([realNode]);
 
-      var target = adapter.getClickTarget(event);
+      var target = adapter.getNearestElement({
+        point: { x: 125, y: 130 },
+        nodeAreaFuzzFactor: 0
+      });
       expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(345);
       expect(target.realNode).toBe(realNode);
@@ -310,14 +300,13 @@ describe('GreulerAdapter', function() {
 
     it('adds a fuzz factor to node bounding box', function() {
       var realNode = makeNode({ id: 345, index: 1 })
-      var event = makeEvent({
-        clientX: 50,
-        clientY: 100,
-      });
 
       graph.getNodesByFn.andReturn([realNode]);
 
-      var target = adapter.getClickTarget(event, 0.1);
+      var target = adapter.getNearestElement({
+        point: { x: 50, y: 100 },
+        nodeAreaFuzzFactor: 0.1,
+      });
       expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(345);
       expect(target.realNode).toBe(realNode);
@@ -348,33 +337,27 @@ describe('GreulerAdapter', function() {
     });
 
     it('chooses the closest node', function() {
-      var event = makeEvent({
-        clientX: 50,
-        clientY: 100,
-      });
-
       graph.getNodesByFn.andReturn([
         makeNode({ id: 1, index: 0, left: 60, right: 60 + 10, top: 110, bottom: 110 + 10, }),
         makeNode({ id: 2, index: 1, left: 55, right: 55 + 10, top: 95, bottom: 95 + 10, }),
       ]);
 
-      var target = adapter.getClickTarget(event);
+      var target = adapter.getNearestElement({
+        point: { x: 50, y: 100 },
+      });
       expect(target).toBeA(graphelements.Node);
       expect(target.id).toBe(2);
       expect(target.domElement).toBe(domElements[1]);
     });
 
     it('adds a bounding box to the node', function() {
-      var event = makeEvent({
-        clientX: 50,
-        clientY: 100,
-      });
-
       graph.getNodesByFn.andReturn([
         makeNode({ id: 1, index: 0, left: 60, right: 60 + 10, top: 110, bottom: 110 + 10, }),
       ]);
 
-      var target = adapter.getClickTarget(event);
+      var target = adapter.getNearestElement({
+        point: { x: 50, y: 100 },
+      });
       expect(target).toBeA(graphelements.Node);
       expect(target.getCurrentBoundingBox()).toEqual(new BoundingBox({
         left: 60,
@@ -389,14 +372,12 @@ describe('GreulerAdapter', function() {
         left: 140,
         top: 500,
       });
-      var event = makeEvent({
-        clientX: 190,
-        clientY: 600,
-      });
 
       graph.getNodesByFn.andReturn([]);
 
-      adapter.getClickTarget(event);
+      adapter.getNearestElement({
+        point: { x: 190, y: 600 },
+      });
 
       expect(graph.getNodesByFn).toHaveBeenCalledWith(matchers.functionThatReturns(
         { input: makeNode({ x: 50, y: 100 }), output: true },

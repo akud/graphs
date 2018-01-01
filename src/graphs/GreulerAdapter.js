@@ -67,8 +67,10 @@ GreulerAdapter.prototype = {
     }
   },
 
-  getClickTarget: function(event, nodeAreaFuzzFactor) {
-    return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
+  getNearestElement: function(opts) {
+    var point = utils.requireNonNull(opts, 'point');
+    var nodeAreaFuzzFactor = opts.nodeAreaFuzzFactor || 0;
+    return this._getTargetNode(point, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
   getNode: function(nodeId) {
@@ -113,12 +115,7 @@ GreulerAdapter.prototype = {
     return childNodes[node.index].getElementsByTagName('circle')[0];
   },
 
-  _getTargetNode: function(event, nodeAreaFuzzFactor) {
-    nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var point = {
-      x: event.clientX,
-      y: event.clientY,
-    };
+  _getTargetNode: function(point, nodeAreaFuzzFactor) {
     var matchingNodes = this.getNodes((function(node) {
       return this._getBoundingBox(node)
         .expandBy(nodeAreaFuzzFactor)

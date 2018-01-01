@@ -7,12 +7,10 @@ var LOG = new Logger('GraphComponent');
 
 function GraphComponent(opts) {
   Component.apply(this, arguments);
-  this.adapter = opts && opts.adapter;
   this.editMode = opts && opts.editMode;
   this.graph = opts && opts.graph;
   this.width = opts && opts.width;
   this.height = opts && opts.height;
-  this.nodeAreaFuzzFactor = opts.nodeAreaFuzzFactor;
 }
 
 
@@ -28,9 +26,10 @@ GraphComponent.prototype = Object.assign(new Component(), {
   },
 
   handleClick: function(event) {
-    var clickTarget = this.adapter.getClickTarget(
-      event, this.nodeAreaFuzzFactor
-    );
+    var clickTarget = this.graph.getNearestElement({
+      x: event.clientX,
+      y: event.clientY,
+    });
 
     this.editMode.perform({
       ifActive: (function(currentlyEditedNode) {
@@ -52,9 +51,11 @@ GraphComponent.prototype = Object.assign(new Component(), {
   },
 
   handleClickAndHold: function(event) {
-    var clickTarget = this.adapter.getClickTarget(
-      event, this.nodeAreaFuzzFactor
-    );
+    var clickTarget = this.graph.getNearestElement({
+      x: event.clientX,
+      y: event.clientY,
+    });
+
     if (clickTarget.isNode()) {
       this.editMode.activate(clickTarget);
     }
@@ -67,9 +68,6 @@ GraphComponent.prototype = Object.assign(new Component(), {
 
   _validateOptions: function() {
     Component.prototype._validateOptions.call(this, arguments);
-    if (!this.adapter) {
-      throw new Error('adapter is required');
-    }
     if (!this.editMode) {
       throw new Error('edit mode is required');
     }

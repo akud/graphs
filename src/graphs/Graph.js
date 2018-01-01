@@ -21,6 +21,7 @@ function Graph(opts) {
   this.edgeDistance = opts && opts.edgeDistance;
   this.initialNodes = (opts && opts.initialNodes) || [];
   this.initialEdges = (opts && opts.initialEdges) || [];
+  this.nodeAreaFuzzFactor = (opts && opts.nodeAreaFuzzFactor) || 0;
   this.constructorArgs = opts;
 }
 
@@ -96,7 +97,17 @@ Graph.prototype = {
       state: this.state,
       edgeDistance: this.edgeDistance,
     });
- },
+  },
+
+  getNearestElement: function(point) {
+    utils.requireNonNull(point, 'x');
+    utils.requireNonNull(point, 'y');
+
+    return this.adapter.getNearestElement({
+      point: point,
+      nodeAreaFuzzFactor: this.nodeAreaFuzzFactor,
+    });
+  },
 
   reset: function() {
     LOG.debug('resetting');
