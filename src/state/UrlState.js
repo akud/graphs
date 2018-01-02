@@ -8,6 +8,7 @@ NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
 LABEL_PARAM_PREFIX = 'l_';
+LINK_PARAM_PREFIX = 'li_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -46,6 +47,10 @@ UrlState.prototype = {
       this._setNodeLabel(nodeId, options.label);
     }
 
+    if (options.link) {
+      this._setNodeLink(nodeId, options.link);
+    }
+
     this._persistState();
     return nodeId;
   },
@@ -56,10 +61,12 @@ UrlState.prototype = {
       return this._isColor({ bit: nodeBit, colorKey: param });
     }).bind(this));
     var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    var link = this.urlSearchParams.get(LINK_PARAM_PREFIX + nodeId);
     return utils.optional({
       id: nodeId,
       color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
       label: label && decodeURIComponent(label),
+      link: link && decodeURIComponent(link),
     }, { force: 'id' });
   },
 
@@ -106,6 +113,13 @@ UrlState.prototype = {
     this.urlSearchParams.set(
       LABEL_PARAM_PREFIX + nodeId,
       encodeURIComponent(label)
+    );
+  },
+
+  _setNodeLink: function(nodeId, link) {
+    this.urlSearchParams.set(
+      LINK_PARAM_PREFIX + nodeId,
+      encodeURIComponent(link)
     );
   },
 

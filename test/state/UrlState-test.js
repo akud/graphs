@@ -61,20 +61,47 @@ describe('UrlState', function() {
       expect(urlSearchParams.set).toHaveBeenCalledWith('l_1', 'hello%20world%3A');
     });
 
-    it('does not change a node\'s color if only a label is provided', function() {
-      urlSearchParams.setNumericParam('n', 5);
-      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
-      state.persistNode({ id: 1, label: 'hello' });
-      expect(urlSearchParams.get('c_FFFFFF')).toEqual(matchers.hexEncodedBinary('1010'));
+    it('persists a new node\'s link if it is provided', function() {
+      urlSearchParams.setNumericParam('n', 7);
+      state.persistNode({ link: '/foobar' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('li_7', '%2Ffoobar');
     });
 
-    it('does not change a node\'s label if only a color is provided', function() {
+    it('updates a node link', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      state.persistNode({ id: 1, link: '/foo/bar' });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('li_1', '%2Ffoo%2Fbar');
+    });
+
+    it('does not change a node\'s other properties if only a label is provided', function() {
+      urlSearchParams.setNumericParam('n', 5);
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
+      urlSearchParams.set('li_1', '%2Fwtf');
+      state.persistNode({ id: 1, label: 'hello' });
+      expect(urlSearchParams.get('c_FFFFFF')).toEqual(matchers.hexEncodedBinary('1010'));
+      expect(urlSearchParams.get('li_1')).toEqual('%2Fwtf');
+    });
+
+    it('does not change a node\'s other properties if only a color is provided', function() {
       urlSearchParams.setNumericParam('n', 5);
       urlSearchParams.set('l_1', 'hello');
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1000');
+      urlSearchParams.set('li_1', '%2Fwtf');
       state.persistNode({ id: 1, color: '#FFFFFF' });
       expect(urlSearchParams.get('l_1')).toEqual('hello');
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('1010'));
+      expect(urlSearchParams.get('li_1')).toEqual('%2Fwtf');
+    });
+
+    it('does not change a node\'s other properties if only a link is provided', function() {
+      urlSearchParams.setNumericParam('n', 5);
+      urlSearchParams.set('l_1', 'hello');
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1000');
+      urlSearchParams.set('li_1', '%2Fwtf');
+      state.persistNode({ id: 1, link: '/foobar' });
+      expect(urlSearchParams.get('l_1')).toEqual('hello');
+      expect(urlSearchParams.get('c_FFFFFF')).toEqual(matchers.hexEncodedBinary('1000'));
+      expect(urlSearchParams.set).toHaveBeenCalledWith('li_1', '%2Ffoobar');
     });
 
     it('persists a new node\'s color to existing color bitmask', function() {
@@ -126,13 +153,15 @@ describe('UrlState', function() {
       expect(state.retrieveNode(3)).toEqual({ id: 3 });
     });
 
-    it('returns the node\'s color and label', function() {
+    it('returns the node\'s stored data', function() {
       urlSearchParams.setHexEncodedBinary('c_0000FF', '101001');
       urlSearchParams.set('l_3', 'hello%20world');
+      urlSearchParams.set('li_3', '%2Ffoo%2Fbar');
       expect(state.retrieveNode(3)).toEqual({
         id: 3,
         color: '#0000FF',
         label: 'hello world',
+        link: '/foo/bar',
       });
     });
   });
@@ -177,6 +206,17 @@ describe('UrlState', function() {
         { id: 0, label: 'hello' },
         { id: 1 },
         { id: 2, label: 'what\'s up doc' },
+      ]);
+    });
+
+    it('returns node links if present', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      urlSearchParams.set('li_0', '%2Ffoo');
+      urlSearchParams.set('li_2', '%2Fbar');
+      expect(state.retrievePersistedNodes()).toEqual([
+        { id: 0, link: '/foo' },
+        { id: 1 },
+        { id: 2, link: '/bar' },
       ]);
     });
   });
