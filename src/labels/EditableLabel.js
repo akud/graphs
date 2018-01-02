@@ -1,6 +1,8 @@
 var ModeSwitch = require('../ModeSwitch');
 var BlockText = require('../components/BlockText');
+var Link = require('../components/Link');
 var TextBox = require('../components/TextBox');
+var utils = require('../utils');
 var Logger = require('../Logger');
 
 var LOG = new Logger('EditableLabel');
@@ -14,6 +16,7 @@ function EditableLabel(opts) {
       name: 'EditableLabel({ text: \'' + this.text + '\'})'
     });
     this.onChange = opts.onChange || function() {};
+    this.link = opts.link;
   }
 }
 
@@ -26,6 +29,7 @@ EditableLabel.prototype = {
       text: this.text,
       pinTo: this.pinTo,
       onChange: this.onChange,
+      link: this.link,
     };
   },
 
@@ -43,12 +47,15 @@ EditableLabel.prototype = {
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
         var component = this.componentManager.insertComponent({
-          class: BlockText,
-          constructorArgs: { text: this.text },
+          class: this.link ? Link : BlockText,
+          constructorArgs: utils.optional({ text: this.text, link: this.link }),
           pinTo: this.pinTo,
         });
         this.onChange(this.text);
-        LOG.debug('EditableLabel: displaying component with text', this.text);
+        LOG.debug(
+          'displaying component text=\'' + this.text + '\'' +
+          (this.link ? ', link=\'' + this.link + '\'' : '')
+        );
         return { component: component };
       }).bind(this));
     }

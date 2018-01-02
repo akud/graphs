@@ -1,5 +1,6 @@
 var Position = require('../geometry/Position');
 var EditableLabel = require('./EditableLabel');
+var utils = require('../utils');
 var Logger = require('../Logger');
 
 var LOG = new Logger('NodeLabelSet');
@@ -25,7 +26,7 @@ NodeLabelSet.prototype = {
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
-        var label = this._createLabel(o.node, o.label);
+        var label = this._createLabel(o);
         this.labels[o.node.id] = label;
         label.display();
       }).bind(this));
@@ -55,15 +56,19 @@ NodeLabelSet.prototype = {
       label = this.labels[node.id];
       LOG.info('reusing existing label for node ' + node.id, label);
     } else {
-      label = this._createLabel(node);
+      label = this._createLabel({ node: node });
       this.labels[node.id] = label;
       LOG.info('created new label for node ' + node.id, label);
     }
     return label;
   },
 
-  _createLabel: function(node, label) {
+  _createLabel: function(opts) {
+    var node = utils.requireNonNull(opts, 'node');
+    var label = opts.label;
+    var link = opts.link;
     LOG.debug('Creating label', node);
+
     return this.editableLabelFactory.create({
       text: label,
       componentManager: this.componentManager,
@@ -76,6 +81,7 @@ NodeLabelSet.prototype = {
         LOG.debug('saving label', node, text);
         this.state.persistNode({ id: node.id, label: text });
       }).bind(this),
+      link: link,
     });
   },
 

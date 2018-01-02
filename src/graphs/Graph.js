@@ -63,6 +63,7 @@ Graph.prototype = {
           return {
             node: this.adapter.getNode(n.id),
             label: n.label,
+            link: n.link,
           };
         }).bind(this))
       );

@@ -36,7 +36,7 @@ describe('NodeLabelSet', function() {
     );
   }
 
-  function expectLabelToHaveBeenCreated(node, label) {
+  function expectLabelToHaveBeenCreated(node, label, link) {
     var reset = function() { node.getCurrentBoundingBox.reset() };
     expect(labelFactory.create).toHaveBeenCalledWith({
       text: label,
@@ -64,6 +64,7 @@ describe('NodeLabelSet', function() {
           });
         },
         reset: function() { state.persistNode.reset(); },
+        link: link,
       }),
     });
   }
@@ -83,11 +84,11 @@ describe('NodeLabelSet', function() {
       labelSet.initialize([
         { node: node1, label: 'hello' },
         { node: node2, label: '' },
-        { node: node3, label: 'world' },
+        { node: node3, label: 'world', link: '/foobar/' },
       ]);
 
       expectLabelToHaveBeenCreated(node1, 'hello');
-      expectLabelToHaveBeenCreated(node3, 'world');
+      expectLabelToHaveBeenCreated(node3, 'world', '/foobar/');
       expect(labelFactory.create.calls.length).toBe(2);
 
       expect(label1.display).toHaveBeenCalled();
