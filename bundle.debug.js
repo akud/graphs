@@ -4,6 +4,7 @@ global.utils = require('./src/utils')
 global.TextBox = require('./src/components/TextBox')
 global.GraphComponent = require('./src/components/GraphComponent')
 global.BlockText = require('./src/components/BlockText')
+global.Link = require('./src/components/Link')
 global.ResetButton = require('./src/components/ResetButton')
 global.ActionQueue = require('./src/ActionQueue')
 global.Logger = require('./src/Logger')
@@ -86,7 +87,7 @@ global.graphComponent.attachTo(document.getElementById('main-graph'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Component":4,"./src/ComponentManager":5,"./src/Logger":6,"./src/ModeSwitch":7,"./src/colors":8,"./src/components/BlockText":9,"./src/components/GraphComponent":10,"./src/components/ResetButton":11,"./src/components/TextBox":12,"./src/geometry/BoundingBox":13,"./src/geometry/Position":14,"./src/graphs/ColorChanger":15,"./src/graphs/EdgeCreator":16,"./src/graphs/Graph":17,"./src/graphs/GreulerAdapter":18,"./src/graphs/NoOpColorChanger":19,"./src/graphs/NoOpEdgeCreator":20,"./src/graphs/NoOpNodeCreator":21,"./src/graphs/NodeCreator":22,"./src/graphs/graphelements":23,"./src/graphs/graphfactory":24,"./src/labels/EditableLabel":25,"./src/labels/EmptyLabelSet":26,"./src/labels/NodeLabelSet":27,"./src/modes/DisallowedEditMode":28,"./src/modes/EditMode":29,"./src/modes/NonAnimatingEditMode":30,"./src/state/InMemoryState":31,"./src/state/UrlState":32,"./src/utils":33,"./src/utils/Literal":34}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Animator":3,"./src/Component":4,"./src/ComponentManager":5,"./src/Logger":6,"./src/ModeSwitch":7,"./src/colors":8,"./src/components/BlockText":9,"./src/components/GraphComponent":10,"./src/components/Link":11,"./src/components/ResetButton":12,"./src/components/TextBox":13,"./src/geometry/BoundingBox":14,"./src/geometry/Position":15,"./src/graphs/ColorChanger":16,"./src/graphs/EdgeCreator":17,"./src/graphs/Graph":18,"./src/graphs/GreulerAdapter":19,"./src/graphs/NoOpColorChanger":20,"./src/graphs/NoOpEdgeCreator":21,"./src/graphs/NoOpNodeCreator":22,"./src/graphs/NodeCreator":23,"./src/graphs/graphelements":24,"./src/graphs/graphfactory":25,"./src/labels/EditableLabel":26,"./src/labels/EmptyLabelSet":27,"./src/labels/NodeLabelSet":28,"./src/modes/DisallowedEditMode":29,"./src/modes/EditMode":30,"./src/modes/NonAnimatingEditMode":31,"./src/state/InMemoryState":32,"./src/state/UrlState":33,"./src/utils":34,"./src/utils/Literal":35}],2:[function(require,module,exports){
 (function (global){
 var Literal = require('./utils/Literal');
 
@@ -154,7 +155,7 @@ module.exports = ActionQueue;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./utils/Literal":34}],3:[function(require,module,exports){
+},{"./utils/Literal":35}],3:[function(require,module,exports){
 function Animator(options) {
   this.actionQueue = (options && options.actionQueue);
 }
@@ -370,7 +371,7 @@ Component.prototype = {
 
 module.exports = Component;
 
-},{"./Logger":6,"./ModeSwitch":7,"./utils":33}],5:[function(require,module,exports){
+},{"./Logger":6,"./ModeSwitch":7,"./utils":34}],5:[function(require,module,exports){
 var utils = require('./utils');
 var Position = require('./geometry/Position');
 var Component = require('./Component');
@@ -435,7 +436,7 @@ ComponentManager.prototype = {
 
 module.exports = ComponentManager;
 
-},{"./Component":4,"./geometry/Position":14,"./utils":33,"./utils/Literal":34}],6:[function(require,module,exports){
+},{"./Component":4,"./geometry/Position":15,"./utils":34,"./utils/Literal":35}],6:[function(require,module,exports){
 (function (global){
 var LEVEL_ORDER = [
   'DEBUG',
@@ -641,12 +642,10 @@ var LOG = new Logger('GraphComponent');
 
 function GraphComponent(opts) {
   Component.apply(this, arguments);
-  this.adapter = opts && opts.adapter;
   this.editMode = opts && opts.editMode;
   this.graph = opts && opts.graph;
   this.width = opts && opts.width;
   this.height = opts && opts.height;
-  this.nodeAreaFuzzFactor = opts.nodeAreaFuzzFactor;
 }
 
 
@@ -662,9 +661,10 @@ GraphComponent.prototype = Object.assign(new Component(), {
   },
 
   handleClick: function(event) {
-    var clickTarget = this.adapter.getClickTarget(
-      event, this.nodeAreaFuzzFactor
-    );
+    var clickTarget = this.graph.getNearestElement({
+      x: event.clientX,
+      y: event.clientY,
+    });
 
     this.editMode.perform({
       ifActive: (function(currentlyEditedNode) {
@@ -686,9 +686,11 @@ GraphComponent.prototype = Object.assign(new Component(), {
   },
 
   handleClickAndHold: function(event) {
-    var clickTarget = this.adapter.getClickTarget(
-      event, this.nodeAreaFuzzFactor
-    );
+    var clickTarget = this.graph.getNearestElement({
+      x: event.clientX,
+      y: event.clientY,
+    });
+
     if (clickTarget.isNode()) {
       this.editMode.activate(clickTarget);
     }
@@ -701,9 +703,6 @@ GraphComponent.prototype = Object.assign(new Component(), {
 
   _validateOptions: function() {
     Component.prototype._validateOptions.call(this, arguments);
-    if (!this.adapter) {
-      throw new Error('adapter is required');
-    }
     if (!this.editMode) {
       throw new Error('edit mode is required');
     }
@@ -715,7 +714,30 @@ GraphComponent.prototype = Object.assign(new Component(), {
 
 module.exports = GraphComponent;
 
-},{"../Component":4,"../Logger":6,"../utils":33}],11:[function(require,module,exports){
+},{"../Component":4,"../Logger":6,"../utils":34}],11:[function(require,module,exports){
+var Component = require('../Component');
+
+function Link(opts) {
+  Component.apply(this, arguments);
+  this.text = opts && opts.text;
+  this.link = opts && opts.link;
+}
+
+Link.prototype = Object.assign(new Component(), {
+  className: 'Link',
+
+  getGeneratedMarkup: function() {
+    if (this.text && this.link) {
+      return '<a href="' + this.link + '">' + this.text + '</a>';
+    } else {
+      return null;
+    }
+  },
+});
+
+module.exports = Link;
+
+},{"../Component":4}],12:[function(require,module,exports){
 var Component = require('../Component');
 
 function ResetButton(options) {
@@ -740,7 +762,7 @@ ResetButton.prototype = Object.assign(new Component(), {
 
 module.exports = ResetButton;
 
-},{"../Component":4}],12:[function(require,module,exports){
+},{"../Component":4}],13:[function(require,module,exports){
 var Component = require('../Component');
 
 function TextBox(options) {
@@ -769,7 +791,7 @@ TextBox.prototype = Object.assign(new Component(), {
 
 module.exports = TextBox;
 
-},{"../Component":4}],13:[function(require,module,exports){
+},{"../Component":4}],14:[function(require,module,exports){
 function BoundingBox(dimensions) {
   this.dimensions = dimensions || {
     left: 0,
@@ -857,7 +879,7 @@ BoundingBox.prototype = {
 
 module.exports = BoundingBox;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var utils = require('../utils');
 
 function Position(opts) {
@@ -915,7 +937,7 @@ Position.prototype = {
 
 module.exports = Position;
 
-},{"../utils":33}],15:[function(require,module,exports){
+},{"../utils":34}],16:[function(require,module,exports){
 var utils = require('../utils');
 
 function ColorChanger() {
@@ -939,7 +961,7 @@ ColorChanger.prototype = {
 
 module.exports = ColorChanger;
 
-},{"../utils":33}],16:[function(require,module,exports){
+},{"../utils":34}],17:[function(require,module,exports){
 var utils = require('../utils');
 
 function EdgeCreator() {
@@ -969,7 +991,7 @@ EdgeCreator.prototype = {
 
 module.exports = EdgeCreator;
 
-},{"../utils":33}],17:[function(require,module,exports){
+},{"../utils":34}],18:[function(require,module,exports){
 var colors = require('../colors');
 var utils = require('../utils');
 var Logger = require('../Logger');
@@ -993,6 +1015,7 @@ function Graph(opts) {
   this.edgeDistance = opts && opts.edgeDistance;
   this.initialNodes = (opts && opts.initialNodes) || [];
   this.initialEdges = (opts && opts.initialEdges) || [];
+  this.nodeAreaFuzzFactor = (opts && opts.nodeAreaFuzzFactor) || 0;
   this.constructorArgs = opts;
 }
 
@@ -1034,6 +1057,7 @@ Graph.prototype = {
           return {
             node: this.adapter.getNode(n.id),
             label: n.label,
+            link: n.link,
           };
         }).bind(this))
       );
@@ -1068,7 +1092,17 @@ Graph.prototype = {
       state: this.state,
       edgeDistance: this.edgeDistance,
     });
- },
+  },
+
+  getNearestElement: function(point) {
+    utils.requireNonNull(point, 'x');
+    utils.requireNonNull(point, 'y');
+
+    return this.adapter.getNearestElement({
+      point: point,
+      nodeAreaFuzzFactor: this.nodeAreaFuzzFactor,
+    });
+  },
 
   reset: function() {
     LOG.debug('resetting');
@@ -1111,7 +1145,7 @@ Graph.prototype = {
 
 module.exports = Graph;
 
-},{"../Logger":6,"../colors":8,"../utils":33,"./ColorChanger":15,"./EdgeCreator":16,"./NodeCreator":22}],18:[function(require,module,exports){
+},{"../Logger":6,"../colors":8,"../utils":34,"./ColorChanger":16,"./EdgeCreator":17,"./NodeCreator":23}],19:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('../utils');
 var BoundingBox = require('../geometry/BoundingBox');
@@ -1181,8 +1215,10 @@ GreulerAdapter.prototype = {
     }
   },
 
-  getClickTarget: function(event, nodeAreaFuzzFactor) {
-    return this._getTargetNode(event, nodeAreaFuzzFactor) || graphelements.NONE;
+  getNearestElement: function(opts) {
+    var point = utils.requireNonNull(opts, 'point');
+    var nodeAreaFuzzFactor = opts.nodeAreaFuzzFactor || 0;
+    return this._getTargetNode(point, nodeAreaFuzzFactor) || graphelements.NONE;
   },
 
   getNode: function(nodeId) {
@@ -1227,12 +1263,7 @@ GreulerAdapter.prototype = {
     return childNodes[node.index].getElementsByTagName('circle')[0];
   },
 
-  _getTargetNode: function(event, nodeAreaFuzzFactor) {
-    nodeAreaFuzzFactor = nodeAreaFuzzFactor || 0;
-    var point = {
-      x: event.clientX,
-      y: event.clientY,
-    };
+  _getTargetNode: function(point, nodeAreaFuzzFactor) {
     var matchingNodes = this.getNodes((function(node) {
       return this._getBoundingBox(node)
         .expandBy(nodeAreaFuzzFactor)
@@ -1274,7 +1305,7 @@ GreulerAdapter.prototype = {
 
 module.exports = GreulerAdapter;
 
-},{"../Logger":6,"../geometry/BoundingBox":13,"../utils":33,"../utils/Literal":34,"./graphelements":23}],19:[function(require,module,exports){
+},{"../Logger":6,"../geometry/BoundingBox":14,"../utils":34,"../utils/Literal":35,"./graphelements":24}],20:[function(require,module,exports){
 function NoOpColorChanger() {
 
 }
@@ -1288,7 +1319,7 @@ NoOpColorChanger.prototype = {
 
 module.exports = NoOpColorChanger;
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 function NoOpEdgeCreator() {
 
 }
@@ -1303,7 +1334,7 @@ NoOpEdgeCreator.prototype = {
 
 module.exports = NoOpEdgeCreator;
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 function NoOpNodeCreator() {
 
 }
@@ -1316,7 +1347,7 @@ NoOpNodeCreator.prototype = {
 
 module.exports = NoOpNodeCreator;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var utils = require('../utils');
 
 function NodeCreator() {
@@ -1347,7 +1378,7 @@ NodeCreator.prototype = {
 
 module.exports = NodeCreator;
 
-},{"../utils":33}],23:[function(require,module,exports){
+},{"../utils":34}],24:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -1420,7 +1451,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 var GreulerAdapter = require('./GreulerAdapter');
 var ColorChanger = require('./ColorChanger');
@@ -1457,6 +1488,7 @@ module.exports = {
       allowAddEdges: true,
       allowChangeColors: true,
       allowLabels: true,
+      nodeAreaFuzzFactor: 0.1,
     }, opts);
     LOG.debug('instantiating graph', opts);
 
@@ -1471,6 +1503,7 @@ module.exports = {
       initialNodes: opts.initialNodes,
       initialEdges: opts.initialEdges,
       labelSet: this._getLabelSet(opts),
+      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
       state: utils.requireNonNull(opts, 'state'),
@@ -1520,11 +1553,9 @@ module.exports = {
           nodeSize: sizing.nodeSize,
           edgeDistance: sizing.edgeDistance,
         }, opts)),
-        adapter: utils.requireNonNull(opts, 'adapter'),
         editMode: this._getEditMode(opts, labelSet),
         width: sizing.width,
         height: sizing.height,
-        nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       },
       this._getComponentServices(opts)
     ));
@@ -1681,13 +1712,16 @@ module.exports = {
   },
 };
 
-},{"../Animator":3,"../ComponentManager":5,"../Logger":6,"../components/GraphComponent":10,"../labels/EmptyLabelSet":26,"../labels/NodeLabelSet":27,"../modes/DisallowedEditMode":28,"../modes/EditMode":29,"../modes/NonAnimatingEditMode":30,"../utils":33,"./ColorChanger":15,"./EdgeCreator":16,"./Graph":17,"./GreulerAdapter":18,"./NoOpColorChanger":19,"./NoOpEdgeCreator":20,"./NoOpNodeCreator":21,"./NodeCreator":22}],25:[function(require,module,exports){
+},{"../Animator":3,"../ComponentManager":5,"../Logger":6,"../components/GraphComponent":10,"../labels/EmptyLabelSet":27,"../labels/NodeLabelSet":28,"../modes/DisallowedEditMode":29,"../modes/EditMode":30,"../modes/NonAnimatingEditMode":31,"../utils":34,"./ColorChanger":16,"./EdgeCreator":17,"./Graph":18,"./GreulerAdapter":19,"./NoOpColorChanger":20,"./NoOpEdgeCreator":21,"./NoOpNodeCreator":22,"./NodeCreator":23}],26:[function(require,module,exports){
 var ModeSwitch = require('../ModeSwitch');
 var BlockText = require('../components/BlockText');
+var Link = require('../components/Link');
 var TextBox = require('../components/TextBox');
+var utils = require('../utils');
 var Logger = require('../Logger');
 
 var LOG = new Logger('EditableLabel');
+
 
 function EditableLabel(opts) {
   if (opts) {
@@ -1698,6 +1732,7 @@ function EditableLabel(opts) {
       name: 'EditableLabel({ text: \'' + this.text + '\'})'
     });
     this.onChange = opts.onChange || function() {};
+    this.link = opts.link;
   }
 }
 
@@ -1710,6 +1745,7 @@ EditableLabel.prototype = {
       text: this.text,
       pinTo: this.pinTo,
       onChange: this.onChange,
+      link: this.link,
     };
   },
 
@@ -1718,7 +1754,7 @@ EditableLabel.prototype = {
     this._validate();
 
     this.modeSwitch.exit('edit', (function(editState) {
-      this.text = editState.component.getText();
+      this._setText(editState.component.getText());
       editState.component.remove();
       LOG.debug('got text from input component', this.text);
     }).bind(this))
@@ -1727,12 +1763,15 @@ EditableLabel.prototype = {
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
         var component = this.componentManager.insertComponent({
-          class: BlockText,
-          constructorArgs: { text: this.text },
+          class: this.link ? Link : BlockText,
+          constructorArgs: utils.optional({ text: this.text, link: this.link }),
           pinTo: this.pinTo,
         });
-        this.onChange(this.text);
-        LOG.debug('EditableLabel: displaying component with text', this.text);
+        this.onChange({ text: this.text, link: this.link });
+        LOG.debug(
+          'displaying component text=\'' + this.text + '\'' +
+          (this.link ? ', link=\'' + this.link + '\'' : '')
+        );
         return { component: component };
       }).bind(this));
     }
@@ -1752,7 +1791,7 @@ EditableLabel.prototype = {
        var component = this.componentManager.insertComponent({
         class: TextBox,
         constructorArgs: {
-          text: this.text,
+          text: this._getTextForEdit(),
           onSave: this.display.bind(this),
         },
         pinTo: this.pinTo,
@@ -1789,6 +1828,25 @@ EditableLabel.prototype = {
   _closeComponent: function(state) {
     state.component.remove();
   },
+
+  _setText: function(text) {
+    var match;
+    if (text && !!(match = /\[(.*)\]\((.*)\)/.exec(text))) {
+      this.text = match[1];
+      this.link = match[2];
+    } else {
+      this.text = text;
+      this.link = null;
+    }
+  },
+
+  _getTextForEdit: function() {
+    if (this.text && this.link) {
+      return '[' + this.text + '](' + this.link + ')';
+    } else {
+      return this.text;
+    }
+  },
 };
 
 EditableLabel.Factory = {
@@ -1797,7 +1855,7 @@ EditableLabel.Factory = {
 };
 module.exports = EditableLabel;
 
-},{"../Logger":6,"../ModeSwitch":7,"../components/BlockText":9,"../components/TextBox":12}],26:[function(require,module,exports){
+},{"../Logger":6,"../ModeSwitch":7,"../components/BlockText":9,"../components/Link":11,"../components/TextBox":13,"../utils":34}],27:[function(require,module,exports){
 function EmptyLabelSet() {
 
 }
@@ -1814,9 +1872,10 @@ EmptyLabelSet.prototype = {
 
 module.exports = EmptyLabelSet;
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var Position = require('../geometry/Position');
 var EditableLabel = require('./EditableLabel');
+var utils = require('../utils');
 var Logger = require('../Logger');
 
 var LOG = new Logger('NodeLabelSet');
@@ -1842,7 +1901,7 @@ NodeLabelSet.prototype = {
     initialData
       .filter(function(o) { return !!o.label; })
       .forEach((function(o) {
-        var label = this._createLabel(o.node, o.label);
+        var label = this._createLabel(o);
         this.labels[o.node.id] = label;
         label.display();
       }).bind(this));
@@ -1872,15 +1931,19 @@ NodeLabelSet.prototype = {
       label = this.labels[node.id];
       LOG.info('reusing existing label for node ' + node.id, label);
     } else {
-      label = this._createLabel(node);
+      label = this._createLabel({ node: node });
       this.labels[node.id] = label;
       LOG.info('created new label for node ' + node.id, label);
     }
     return label;
   },
 
-  _createLabel: function(node, label) {
+  _createLabel: function(opts) {
+    var node = utils.requireNonNull(opts, 'node');
+    var label = opts.label;
+    var link = opts.link;
     LOG.debug('Creating label', node);
+
     return this.editableLabelFactory.create({
       text: label,
       componentManager: this.componentManager,
@@ -1889,10 +1952,11 @@ NodeLabelSet.prototype = {
           bottomRight: node.getCurrentBoundingBox().getTopLeft(),
         });
       },
-      onChange: (function(text) {
-        LOG.debug('saving label', node, text);
-        this.state.persistNode({ id: node.id, label: text });
+      onChange: (function(opts) {
+        LOG.debug('saving label', node, opts);
+        this.state.persistNode({ id: node.id, label: opts.text, link: opts.link });
       }).bind(this),
+      link: link,
     });
   },
 
@@ -1908,7 +1972,7 @@ NodeLabelSet.prototype = {
 
 module.exports = NodeLabelSet;
 
-},{"../Logger":6,"../geometry/Position":14,"./EditableLabel":25}],28:[function(require,module,exports){
+},{"../Logger":6,"../geometry/Position":15,"../utils":34,"./EditableLabel":26}],29:[function(require,module,exports){
 var EditMode = require('./EditMode');
 
 function DisallowedEditMode() {
@@ -1924,7 +1988,7 @@ DisallowedEditMode.prototype = Object.assign(new EditMode(), {
 
 module.exports = DisallowedEditMode;
 
-},{"./EditMode":29}],29:[function(require,module,exports){
+},{"./EditMode":30}],30:[function(require,module,exports){
 var ModeSwitch = require('../ModeSwitch');
 var colors = require('../colors');
 var Logger = require('../Logger');
@@ -2055,7 +2119,7 @@ EditMode.prototype = {
 
 module.exports = EditMode;
 
-},{"../Logger":6,"../ModeSwitch":7,"../colors":8}],30:[function(require,module,exports){
+},{"../Logger":6,"../ModeSwitch":7,"../colors":8}],31:[function(require,module,exports){
 var EditMode = require('./EditMode');
 var Logger = require('../Logger');
 
@@ -2087,7 +2151,7 @@ NonAnimatingEditMode.prototype = Object.assign(new EditMode(), {
 
 module.exports = NonAnimatingEditMode;
 
-},{"../Logger":6,"./EditMode":29}],31:[function(require,module,exports){
+},{"../Logger":6,"./EditMode":30}],32:[function(require,module,exports){
 function InMemoryState() {
   this.nodes = {};
   this.edges = [];
@@ -2143,7 +2207,7 @@ InMemoryState.prototype = {
 
 module.exports = InMemoryState;
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var utils = require('../utils');
 var Literal = require('../utils/Literal');
 var Logger = require('../Logger');
@@ -2154,6 +2218,7 @@ NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
 LABEL_PARAM_PREFIX = 'l_';
+LINK_PARAM_PREFIX = 'li_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -2184,12 +2249,16 @@ UrlState.prototype = {
       this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
-    if (options.color) {
+    if (options.hasOwnProperty('color')) {
       this._setNodeColor(nodeId, options.color);
     }
 
-    if (options.label) {
+    if (options.hasOwnProperty('label')) {
       this._setNodeLabel(nodeId, options.label);
+    }
+
+    if (options.hasOwnProperty('link')) {
+      this._setNodeLink(nodeId, options.link);
     }
 
     this._persistState();
@@ -2202,10 +2271,12 @@ UrlState.prototype = {
       return this._isColor({ bit: nodeBit, colorKey: param });
     }).bind(this));
     var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    var link = this.urlSearchParams.get(LINK_PARAM_PREFIX + nodeId);
     return utils.optional({
       id: nodeId,
       color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
       label: label && decodeURIComponent(label),
+      link: link && decodeURIComponent(link),
     }, { force: 'id' });
   },
 
@@ -2249,10 +2320,25 @@ UrlState.prototype = {
   },
 
   _setNodeLabel: function(nodeId, label) {
-    this.urlSearchParams.set(
-      LABEL_PARAM_PREFIX + nodeId,
-      encodeURIComponent(label)
-    );
+    if (label) {
+      this.urlSearchParams.set(
+        LABEL_PARAM_PREFIX + nodeId,
+        encodeURIComponent(label)
+      );
+    } else {
+      this.urlSearchParams.delete(LABEL_PARAM_PREFIX + nodeId);
+    }
+  },
+
+  _setNodeLink: function(nodeId, link) {
+    if (link) {
+      this.urlSearchParams.set(
+        LINK_PARAM_PREFIX + nodeId,
+        encodeURIComponent(link)
+      );
+    } else {
+      this.urlSearchParams.delete(LINK_PARAM_PREFIX + nodeId);
+    }
   },
 
   getUrl: function() {
@@ -2377,7 +2463,9 @@ UrlState.prototype = {
       }
     }).bind(this));
 
-    this._setColor({ bit: bit, color: color });
+    if (color) {
+      this._setColor({ bit: bit, color: color });
+    }
   },
 
 
@@ -2388,7 +2476,7 @@ UrlState.prototype = {
 
 module.exports = UrlState;
 
-},{"../Logger":6,"../utils":33,"../utils/Literal":34}],33:[function(require,module,exports){
+},{"../Logger":6,"../utils":34,"../utils/Literal":35}],34:[function(require,module,exports){
 var Literal = require('./utils/Literal');
 
 /**
@@ -2531,7 +2619,7 @@ module.exports = {
   requireNonNull: requireNonNull,
 };
 
-},{"./utils/Literal":34}],34:[function(require,module,exports){
+},{"./utils/Literal":35}],35:[function(require,module,exports){
 function Literal(value) {
   this.value = value;
 }
