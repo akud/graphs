@@ -77,9 +77,9 @@ NodeLabelSet.prototype = {
           bottomRight: node.getCurrentBoundingBox().getTopLeft(),
         });
       },
-      onChange: (function(text) {
-        LOG.debug('saving label', node, text);
-        this.state.persistNode({ id: node.id, label: text });
+      onChange: (function(opts) {
+        LOG.debug('saving label', node, opts);
+        this.state.persistNode({ id: node.id, label: opts.text, link: opts.link });
       }).bind(this),
       link: link,
     });

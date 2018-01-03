@@ -55,12 +55,13 @@ describe('NodeLabelSet', function() {
         },
       }),
       onChange: matchers.functionThatHasSideEffect({
-        arguments: ['askjf'],
+        arguments: [{ text: 'askjf', link: 'hijk' }],
         before: function() { expect(state.persistNode).toNotHaveBeenCalled(); },
         after: function() {
           expect(state.persistNode).toHaveBeenCalledWith({
             id: node.id,
             label: 'askjf',
+            link: 'hijk',
           });
         },
         reset: function() { state.persistNode.reset(); },

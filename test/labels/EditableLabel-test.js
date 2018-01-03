@@ -60,22 +60,21 @@ describe('EditableLabel', function() {
         pinTo: pinTo,
       });
       expect(editComponent.remove).toHaveBeenCalled();
-      expect(onChange).toHaveBeenCalledWith('edited text');
+      expect(onChange).toHaveBeenCalledWith({ text: 'edited text', link: null });
     });
 
-    it('preserves the link across edits', function() {
-      editableLabel.link = '/hello';
+    it('parses a link from the edit component text', function() {
       var editComponent = createSpyObjectWith('getText', 'remove');
-      editComponent.getText.andReturn('edited text');
+      editComponent.getText.andReturn('[hello](google.com)');
       componentManager.insertComponent.andReturn(editComponent);
       editableLabel.edit().display();
       expect(componentManager.insertComponent).toHaveBeenCalledWith({
         class: Link,
-        constructorArgs: { text: 'edited text', link: '/hello' },
+        constructorArgs: { text: 'hello', link: 'google.com' },
         pinTo: pinTo,
       });
       expect(editComponent.remove).toHaveBeenCalled();
-      expect(onChange).toHaveBeenCalledWith('edited text');
+      expect(onChange).toHaveBeenCalledWith({ text: 'hello', link: 'google.com' });
     });
 
     it('can be called twice in a row', function() {
@@ -103,6 +102,20 @@ describe('EditableLabel', function() {
         class: TextBox,
         constructorArgs: {
          text: 'foobar',
+         onSave: matchers.any(Function),
+        },
+        pinTo: pinTo,
+      });
+    });
+
+    it('displays a link in markdown format', function() {
+      editableLabel.text = 'foobar';
+      editableLabel.link = 'google.com';
+      editableLabel.edit();
+      expect(componentManager.insertComponent).toHaveBeenCalledWith({
+        class: TextBox,
+        constructorArgs: {
+         text: '[foobar](google.com)',
          onSave: matchers.any(Function),
         },
         pinTo: pinTo,
