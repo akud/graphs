@@ -39,15 +39,15 @@ UrlState.prototype = {
       this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
-    if (options.color) {
+    if (options.hasOwnProperty('color')) {
       this._setNodeColor(nodeId, options.color);
     }
 
-    if (options.label) {
+    if (options.hasOwnProperty('label')) {
       this._setNodeLabel(nodeId, options.label);
     }
 
-    if (options.link) {
+    if (options.hasOwnProperty('link')) {
       this._setNodeLink(nodeId, options.link);
     }
 
@@ -110,17 +110,25 @@ UrlState.prototype = {
   },
 
   _setNodeLabel: function(nodeId, label) {
-    this.urlSearchParams.set(
-      LABEL_PARAM_PREFIX + nodeId,
-      encodeURIComponent(label)
-    );
+    if (label) {
+      this.urlSearchParams.set(
+        LABEL_PARAM_PREFIX + nodeId,
+        encodeURIComponent(label)
+      );
+    } else {
+      this.urlSearchParams.delete(LABEL_PARAM_PREFIX + nodeId);
+    }
   },
 
   _setNodeLink: function(nodeId, link) {
-    this.urlSearchParams.set(
-      LINK_PARAM_PREFIX + nodeId,
-      encodeURIComponent(link)
-    );
+    if (link) {
+      this.urlSearchParams.set(
+        LINK_PARAM_PREFIX + nodeId,
+        encodeURIComponent(link)
+      );
+    } else {
+      this.urlSearchParams.delete(LINK_PARAM_PREFIX + nodeId);
+    }
   },
 
   getUrl: function() {
@@ -245,7 +253,9 @@ UrlState.prototype = {
       }
     }).bind(this));
 
-    this._setColor({ bit: bit, color: color });
+    if (color) {
+      this._setColor({ bit: bit, color: color });
+    }
   },
 
 

@@ -61,6 +61,12 @@ describe('UrlState', function() {
       expect(urlSearchParams.set).toHaveBeenCalledWith('l_1', 'hello%20world%3A');
     });
 
+    it('removes a node label if it is set to null', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      state.persistNode({ id: 1, label: null });
+      expect(urlSearchParams.delete).toHaveBeenCalledWith('l_1');
+    });
+
     it('persists a new node\'s link if it is provided', function() {
       urlSearchParams.setNumericParam('n', 7);
       state.persistNode({ link: '/foobar' });
@@ -71,6 +77,12 @@ describe('UrlState', function() {
       urlSearchParams.setNumericParam('n', 3);
       state.persistNode({ id: 1, link: '/foo/bar' });
       expect(urlSearchParams.set).toHaveBeenCalledWith('li_1', '%2Ffoo%2Fbar');
+    });
+
+    it('deletes a node link if it is set to null', function() {
+      urlSearchParams.setNumericParam('n', 3);
+      state.persistNode({ id: 1, link: null });
+      expect(urlSearchParams.delete).toHaveBeenCalledWith('li_1');
     });
 
     it('does not change a node\'s other properties if only a label is provided', function() {
@@ -118,11 +130,25 @@ describe('UrlState', function() {
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_00FF00', matchers.hexEncodedBinary('1000'));
     });
 
+    it('removes existing color from the node if deleting color', function() {
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '1010');
+      state.persistNode({ id: 3, color: null });
+      expect(urlSearchParams.set).toHaveBeenCalledWith('c_FFFFFF', matchers.hexEncodedBinary('0010'));
+      expect(urlSearchParams.set.calls.length).toBe(1);
+    });
+
     it('removes the existing color param if node was only one with color', function() {
       urlSearchParams.setHexEncodedBinary('c_FFFFFF', '10');
       state.persistNode({ id: 1, color: '#00FF00' });
       expect(urlSearchParams.delete).toHaveBeenCalledWith('c_FFFFFF');
       expect(urlSearchParams.set).toHaveBeenCalledWith('c_00FF00', matchers.hexEncodedBinary('10'));
+    });
+
+    it('removes the existing color param if node was only one with color when deleting color', function() {
+      urlSearchParams.setHexEncodedBinary('c_FFFFFF', '10');
+      state.persistNode({ id: 1, color: null });
+      expect(urlSearchParams.delete).toHaveBeenCalledWith('c_FFFFFF');
+      expect(urlSearchParams.set).toNotHaveBeenCalled();
     });
 
     it('can set the label on node 0', function() {
