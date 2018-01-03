@@ -34,6 +34,7 @@ module.exports = {
       allowAddEdges: true,
       allowChangeColors: true,
       allowLabels: true,
+      nodeAreaFuzzFactor: 0.1,
     }, opts);
     LOG.debug('instantiating graph', opts);
 
@@ -48,6 +49,7 @@ module.exports = {
       initialNodes: opts.initialNodes,
       initialEdges: opts.initialEdges,
       labelSet: this._getLabelSet(opts),
+      nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
       state: utils.requireNonNull(opts, 'state'),
@@ -97,11 +99,9 @@ module.exports = {
           nodeSize: sizing.nodeSize,
           edgeDistance: sizing.edgeDistance,
         }, opts)),
-        adapter: utils.requireNonNull(opts, 'adapter'),
         editMode: this._getEditMode(opts, labelSet),
         width: sizing.width,
         height: sizing.height,
-        nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       },
       this._getComponentServices(opts)
     ));

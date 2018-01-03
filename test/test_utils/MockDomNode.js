@@ -38,6 +38,7 @@ MockDomNode.prototype = {
   },
 
   trigger: function(eventName, eventObj) {
+    eventObj = eventObj || createSpyObjectWith();
     if (this.listeners[eventName]) {
       this.listeners[eventName].forEach(function(fn) { fn(eventObj) });
     }

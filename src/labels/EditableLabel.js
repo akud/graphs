@@ -1,9 +1,12 @@
 var ModeSwitch = require('../ModeSwitch');
 var BlockText = require('../components/BlockText');
+var Link = require('../components/Link');
 var TextBox = require('../components/TextBox');
+var utils = require('../utils');
 var Logger = require('../Logger');
 
 var LOG = new Logger('EditableLabel');
+
 
 function EditableLabel(opts) {
   if (opts) {
@@ -14,6 +17,7 @@ function EditableLabel(opts) {
       name: 'EditableLabel({ text: \'' + this.text + '\'})'
     });
     this.onChange = opts.onChange || function() {};
+    this.link = opts.link;
   }
 }
 
@@ -26,6 +30,7 @@ EditableLabel.prototype = {
       text: this.text,
       pinTo: this.pinTo,
       onChange: this.onChange,
+      link: this.link,
     };
   },
 
@@ -34,7 +39,7 @@ EditableLabel.prototype = {
     this._validate();
 
     this.modeSwitch.exit('edit', (function(editState) {
-      this.text = editState.component.getText();
+      this._setText(editState.component.getText());
       editState.component.remove();
       LOG.debug('got text from input component', this.text);
     }).bind(this))
@@ -43,12 +48,15 @@ EditableLabel.prototype = {
     if (this.text) {
       this.modeSwitch.enter('display', (function() {
         var component = this.componentManager.insertComponent({
-          class: BlockText,
-          constructorArgs: { text: this.text },
+          class: this.link ? Link : BlockText,
+          constructorArgs: utils.optional({ text: this.text, link: this.link }),
           pinTo: this.pinTo,
         });
-        this.onChange(this.text);
-        LOG.debug('EditableLabel: displaying component with text', this.text);
+        this.onChange({ text: this.text, link: this.link });
+        LOG.debug(
+          'displaying component text=\'' + this.text + '\'' +
+          (this.link ? ', link=\'' + this.link + '\'' : '')
+        );
         return { component: component };
       }).bind(this));
     }
@@ -68,7 +76,7 @@ EditableLabel.prototype = {
        var component = this.componentManager.insertComponent({
         class: TextBox,
         constructorArgs: {
-          text: this.text,
+          text: this._getTextForEdit(),
           onSave: this.display.bind(this),
         },
         pinTo: this.pinTo,
@@ -104,6 +112,25 @@ EditableLabel.prototype = {
 
   _closeComponent: function(state) {
     state.component.remove();
+  },
+
+  _setText: function(text) {
+    var match;
+    if (text && !!(match = /\[(.*)\]\((.*)\)/.exec(text))) {
+      this.text = match[1];
+      this.link = match[2];
+    } else {
+      this.text = text;
+      this.link = null;
+    }
+  },
+
+  _getTextForEdit: function() {
+    if (this.text && this.link) {
+      return '[' + this.text + '](' + this.link + ')';
+    } else {
+      return this.text;
+    }
   },
 };
 

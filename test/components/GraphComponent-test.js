@@ -4,14 +4,12 @@ var MockActionQueue = require('../test_utils/MockActionQueue');
 
 
 describe('GraphComponent', function() {
-  var adapter;
   var targetElement;
   var editMode;
   var graph;
 
   beforeEach(function() {
     actionQueue = new MockActionQueue();
-    adapter = createSpyObjectWith('getClickTarget');
     editMode = createSpyObjectWith(
       'activate',
       'deactivate',
@@ -23,7 +21,8 @@ describe('GraphComponent', function() {
       'changeColor',
       'addNode',
       'addEdge',
-      'reset'
+      'reset',
+      'getNearestElement'
     );
     targetElement = new MockDomNode();
   });
@@ -31,7 +30,6 @@ describe('GraphComponent', function() {
   function newComponent(options) {
     return new GraphComponent(Object.assign({
         actionQueue: actionQueue,
-        adapter: adapter,
         editMode: editMode,
         graph: graph,
         holdTime: 100,
@@ -74,19 +72,26 @@ describe('GraphComponent', function() {
     });
 
     it('adds a node to the graph by default', function() {
-      adapter.getClickTarget.andReturn(graphelements.NONE);
+      graph.getNearestElement.andReturn(graphelements.NONE);
       targetElement.click();
 
       expect(graph.addNode).toHaveBeenCalled();
     });
 
     it('changes node color when clicking on a node', function() {
+      var event = {
+        clientX: 234,
+        clientY: 8923,
+      };
       var clickTarget = new graphelements.Node({ id: 1 });
-      adapter.getClickTarget.andReturn(clickTarget);
+      graph.getNearestElement.andReturn(clickTarget);
 
-      targetElement.click();
+      targetElement.click({ mousedown: event });
 
-      expect(adapter.getClickTarget).toHaveBeenCalled();
+      expect(graph.getNearestElement).toHaveBeenCalledWith({
+        x: 234,
+        y: 8923,
+      });
       expect(graph.addNode).toNotHaveBeenCalled();
       expect(graph.changeColor).toHaveBeenCalledWith(clickTarget);
     });
@@ -101,17 +106,21 @@ describe('GraphComponent', function() {
 
     it('is triggered on click and hold on a graph node', function() {
       var node = new graphelements.Node();
-      adapter.getClickTarget.andReturn(node);
-      targetElement.trigger('mousedown');
+      graph.getNearestElement.andReturn(node);
+      targetElement.trigger('mousedown', { clientX: 234, clientY: 12357 });
       actionQueue.step(50);
       expect(editMode.activate).toNotHaveBeenCalled();
       actionQueue.step(50);
+      expect(graph.getNearestElement).toHaveBeenCalledWith({
+        x: 234,
+        y: 12357,
+      });
       expect(editMode.activate).toHaveBeenCalledWith(node);
       expect(editMode.deactivate).toNotHaveBeenCalled();
     });
 
     it('is not triggered by click and hold on other graph elements', function() {
-      adapter.getClickTarget.andReturn(graphelements.NONE);
+      graph.getNearestElement.andReturn(graphelements.NONE);
       targetElement.clickAndHold(actionQueue, 100);
       expect(editMode.activate).toNotHaveBeenCalled();
       expect(editMode.deactivate).toNotHaveBeenCalled();
@@ -128,7 +137,7 @@ describe('GraphComponent', function() {
       });
       activateEditMode(originalNode);
 
-      adapter.getClickTarget.andReturn(otherNode);
+      graph.getNearestElement.andReturn(otherNode);
       targetElement.click();
 
       expect(graph.addEdge).toHaveBeenCalledWith(originalNode, otherNode);
@@ -143,7 +152,7 @@ describe('GraphComponent', function() {
       });
       activateEditMode(originalNode);
 
-      adapter.getClickTarget.andReturn(originalNode);
+      graph.getNearestElement.andReturn(originalNode);
       targetElement.click();
 
       expect(graph.addEdge).toNotHaveBeenCalled();
@@ -157,7 +166,7 @@ describe('GraphComponent', function() {
       });
       activateEditMode(originalNode);
 
-      adapter.getClickTarget.andReturn(graphelements.NONE);
+      graph.getNearestElement.andReturn(graphelements.NONE);
       targetElement.click();
 
       expect(graph.addEdge).toNotHaveBeenCalled();
@@ -167,7 +176,7 @@ describe('GraphComponent', function() {
     it('exits edit mode when clicking elsewhere', function() {
       activateEditMode(new graphelements.Node({ id: 20 }));
 
-      adapter.getClickTarget.andReturn(graphelements.NONE);
+      graph.getNearestElement.andReturn(graphelements.NONE);
       targetElement.click();
 
       expect(editMode.deactivate).toHaveBeenCalled();
@@ -177,7 +186,7 @@ describe('GraphComponent', function() {
       var node = new graphelements.Node({ id: 21 });
       activateEditMode(node);
 
-      adapter.getClickTarget.andReturn(node);
+      graph.getNearestElement.andReturn(node);
 
       targetElement.click();
 
@@ -188,7 +197,7 @@ describe('GraphComponent', function() {
     it('does not exit edit mode when clicking on another node', function() {
       activateEditMode(new graphelements.Node({ id: 21 }));
 
-      adapter.getClickTarget.andReturn(new graphelements.Node({ id: 23 }));
+      graph.getNearestElement.andReturn(new graphelements.Node({ id: 23 }));
       targetElement.click();
 
       expect(editMode.deactivate).toNotHaveBeenCalled();

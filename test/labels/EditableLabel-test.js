@@ -1,5 +1,6 @@
 var EditableLabel = require('../../src/labels/EditableLabel');
 var BlockText = require('../../src/components/BlockText');
+var Link = require('../../src/components/Link');
 var TextBox = require('../../src/components/TextBox');
 
 describe('EditableLabel', function() {
@@ -37,6 +38,17 @@ describe('EditableLabel', function() {
       });
     });
 
+    it('inserts a Link component if the label has text and a link', function() {
+      editableLabel.text = 'hello';
+      editableLabel.link = '/foobar/';
+      editableLabel.display();
+      expect(componentManager.insertComponent).toHaveBeenCalledWith({
+        class: Link,
+        constructorArgs: { text: 'hello', link: '/foobar/' },
+        pinTo: pinTo,
+      });
+    });
+
     it('takes the text from edit component and displays it', function() {
       var editComponent = createSpyObjectWith('getText', 'remove');
       editComponent.getText.andReturn('edited text');
@@ -48,7 +60,21 @@ describe('EditableLabel', function() {
         pinTo: pinTo,
       });
       expect(editComponent.remove).toHaveBeenCalled();
-      expect(onChange).toHaveBeenCalledWith('edited text');
+      expect(onChange).toHaveBeenCalledWith({ text: 'edited text', link: null });
+    });
+
+    it('parses a link from the edit component text', function() {
+      var editComponent = createSpyObjectWith('getText', 'remove');
+      editComponent.getText.andReturn('[hello](google.com)');
+      componentManager.insertComponent.andReturn(editComponent);
+      editableLabel.edit().display();
+      expect(componentManager.insertComponent).toHaveBeenCalledWith({
+        class: Link,
+        constructorArgs: { text: 'hello', link: 'google.com' },
+        pinTo: pinTo,
+      });
+      expect(editComponent.remove).toHaveBeenCalled();
+      expect(onChange).toHaveBeenCalledWith({ text: 'hello', link: 'google.com' });
     });
 
     it('can be called twice in a row', function() {
@@ -76,6 +102,20 @@ describe('EditableLabel', function() {
         class: TextBox,
         constructorArgs: {
          text: 'foobar',
+         onSave: matchers.any(Function),
+        },
+        pinTo: pinTo,
+      });
+    });
+
+    it('displays a link in markdown format', function() {
+      editableLabel.text = 'foobar';
+      editableLabel.link = 'google.com';
+      editableLabel.edit();
+      expect(componentManager.insertComponent).toHaveBeenCalledWith({
+        class: TextBox,
+        constructorArgs: {
+         text: '[foobar](google.com)',
          onSave: matchers.any(Function),
         },
         pinTo: pinTo,

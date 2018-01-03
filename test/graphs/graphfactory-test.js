@@ -150,14 +150,13 @@ describe('GraphFactory', function() {
         document: document,
         width: 100,
         height: 500,
-        nodeAreaFuzzFactor: 0.1,
+        nodeAreaFuzzFactor: 0.2,
       };
       var component = graphfactory.newGraphComponent(opts);
       expect(component.graph).toEqual(graph);
       expect(component.editMode).toBeA(DisallowedEditMode);
       expect(component.width).toBe(100);
       expect(component.height).toBe(500);
-      expect(component.nodeAreaFuzzFactor).toBe(0.1);
       expect(graphfactory.newGraph).toHaveBeenCalledWith(Object.assign({
         allowAddNodes: true,
         allowAddEdges: true,
@@ -176,14 +175,13 @@ describe('GraphFactory', function() {
         document: document,
         width: 100,
         height: 500,
-        nodeAreaFuzzFactor: 0.1,
+        nodeAreaFuzzFactor: 0.2,
       };
       var component = graphfactory.newGraphComponent(opts);
       expect(component.graph).toEqual(graph);
       expect(component.editMode).toBeA(DisallowedEditMode);
       expect(component.width).toBe(100);
       expect(component.height).toBe(500);
-      expect(component.nodeAreaFuzzFactor).toBe(0.1);
       expect(graphfactory.newGraph).toHaveBeenCalledWith(Object.assign({
         immutable: false,
         allowAddNodes: true,
@@ -201,14 +199,13 @@ describe('GraphFactory', function() {
         document: document,
         width: 100,
         height: 500,
-        nodeAreaFuzzFactor: 0.1,
+        nodeAreaFuzzFactor: 0.2,
       };
       var component = graphfactory.newGraphComponent(opts);
       expect(component.graph).toEqual(graph);
       expect(component.editMode).toBeAn(EditMode);
       expect(component.width).toBe(100);
       expect(component.height).toBe(500);
-      expect(component.nodeAreaFuzzFactor).toBe(0.1);
       expect(graphfactory.newGraph).toHaveBeenCalledWith(Object.assign({
         immutable: false,
         allowAddNodes: true,
@@ -228,14 +225,13 @@ describe('GraphFactory', function() {
         document: document,
         width: 100,
         height: 500,
-        nodeAreaFuzzFactor: 0.1,
+        nodeAreaFuzzFactor: 0.2,
       };
       var component = graphfactory.newGraphComponent(opts);
       expect(component.graph).toEqual(graph);
       expect(component.editMode).toBeA(NonAnimatingEditMode);
       expect(component.width).toBe(100);
       expect(component.height).toBe(500);
-      expect(component.nodeAreaFuzzFactor).toBe(0.1);
       expect(graphfactory.newGraph).toHaveBeenCalledWith(Object.assign({
         immutable: false,
         allowAddNodes: true,

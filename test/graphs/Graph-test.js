@@ -33,6 +33,7 @@ describe('Graph', function() {
       'initialize',
       'setNodeColor',
       'removeNode',
+      'getNearestElement',
       {
         'performInBulk': function(fn) { fn(adapter); },
       }
@@ -230,6 +231,21 @@ describe('Graph', function() {
         edgeDistance: 456,
         state: state,
         adapter: adapter,
+      });
+    });
+  });
+
+  describe('getNearestElement', function() {
+    it('delegates to the adapter', function() {
+      var graph = newGraph({ nodeAreaFuzzFactor: 0.53 });
+      var expected = new graphelements.Node({ id: 234 });
+      adapter.getNearestElement.andReturn(expected);
+      var result = graph.getNearestElement({ x: 543, y: 182 });
+      expect(result).toBe(expected);
+
+      expect(adapter.getNearestElement).toHaveBeenCalledWith({
+        point: { x: 543, y: 182 },
+        nodeAreaFuzzFactor: 0.53,
       });
     });
   });

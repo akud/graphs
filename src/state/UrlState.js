@@ -8,6 +8,7 @@ NUM_NODES_PARAM = 'n'
 COLOR_PARAM_PREFIX = 'c_';
 EDGE_PARAM_PREFIX = 'e_';
 LABEL_PARAM_PREFIX = 'l_';
+LINK_PARAM_PREFIX = 'li_';
 
 function UrlState(options) {
   this.baseUrl = (options && options.baseUrl);
@@ -38,12 +39,16 @@ UrlState.prototype = {
       this.urlSearchParams.set(NUM_NODES_PARAM, nodeId + 1);
     }
 
-    if (options.color) {
+    if (options.hasOwnProperty('color')) {
       this._setNodeColor(nodeId, options.color);
     }
 
-    if (options.label) {
+    if (options.hasOwnProperty('label')) {
       this._setNodeLabel(nodeId, options.label);
+    }
+
+    if (options.hasOwnProperty('link')) {
+      this._setNodeLink(nodeId, options.link);
     }
 
     this._persistState();
@@ -56,10 +61,12 @@ UrlState.prototype = {
       return this._isColor({ bit: nodeBit, colorKey: param });
     }).bind(this));
     var label = this.urlSearchParams.get(LABEL_PARAM_PREFIX + nodeId);
+    var link = this.urlSearchParams.get(LINK_PARAM_PREFIX + nodeId);
     return utils.optional({
       id: nodeId,
       color: (nodeColor && nodeColor.replace(COLOR_PARAM_PREFIX, '#')),
       label: label && decodeURIComponent(label),
+      link: link && decodeURIComponent(link),
     }, { force: 'id' });
   },
 
@@ -103,10 +110,25 @@ UrlState.prototype = {
   },
 
   _setNodeLabel: function(nodeId, label) {
-    this.urlSearchParams.set(
-      LABEL_PARAM_PREFIX + nodeId,
-      encodeURIComponent(label)
-    );
+    if (label) {
+      this.urlSearchParams.set(
+        LABEL_PARAM_PREFIX + nodeId,
+        encodeURIComponent(label)
+      );
+    } else {
+      this.urlSearchParams.delete(LABEL_PARAM_PREFIX + nodeId);
+    }
+  },
+
+  _setNodeLink: function(nodeId, link) {
+    if (link) {
+      this.urlSearchParams.set(
+        LINK_PARAM_PREFIX + nodeId,
+        encodeURIComponent(link)
+      );
+    } else {
+      this.urlSearchParams.delete(LINK_PARAM_PREFIX + nodeId);
+    }
   },
 
   getUrl: function() {
@@ -231,7 +253,9 @@ UrlState.prototype = {
       }
     }).bind(this));
 
-    this._setColor({ bit: bit, color: color });
+    if (color) {
+      this._setColor({ bit: bit, color: color });
+    }
   },
 
 
