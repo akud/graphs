@@ -40,7 +40,7 @@ global.graphComponent = graphfactory.newGraphComponent({
   allowEdit: allowEdit,
   allowLabels: allowLabels,
   colorChoices: urlSearchParams.has('colorChoices') &&
-    urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
+    urlSearchParams.getAll('colorChoices').map(addHashIfMissing),
   initialNodes: state.retrievePersistedNodes(),
   initialEdges: state.retrievePersistedEdges(),
 });
