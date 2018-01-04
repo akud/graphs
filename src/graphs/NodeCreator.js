@@ -1,9 +1,11 @@
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function NodeCreator() {
+  TrackedObject.apply(this);
 }
 
-NodeCreator.prototype = {
+NodeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'NodeCreator',
   getConstructorArgs: function() { return {}; },
 
@@ -24,6 +26,6 @@ NodeCreator.prototype = {
     }, { force: ['id', 'label'] });
     adapter.addNode(node);
   },
-};
+});
 
 module.exports = NodeCreator;

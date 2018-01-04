@@ -1,8 +1,10 @@
 var Logger = require('./Logger');
+var TrackedObject = require('./TrackedObject');
 
 var LOG = new Logger('ModeSwitch');
 
 function ModeSwitch(opts) {
+  TrackedObject.apply(this);
   this.actionQueue = opts && opts.actionQueue;
   this.timeout = (opts && opts.timeout) || 0;
   this.modeStates = (opts && opts.initialStates) || {};
@@ -12,7 +14,7 @@ function ModeSwitch(opts) {
   LOG.debug('Initialized ' + this.name, this);
 }
 
-ModeSwitch.prototype = {
+ModeSwitch.prototype = Object.assign(new TrackedObject(), {
   className: 'ModeSwitch',
   getConstructorArgs: function() {
     return {
@@ -97,6 +99,6 @@ ModeSwitch.prototype = {
       throw new Error('action queue is required if a timeout is specified');
     }
   },
-};
+});
 
 module.exports = ModeSwitch;

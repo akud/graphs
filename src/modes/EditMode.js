@@ -1,11 +1,13 @@
 var ModeSwitch = require('../ModeSwitch');
 var colors = require('../colors');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('EditMode');
 
 
 function EditMode(opts) {
+  TrackedObject.apply(this);
   this.adapter = opts && opts.adapter;
   this.animator = opts && opts.animator;
   this.alternateInterval = (opts && opts.alternateInterval) || 250;
@@ -17,7 +19,7 @@ function EditMode(opts) {
 }
 
 
-EditMode.prototype = {
+EditMode.prototype = Object.assign(new TrackedObject(), {
   className: 'EditMode',
 
   getConstructorArgs: function() {
@@ -124,6 +126,6 @@ EditMode.prototype = {
     }
   }
 
-};
+});
 
 module.exports = EditMode;

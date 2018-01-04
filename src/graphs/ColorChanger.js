@@ -1,10 +1,11 @@
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function ColorChanger() {
-
+  TrackedObject.apply(this);
 }
 
-ColorChanger.prototype = {
+ColorChanger.prototype = Object.assign(new TrackedObject(), {
   className: 'ColorChanger',
   getConstructorArgs: function() { return {}; },
 
@@ -17,6 +18,6 @@ ColorChanger.prototype = {
     adapter.setNodeColor(node, color);
     state.persistNode({ id: node.id, color: color });
   },
-};
+});
 
 module.exports = ColorChanger;

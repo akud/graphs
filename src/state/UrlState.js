@@ -1,6 +1,7 @@
 var utils = require('../utils');
 var Literal = require('../utils/Literal');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('UrlState');
 
@@ -11,12 +12,13 @@ LABEL_PARAM_PREFIX = 'l_';
 LINK_PARAM_PREFIX = 'li_';
 
 function UrlState(options) {
+  TrackedObject.apply(this);
   this.baseUrl = (options && options.baseUrl);
   this.setUrl = (options && options.setUrl);
   this.urlSearchParams = (options && options.urlSearchParams);
 }
 
-UrlState.prototype = {
+UrlState.prototype = Object.assign(new TrackedObject(), {
   className: 'UrlState',
   getConstructorArgs: function() {
     return {
@@ -262,6 +264,6 @@ UrlState.prototype = {
   _persistState: function() {
     this.setUrl(this.getUrl());
   },
-};
+});
 
 module.exports = UrlState;

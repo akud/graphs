@@ -1,8 +1,11 @@
+var TrackedObject = require('./TrackedObject');
+
 function Animator(options) {
+  TrackedObject.apply(this);
   this.actionQueue = (options && options.actionQueue);
 }
 
-Animator.prototype = {
+Animator.prototype = Object.assign(new TrackedObject(), {
   className: 'Animator',
 
   alternate: function() {
@@ -19,7 +22,7 @@ Animator.prototype = {
       throw Error('ActionQueue is required');
     }
   },
-};
+});
 
 function AlternatingAnimation(actionQueue, functions) {
   this.actionQueue = actionQueue;

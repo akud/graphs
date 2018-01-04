@@ -4,10 +4,12 @@ var Logger = require('../Logger');
 var NodeCreator = require('./NodeCreator');
 var EdgeCreator = require('./EdgeCreator');
 var ColorChanger = require('./ColorChanger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('Graph');
 
 function Graph(opts) {
+  TrackedObject.apply(this);
   this.state = opts && opts.state;
   this.adapter = opts && opts.adapter;
   this.actionQueue = opts && opts.actionQueue;
@@ -26,7 +28,7 @@ function Graph(opts) {
   this.constructorArgs = opts;
 }
 
-Graph.prototype = {
+Graph.prototype = Object.assign(new TrackedObject(), {
   className: 'Graph',
 
   getConstructorArgs: function() {
@@ -151,6 +153,6 @@ Graph.prototype = {
       throw new Error('edgeCreator is required');
     }
   },
-};
+});
 
 module.exports = Graph;

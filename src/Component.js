@@ -1,8 +1,10 @@
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
+var TrackedObject = require('./TrackedObject');
 var Logger = require('./Logger');
 
 var LOG = new Logger('Component');
+
 
 /**
  * Component constructor
@@ -12,6 +14,7 @@ var LOG = new Logger('Component');
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(options) {
+  TrackedObject.apply(this);
   if (options) {
     this.actionQueue = options.actionQueue;
     this.holdTime = options.holdTime || 250;
@@ -29,7 +32,7 @@ function Component(options) {
   this.closeListeners = [];
 }
 
-Component.prototype = {
+Component.prototype = Object.assign(new TrackedObject(), {
   handleClick: function() {},
   handleClickAndHold: function() {},
   handleEnter: function() {},
@@ -146,7 +149,6 @@ Component.prototype = {
       }
     }).bind(this));
   },
-
-};
+});
 
 module.exports = Component;

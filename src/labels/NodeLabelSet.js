@@ -2,17 +2,21 @@ var Position = require('../geometry/Position');
 var EditableLabel = require('./EditableLabel');
 var utils = require('../utils');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('NodeLabelSet');
+var id = 0;
 
 function NodeLabelSet(opts) {
+  TrackedObject.apply(this);
   this.componentManager = opts && opts.componentManager;
   this.state = opts && opts.state;
   this.editableLabelFactory = (opts && opts.editableLabelFactory) || EditableLabel.Factory;
   this.labels = {};
+  this.id = (id++);
 }
 
-NodeLabelSet.prototype = {
+NodeLabelSet.prototype = Object.assign(new TrackedObject(), {
   className: 'NodeLabelSet',
   getConstructorArgs: function() {
     return {
@@ -93,6 +97,6 @@ NodeLabelSet.prototype = {
       throw new Error('state is required');
     }
   },
-};
+});
 
 module.exports = NodeLabelSet;

@@ -4,11 +4,13 @@ var Link = require('../components/Link');
 var TextBox = require('../components/TextBox');
 var utils = require('../utils');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('EditableLabel');
 
 
 function EditableLabel(opts) {
+  TrackedObject.apply(this);
   if (opts) {
     this.componentManager = opts.componentManager;
     this.text = opts.text;
@@ -21,7 +23,7 @@ function EditableLabel(opts) {
   }
 }
 
-EditableLabel.prototype = {
+EditableLabel.prototype = Object.assign(new TrackedObject(), {
   className: 'EditableLabel',
 
   getConstructorArgs: function() {
@@ -132,7 +134,7 @@ EditableLabel.prototype = {
       return this.text;
     }
   },
-};
+});
 
 EditableLabel.Factory = {
   create: function(opts) { return new EditableLabel(opts); },

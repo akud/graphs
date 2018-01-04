@@ -17,6 +17,15 @@ expect.extend({
     this.toBeA.apply(this, arguments);
   },
 
+  toBePresent: function() {
+    expect.assert(
+      this.actual !== undefined && this.actual !== null,
+      'expected %s to be present',
+      this.actual
+    );
+    return this;
+  },
+
   toEqual: function(expected) {
     var matcher = matchers.equals(expected).match(this.actual);
     try {
