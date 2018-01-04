@@ -52,7 +52,8 @@ GreulerAdapter.prototype = {
       source: options.source.id,
       target: options.target.id,
       linkDistance: options.distance,
-    }, { force: ['source', 'target'] }));
+      directed: !!options.directed,
+    }, { force: ['source', 'target', 'directed'] }));
     this._updateInstance();
   },
 

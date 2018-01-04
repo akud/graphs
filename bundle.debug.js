@@ -57,6 +57,7 @@ var allowAddEdges = urlSearchParams.get('allowAddEdges') !== 'false';
 var allowEdit = urlSearchParams.get('allowEdit') !== 'false';
 var allowChangeColors = urlSearchParams.get('allowChangeColors') !== 'false';
 var allowLabels = urlSearchParams.get('allowLabels') !== 'false';
+var directed = urlSearchParams.get('directed') === 'true';
 
 
 global.graphComponent = graphfactory.newGraphComponent({
@@ -76,10 +77,13 @@ global.graphComponent = graphfactory.newGraphComponent({
   allowEdit: allowEdit,
   allowLabels: allowLabels,
   colorChoices: urlSearchParams.has('colorChoices') &&
-    urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
+    urlSearchParams.getAll('colorChoices').map(addHashIfMissing),
+  directed: directed,
   initialNodes: state.retrievePersistedNodes(),
   initialEdges: state.retrievePersistedEdges(),
 });
+
+function addHashIfMissing(c) { return c.indexOf('#') === 0 ? c : '#' + c; }
 
 global.graph = global.graphComponent.graph;
 
@@ -978,11 +982,13 @@ EdgeCreator.prototype = {
     var source = utils.requireNonNull(opts, 'source');
     var target = utils.requireNonNull(opts, 'target');
     var edgeDistance = opts.edgeDistance;
+    var directed = opts.directed;
 
     adapter.addEdge({
       source: source,
       target: target,
       distance: edgeDistance,
+      directed: directed,
     });
     state.persistEdge(source.id, target.id);
   },
@@ -1016,6 +1022,7 @@ function Graph(opts) {
   this.initialNodes = (opts && opts.initialNodes) || [];
   this.initialEdges = (opts && opts.initialEdges) || [];
   this.nodeAreaFuzzFactor = (opts && opts.nodeAreaFuzzFactor) || 0;
+  this.directed = !!(opts && opts.directed);
   this.constructorArgs = opts;
 }
 
@@ -1046,7 +1053,9 @@ Graph.prototype = {
             size: this.nodeSize,
           }, { force: ['id', 'label'] });
         }).bind(this)),
-        edges: this.initialEdges,
+        edges: this.initialEdges.map((function(e) {
+          return Object.assign({ directed: this.directed }, e);
+        }).bind(this)),
         edgeDistance: this.edgeDistance,
       })
     );
@@ -1091,6 +1100,7 @@ Graph.prototype = {
       adapter: this.adapter,
       state: this.state,
       edgeDistance: this.edgeDistance,
+      directed: this.directed,
     });
   },
 
@@ -1200,7 +1210,8 @@ GreulerAdapter.prototype = {
       source: options.source.id,
       target: options.target.id,
       linkDistance: options.distance,
-    }, { force: ['source', 'target'] }));
+      directed: !!options.directed,
+    }, { force: ['source', 'target', 'directed'] }));
     this._updateInstance();
   },
 
@@ -1488,6 +1499,7 @@ module.exports = {
       allowAddEdges: true,
       allowChangeColors: true,
       allowLabels: true,
+      directed: false,
       nodeAreaFuzzFactor: 0.1,
     }, opts);
     LOG.debug('instantiating graph', opts);
@@ -1507,6 +1519,7 @@ module.exports = {
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
       state: utils.requireNonNull(opts, 'state'),
+      directed: opts.directed,
     });
   },
 
@@ -1527,6 +1540,7 @@ module.exports = {
    * allowEdit: boolean,
    * allowLabels: boolean,
    * colorChoices: Array<String>
+   * directed: boolean
    * initialNodes: Array<Node>
    * initialEdges: Array<Edge>
    */
@@ -1541,6 +1555,7 @@ module.exports = {
       nodeAreaFuzzFactor: 0.1,
       alternateInterval: 250,
       size: 'large',
+      directed: false,
     }, opts);
     LOG.debug('instantiating graph component', opts);
     var sizing = this._getSizing(opts);

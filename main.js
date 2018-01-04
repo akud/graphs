@@ -21,6 +21,7 @@ var allowAddEdges = urlSearchParams.get('allowAddEdges') !== 'false';
 var allowEdit = urlSearchParams.get('allowEdit') !== 'false';
 var allowChangeColors = urlSearchParams.get('allowChangeColors') !== 'false';
 var allowLabels = urlSearchParams.get('allowLabels') !== 'false';
+var directed = urlSearchParams.get('directed') === 'true';
 
 
 global.graphComponent = graphfactory.newGraphComponent({
@@ -40,10 +41,13 @@ global.graphComponent = graphfactory.newGraphComponent({
   allowEdit: allowEdit,
   allowLabels: allowLabels,
   colorChoices: urlSearchParams.has('colorChoices') &&
-    urlSearchParams.getAll('colorChoices').map(function(c) { return '#' + c; }),
+    urlSearchParams.getAll('colorChoices').map(addHashIfMissing),
+  directed: directed,
   initialNodes: state.retrievePersistedNodes(),
   initialEdges: state.retrievePersistedEdges(),
 });
+
+function addHashIfMissing(c) { return c.indexOf('#') === 0 ? c : '#' + c; }
 
 global.graph = global.graphComponent.graph;
 

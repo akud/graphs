@@ -22,6 +22,7 @@ function Graph(opts) {
   this.initialNodes = (opts && opts.initialNodes) || [];
   this.initialEdges = (opts && opts.initialEdges) || [];
   this.nodeAreaFuzzFactor = (opts && opts.nodeAreaFuzzFactor) || 0;
+  this.directed = !!(opts && opts.directed);
   this.constructorArgs = opts;
 }
 
@@ -52,7 +53,9 @@ Graph.prototype = {
             size: this.nodeSize,
           }, { force: ['id', 'label'] });
         }).bind(this)),
-        edges: this.initialEdges,
+        edges: this.initialEdges.map((function(e) {
+          return Object.assign({ directed: this.directed }, e);
+        }).bind(this)),
         edgeDistance: this.edgeDistance,
       })
     );
@@ -97,6 +100,7 @@ Graph.prototype = {
       adapter: this.adapter,
       state: this.state,
       edgeDistance: this.edgeDistance,
+      directed: this.directed,
     });
   },
 

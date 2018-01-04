@@ -68,7 +68,7 @@ describe('Graph', function() {
         initialEdges: [
           { source: 0, target: 1 },
           { source: 1, target: 2 },
-        ]
+        ],
       });
       var targetElement = createSpyObjectWith();
       graph.initialize({
@@ -102,8 +102,62 @@ describe('Graph', function() {
             },
           ],
           edges: [
-            { source: 0, target: 1 },
-            { source: 1, target: 2 },
+            { source: 0, target: 1, directed: false, },
+            { source: 1, target: 2, directed: false, },
+          ],
+        }
+      );
+      expect(adapter.addNode).toNotHaveBeenCalled();
+    });
+
+    it('initializes edges with direction', function() {
+      var graph = newGraph({
+        nodeSize: 10,
+        initialNodes: [
+          { id: 0, color: '#0000FF' },
+          { id: 1, color: '#00FF00' },
+          { id: 2 },
+        ],
+        initialEdges: [
+          { source: 0, target: 1 },
+          { source: 1, target: 2 },
+        ],
+        directed: true,
+      });
+      var targetElement = createSpyObjectWith();
+      graph.initialize({
+        element: targetElement,
+        width: 8934,
+        height: 123,
+      });
+      expect(adapter.initialize).toHaveBeenCalledWith(
+        targetElement,
+        {
+          width: 8934,
+          height: 123,
+          nodes: [
+            {
+              id: 0,
+              color: '#0000FF',
+              label: '',
+              size: 10,
+            },
+            {
+              id: 1,
+              color: '#00FF00',
+              label: '',
+              size: 10,
+            },
+            {
+              id: 2,
+              color: colors.INDIGO,
+              label: '',
+              size: 10,
+            },
+          ],
+          edges: [
+            { source: 0, target: 1, directed: true, },
+            { source: 1, target: 2, directed: true, },
           ],
         }
       );
@@ -221,7 +275,7 @@ describe('Graph', function() {
       var originalNode = new graphelements.Node({ id: 0 });
       var otherNode = new graphelements.Node({ id: 4 });
 
-      var graph = newGraph({ edgeDistance: 456 });
+      var graph = newGraph({ edgeDistance: 456, directed: true });
 
       graph.addEdge(originalNode, otherNode);
 
@@ -231,6 +285,7 @@ describe('Graph', function() {
         edgeDistance: 456,
         state: state,
         adapter: adapter,
+        directed: true,
       });
     });
   });
