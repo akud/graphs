@@ -43,12 +43,14 @@ describe('EdgeCreator', function() {
         adapter: adapter,
         state: state,
         edgeDistance: 456,
+        directed: true,
       });
 
       expect(adapter.addEdge).toHaveBeenCalledWith({
         source: originalNode,
         target: otherNode,
         distance: 456,
+        directed: true,
       });
       expect(state.persistEdge).toHaveBeenCalledWith(originalNode.id, otherNode.id);
     });

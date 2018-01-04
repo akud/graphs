@@ -115,6 +115,7 @@ describe('GraphFactory', function() {
         nodeSize: 123,
         edgeDistance: 456,
         colorChoices: ['#FF00FF', '#FFFFFF'],
+        directed: true,
       });
       expect(graph.initialNodes).toEqual(initialNodes);
       expect(graph.initialEdges).toEqual(initialEdges);
@@ -122,6 +123,7 @@ describe('GraphFactory', function() {
       expect(graph.edgeDistance).toBe(456)
       expect(graph.adapter).toBe(adapter);
       expect(graph.colorChoices).toEqual(['#FF00FF', '#FFFFFF']);
+      expect(graph.directed).toBe(true);
 
       expect(graph.colorChanger).toBeA(ColorChanger);
       expect(graph.edgeCreator).toBeAn(EdgeCreator);

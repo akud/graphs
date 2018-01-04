@@ -34,6 +34,7 @@ module.exports = {
       allowAddEdges: true,
       allowChangeColors: true,
       allowLabels: true,
+      directed: false,
       nodeAreaFuzzFactor: 0.1,
     }, opts);
     LOG.debug('instantiating graph', opts);
@@ -53,6 +54,7 @@ module.exports = {
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
       state: utils.requireNonNull(opts, 'state'),
+      directed: opts.directed,
     });
   },
 
@@ -73,6 +75,7 @@ module.exports = {
    * allowEdit: boolean,
    * allowLabels: boolean,
    * colorChoices: Array<String>
+   * directed: boolean
    * initialNodes: Array<Node>
    * initialEdges: Array<Edge>
    */
@@ -87,6 +90,7 @@ module.exports = {
       nodeAreaFuzzFactor: 0.1,
       alternateInterval: 250,
       size: 'large',
+      directed: false,
     }, opts);
     LOG.debug('instantiating graph component', opts);
     var sizing = this._getSizing(opts);

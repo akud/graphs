@@ -210,7 +210,8 @@ describe('GreulerAdapter', function() {
       adapter.addEdge({ source: node1, target: node2 });
       expect(instance.graph.addEdge).toHaveBeenCalledWith({
         source: 78,
-        target: 91
+        target: 91,
+        directed: false,
       });
       expect(instance.update).toHaveBeenCalled();
     });
@@ -221,7 +222,8 @@ describe('GreulerAdapter', function() {
       adapter.addEdge({ source: node1, target: node2 });
       expect(instance.graph.addEdge).toHaveBeenCalledWith({
         source: 0,
-        target: 91
+        target: 91,
+        directed: false,
       });
     });
 
@@ -231,7 +233,8 @@ describe('GreulerAdapter', function() {
       adapter.addEdge({ source: node1, target: node2 });
       expect(instance.graph.addEdge).toHaveBeenCalledWith({
         source: 123,
-        target: 0
+        target: 0,
+        directed: false,
       });
     });
 
@@ -243,8 +246,21 @@ describe('GreulerAdapter', function() {
         source: 78,
         target: 91,
         linkDistance: 4589,
+        directed: false,
       });
     });
+
+    it('passes the directed option to the graph', function() {
+      var node1 = { id: 78 };
+      var node2 = { id: 91 };
+      adapter.addEdge({ source: node1, target: node2, directed: true });
+      expect(instance.graph.addEdge).toHaveBeenCalledWith({
+        source: 78,
+        target: 91,
+        directed: true,
+      });
+    });
+
   });
 
   describe('getNearestElement', function() {
