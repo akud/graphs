@@ -3,17 +3,19 @@ var utils = require('../utils');
 var BoundingBox = require('../geometry/BoundingBox');
 var Literal = require('../utils/Literal');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('GreulerAdapter');
 
 
 function GreulerAdapter(opts) {
+  TrackedObject.apply(this);
   this.greuler = opts && opts.greuler;
   this.isInBulkOperation = false;
 }
 
 
-GreulerAdapter.prototype = {
+GreulerAdapter.prototype = Object.assign(new TrackedObject(), {
   className: 'GreulerAdapter',
 
   getConstructorArgs: function() {
@@ -154,6 +156,6 @@ GreulerAdapter.prototype = {
       y: graphElementBounds.top
     });
   },
-};
+});
 
 module.exports = GreulerAdapter;

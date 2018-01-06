@@ -1,10 +1,11 @@
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function EdgeCreator() {
-
+  TrackedObject.apply(this);
 }
 
-EdgeCreator.prototype = {
+EdgeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'EdgeCreator',
   getConstructorArgs: function() { return {}; },
 
@@ -25,6 +26,6 @@ EdgeCreator.prototype = {
     state.persistEdge(source.id, target.id);
   },
 
-};
+});
 
 module.exports = EdgeCreator;

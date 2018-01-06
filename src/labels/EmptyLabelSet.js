@@ -1,8 +1,10 @@
-function EmptyLabelSet() {
+var TrackedObject = require('../TrackedObject');
 
+function EmptyLabelSet() {
+  TrackedObject.apply(this);
 }
 
-EmptyLabelSet.prototype = {
+EmptyLabelSet.prototype = Object.assign(new TrackedObject(), {
   className: 'EmptyLabelSet',
   getConstructorArgs: function() { return {}; },
 
@@ -10,6 +12,6 @@ EmptyLabelSet.prototype = {
   edit: function() {},
   display: function() {},
   closeAll: function() {},
-};
+});
 
 module.exports = EmptyLabelSet;

@@ -243,6 +243,24 @@ describe('GraphFactory', function() {
       }, opts));
     });
 
+    it('uses the same label set for the graph as for the edit mode', function() {
+      var opts = {
+        allowAddEdges: false,
+        state: state,
+        actionQueue: actionQueue,
+        adapter: adapter,
+        document: document,
+        width: 100,
+        height: 500,
+        nodeAreaFuzzFactor: 0.2,
+      };
+      var component = graphfactory.newGraphComponent(opts);
+      var editModeLabelSet = component.editMode.labelSet;
+      var graphLabelSet = graphfactory.newGraph.calls[0].arguments[0].labelSet;
+      expect(editModeLabelSet).toBePresent();
+      expect(editModeLabelSet).toBe(graphLabelSet);
+    });
+
     describe('fullscreen sizing', function() {
       var opts;
       beforeEach(function() {

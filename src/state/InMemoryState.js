@@ -1,9 +1,12 @@
+var TrackedObject = require('../TrackedObject');
+
 function InMemoryState() {
+  TrackedObject.apply(this);
   this.nodes = {};
   this.edges = [];
 }
 
-InMemoryState.prototype = {
+InMemoryState.prototype = Object.assign(new TrackedObject(), {
   className: 'InMemoryState',
   getConstructorArgs: function() { return {}; },
 
@@ -49,6 +52,6 @@ InMemoryState.prototype = {
     return Object.keys(this.nodes).length;
   },
 
-};
+});
 
 module.exports = InMemoryState;

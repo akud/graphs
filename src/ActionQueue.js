@@ -1,6 +1,8 @@
 var Literal = require('./utils/Literal');
+var TrackedObject = require('./TrackedObject');
 
 function ActionQueue(options) {
+  TrackedObject.apply(this);
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
   this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
   this.actionInterval = (options && options.actionInterval) || 10;
@@ -8,7 +10,7 @@ function ActionQueue(options) {
   this.hasStartedPeriodicActions = false;
 }
 
-ActionQueue.prototype = {
+ActionQueue.prototype = Object.assign(new TrackedObject(), {
   className: 'ActionQueue',
 
   defer: function(timeout, fn) {
@@ -58,6 +60,6 @@ ActionQueue.prototype = {
       actionInterval: this.actionInterval,
     };
   },
-};
+});
 
 module.exports = ActionQueue;

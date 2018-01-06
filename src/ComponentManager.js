@@ -2,14 +2,16 @@ var utils = require('./utils');
 var Position = require('./geometry/Position');
 var Component = require('./Component');
 var Literal = require('./utils/Literal');
+var TrackedObject = require('./TrackedObject');
 
 function ComponentManager(options) {
+  TrackedObject.apply(this);
   this.document = options && options.document;
   this.actionQueue = options && options.actionQueue;
   this.componentServices = options && options.componentServices;
 }
 
-ComponentManager.prototype = {
+ComponentManager.prototype = Object.assign(new TrackedObject(), {
   className: 'ComponentManager',
 
   getConstructorArgs: function() {
@@ -58,6 +60,6 @@ ComponentManager.prototype = {
     element.style.top = elementPosition.top + 'px';;
     element.style.left = elementPosition.left + 'px';;
   },
-};
+});
 
 module.exports = ComponentManager;
