@@ -65,6 +65,7 @@ describe('ComponentManager', function() {
       });
       expect(element.style).toEqual({
         position: 'fixed',
+        zIndex: '1',
         top: '123px',
         left: '456px',
       });
@@ -100,14 +101,24 @@ describe('ComponentManager', function() {
       });
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual({ position: 'fixed', left: '1px', top: '2px' });
+      expect(element.style).toEqual({
+        position: 'fixed',
+        zIndex: '1',
+        left: '1px',
+        top: '2px',
+      });
       expect(p1.getElementPosition).toHaveBeenCalledWith({
         width: element.offsetWidth,
         height: element.offsetHeight,
       });
 
       actionQueue.step(actionQueue.mainQueueInterval);
-      expect(element.style).toEqual({ position: 'fixed', left: '3px', top: '4px' });
+      expect(element.style).toEqual({
+        position: 'fixed',
+        zIndex: '1',
+        left: '3px',
+        top: '4px',
+      });
       expect(p2.getElementPosition).toHaveBeenCalledWith({
         width: element.offsetWidth,
         height: element.offsetHeight,
@@ -143,6 +154,7 @@ describe('ComponentManager', function() {
       actionQueue.step(actionQueue.mainQueueInterval);
       expect(element.style).toEqual({
         position: 'fixed',
+        zIndex: '1',
         left: '56px',
         top: '234px',
       });
