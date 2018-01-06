@@ -49,7 +49,7 @@ module.exports = {
       edgeDistance: opts.edgeDistance,
       initialNodes: opts.initialNodes,
       initialEdges: opts.initialEdges,
-      labelSet: this._getLabelSet(opts),
+      labelSet: opts.labelSet || this._getLabelSet(opts),
       nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
