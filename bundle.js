@@ -57,11 +57,13 @@ global.graphComponent.attachTo(document.getElementById('main-graph'));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./src/ActionQueue":2,"./src/Logger":6,"./src/components/ResetButton":12,"./src/graphs/GreulerAdapter":19,"./src/graphs/graphfactory":25,"./src/state/UrlState":32}],2:[function(require,module,exports){
+},{"./src/ActionQueue":2,"./src/Logger":6,"./src/components/ResetButton":13,"./src/graphs/GreulerAdapter":20,"./src/graphs/graphfactory":26,"./src/state/UrlState":33}],2:[function(require,module,exports){
 (function (global){
 var Literal = require('./utils/Literal');
+var TrackedObject = require('./TrackedObject');
 
 function ActionQueue(options) {
+  TrackedObject.apply(this);
   this.setTimeout = (options && options.setTimeout) || global.setTimeout.bind(global);
   this.clearTimeout = (options && options.clearTimeout) || global.clearTimeout.bind(global);
   this.actionInterval = (options && options.actionInterval) || 10;
@@ -69,7 +71,7 @@ function ActionQueue(options) {
   this.hasStartedPeriodicActions = false;
 }
 
-ActionQueue.prototype = {
+ActionQueue.prototype = Object.assign(new TrackedObject(), {
   className: 'ActionQueue',
 
   defer: function(timeout, fn) {
@@ -119,18 +121,21 @@ ActionQueue.prototype = {
       actionInterval: this.actionInterval,
     };
   },
-};
+});
 
 module.exports = ActionQueue;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./utils/Literal":34}],3:[function(require,module,exports){
+},{"./TrackedObject":8,"./utils/Literal":35}],3:[function(require,module,exports){
+var TrackedObject = require('./TrackedObject');
+
 function Animator(options) {
+  TrackedObject.apply(this);
   this.actionQueue = (options && options.actionQueue);
 }
 
-Animator.prototype = {
+Animator.prototype = Object.assign(new TrackedObject(), {
   className: 'Animator',
 
   alternate: function() {
@@ -147,7 +152,7 @@ Animator.prototype = {
       throw Error('ActionQueue is required');
     }
   },
-};
+});
 
 function AlternatingAnimation(actionQueue, functions) {
   this.actionQueue = actionQueue;
@@ -187,12 +192,14 @@ AlternatingAnimation.prototype = {
 
 module.exports = Animator;
 
-},{}],4:[function(require,module,exports){
+},{"./TrackedObject":8}],4:[function(require,module,exports){
 var utils = require('./utils');
 var ModeSwitch = require('./ModeSwitch');
+var TrackedObject = require('./TrackedObject');
 var Logger = require('./Logger');
 
 var LOG = new Logger('Component');
+
 
 /**
  * Component constructor
@@ -202,6 +209,7 @@ var LOG = new Logger('Component');
  *         - holdTime - amount of time to wait before triggering a "hold" event
  */
 function Component(options) {
+  TrackedObject.apply(this);
   if (options) {
     this.actionQueue = options.actionQueue;
     this.holdTime = options.holdTime || 250;
@@ -219,7 +227,7 @@ function Component(options) {
   this.closeListeners = [];
 }
 
-Component.prototype = {
+Component.prototype = Object.assign(new TrackedObject(), {
   handleClick: function() {},
   handleClickAndHold: function() {},
   handleEnter: function() {},
@@ -336,24 +344,25 @@ Component.prototype = {
       }
     }).bind(this));
   },
-
-};
+});
 
 module.exports = Component;
 
-},{"./Logger":6,"./ModeSwitch":7,"./utils":33}],5:[function(require,module,exports){
+},{"./Logger":6,"./ModeSwitch":7,"./TrackedObject":8,"./utils":34}],5:[function(require,module,exports){
 var utils = require('./utils');
 var Position = require('./geometry/Position');
 var Component = require('./Component');
 var Literal = require('./utils/Literal');
+var TrackedObject = require('./TrackedObject');
 
 function ComponentManager(options) {
+  TrackedObject.apply(this);
   this.document = options && options.document;
   this.actionQueue = options && options.actionQueue;
   this.componentServices = options && options.componentServices;
 }
 
-ComponentManager.prototype = {
+ComponentManager.prototype = Object.assign(new TrackedObject(), {
   className: 'ComponentManager',
 
   getConstructorArgs: function() {
@@ -402,11 +411,11 @@ ComponentManager.prototype = {
     element.style.top = elementPosition.top + 'px';;
     element.style.left = elementPosition.left + 'px';;
   },
-};
+});
 
 module.exports = ComponentManager;
 
-},{"./Component":4,"./geometry/Position":15,"./utils":33,"./utils/Literal":34}],6:[function(require,module,exports){
+},{"./Component":4,"./TrackedObject":8,"./geometry/Position":16,"./utils":34,"./utils/Literal":35}],6:[function(require,module,exports){
 (function (global){
 var LEVEL_ORDER = [
   'DEBUG',
@@ -452,10 +461,12 @@ module.exports = Logger;
 
 },{}],7:[function(require,module,exports){
 var Logger = require('./Logger');
+var TrackedObject = require('./TrackedObject');
 
 var LOG = new Logger('ModeSwitch');
 
 function ModeSwitch(opts) {
+  TrackedObject.apply(this);
   this.actionQueue = opts && opts.actionQueue;
   this.timeout = (opts && opts.timeout) || 0;
   this.modeStates = (opts && opts.initialStates) || {};
@@ -465,7 +476,7 @@ function ModeSwitch(opts) {
   LOG.debug('Initialized ' + this.name, this);
 }
 
-ModeSwitch.prototype = {
+ModeSwitch.prototype = Object.assign(new TrackedObject(), {
   className: 'ModeSwitch',
   getConstructorArgs: function() {
     return {
@@ -550,11 +561,20 @@ ModeSwitch.prototype = {
       throw new Error('action queue is required if a timeout is specified');
     }
   },
-};
+});
 
 module.exports = ModeSwitch;
 
-},{"./Logger":6}],8:[function(require,module,exports){
+},{"./Logger":6,"./TrackedObject":8}],8:[function(require,module,exports){
+var id = 0;
+
+function TrackedObject() {
+  this.id = id++;
+}
+
+module.exports = TrackedObject;
+
+},{}],9:[function(require,module,exports){
 var RED = '#db190f';
 var ORANGE = '#f76402';
 var YELLOW = '#fbff14';
@@ -584,7 +604,7 @@ module.exports = {
   ],
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var Component = require('../Component');
 
 function BlockText(opts) {
@@ -602,7 +622,7 @@ BlockText.prototype = Object.assign(new Component(), {
 
 module.exports = BlockText;
 
-},{"../Component":4}],10:[function(require,module,exports){
+},{"../Component":4}],11:[function(require,module,exports){
 var Component = require('../Component');
 var utils = require('../utils');
 var Logger = require('../Logger');
@@ -684,7 +704,7 @@ GraphComponent.prototype = Object.assign(new Component(), {
 
 module.exports = GraphComponent;
 
-},{"../Component":4,"../Logger":6,"../utils":33}],11:[function(require,module,exports){
+},{"../Component":4,"../Logger":6,"../utils":34}],12:[function(require,module,exports){
 var Component = require('../Component');
 
 function Link(opts) {
@@ -707,7 +727,7 @@ Link.prototype = Object.assign(new Component(), {
 
 module.exports = Link;
 
-},{"../Component":4}],12:[function(require,module,exports){
+},{"../Component":4}],13:[function(require,module,exports){
 var Component = require('../Component');
 
 function ResetButton(options) {
@@ -732,7 +752,7 @@ ResetButton.prototype = Object.assign(new Component(), {
 
 module.exports = ResetButton;
 
-},{"../Component":4}],13:[function(require,module,exports){
+},{"../Component":4}],14:[function(require,module,exports){
 var Component = require('../Component');
 
 function TextBox(options) {
@@ -761,7 +781,7 @@ TextBox.prototype = Object.assign(new Component(), {
 
 module.exports = TextBox;
 
-},{"../Component":4}],14:[function(require,module,exports){
+},{"../Component":4}],15:[function(require,module,exports){
 function BoundingBox(dimensions) {
   this.dimensions = dimensions || {
     left: 0,
@@ -849,7 +869,7 @@ BoundingBox.prototype = {
 
 module.exports = BoundingBox;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var utils = require('../utils');
 
 function Position(opts) {
@@ -907,14 +927,15 @@ Position.prototype = {
 
 module.exports = Position;
 
-},{"../utils":33}],16:[function(require,module,exports){
+},{"../utils":34}],17:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function ColorChanger() {
-
+  TrackedObject.apply(this);
 }
 
-ColorChanger.prototype = {
+ColorChanger.prototype = Object.assign(new TrackedObject(), {
   className: 'ColorChanger',
   getConstructorArgs: function() { return {}; },
 
@@ -927,18 +948,19 @@ ColorChanger.prototype = {
     adapter.setNodeColor(node, color);
     state.persistNode({ id: node.id, color: color });
   },
-};
+});
 
 module.exports = ColorChanger;
 
-},{"../utils":33}],17:[function(require,module,exports){
+},{"../TrackedObject":8,"../utils":34}],18:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function EdgeCreator() {
-
+  TrackedObject.apply(this);
 }
 
-EdgeCreator.prototype = {
+EdgeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'EdgeCreator',
   getConstructorArgs: function() { return {}; },
 
@@ -959,21 +981,23 @@ EdgeCreator.prototype = {
     state.persistEdge(source.id, target.id);
   },
 
-};
+});
 
 module.exports = EdgeCreator;
 
-},{"../utils":33}],18:[function(require,module,exports){
+},{"../TrackedObject":8,"../utils":34}],19:[function(require,module,exports){
 var colors = require('../colors');
 var utils = require('../utils');
 var Logger = require('../Logger');
 var NodeCreator = require('./NodeCreator');
 var EdgeCreator = require('./EdgeCreator');
 var ColorChanger = require('./ColorChanger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('Graph');
 
 function Graph(opts) {
+  TrackedObject.apply(this);
   this.state = opts && opts.state;
   this.adapter = opts && opts.adapter;
   this.actionQueue = opts && opts.actionQueue;
@@ -992,7 +1016,7 @@ function Graph(opts) {
   this.constructorArgs = opts;
 }
 
-Graph.prototype = {
+Graph.prototype = Object.assign(new TrackedObject(), {
   className: 'Graph',
 
   getConstructorArgs: function() {
@@ -1117,27 +1141,29 @@ Graph.prototype = {
       throw new Error('edgeCreator is required');
     }
   },
-};
+});
 
 module.exports = Graph;
 
-},{"../Logger":6,"../colors":8,"../utils":33,"./ColorChanger":16,"./EdgeCreator":17,"./NodeCreator":23}],19:[function(require,module,exports){
+},{"../Logger":6,"../TrackedObject":8,"../colors":9,"../utils":34,"./ColorChanger":17,"./EdgeCreator":18,"./NodeCreator":24}],20:[function(require,module,exports){
 var graphelements = require('./graphelements');;
 var utils = require('../utils');
 var BoundingBox = require('../geometry/BoundingBox');
 var Literal = require('../utils/Literal');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('GreulerAdapter');
 
 
 function GreulerAdapter(opts) {
+  TrackedObject.apply(this);
   this.greuler = opts && opts.greuler;
   this.isInBulkOperation = false;
 }
 
 
-GreulerAdapter.prototype = {
+GreulerAdapter.prototype = Object.assign(new TrackedObject(), {
   className: 'GreulerAdapter',
 
   getConstructorArgs: function() {
@@ -1278,59 +1304,67 @@ GreulerAdapter.prototype = {
       y: graphElementBounds.top
     });
   },
-};
+});
 
 module.exports = GreulerAdapter;
 
-},{"../Logger":6,"../geometry/BoundingBox":14,"../utils":33,"../utils/Literal":34,"./graphelements":24}],20:[function(require,module,exports){
-function NoOpColorChanger() {
+},{"../Logger":6,"../TrackedObject":8,"../geometry/BoundingBox":15,"../utils":34,"../utils/Literal":35,"./graphelements":25}],21:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 
+function NoOpColorChanger() {
+  TrackedObject.apply(this);
 }
 
-NoOpColorChanger.prototype = {
+NoOpColorChanger.prototype = Object.assign(new TrackedObject(), {
   className: 'NoOpColorChanger',
 
   getConstructorArgs: function() { return {}; },
   setColor: function() {},
-};
+});
 
 module.exports = NoOpColorChanger;
 
-},{}],21:[function(require,module,exports){
-function NoOpEdgeCreator() {
+},{"../TrackedObject":8}],22:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 
+function NoOpEdgeCreator() {
+  TrackedObject.apply(this);
 }
 
-NoOpEdgeCreator.prototype = {
+NoOpEdgeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'NoOpEdgeCreator',
   getConstructorArgs: function() { return {}; },
 
   addEdge: function() {},
 
-};
+});
 
 module.exports = NoOpEdgeCreator;
 
-},{}],22:[function(require,module,exports){
-function NoOpNodeCreator() {
+},{"../TrackedObject":8}],23:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 
+function NoOpNodeCreator() {
+  TrackedObject.apply(this);
 }
 
-NoOpNodeCreator.prototype = {
+NoOpNodeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'NoOpNodeCreator',
   getConstructorArgs: function() { return {}; },
   addNode: function() {},
-};
+});
 
 module.exports = NoOpNodeCreator;
 
-},{}],23:[function(require,module,exports){
+},{"../TrackedObject":8}],24:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 var utils = require('../utils');
 
 function NodeCreator() {
+  TrackedObject.apply(this);
 }
 
-NodeCreator.prototype = {
+NodeCreator.prototype = Object.assign(new TrackedObject(), {
   className: 'NodeCreator',
   getConstructorArgs: function() { return {}; },
 
@@ -1351,11 +1385,11 @@ NodeCreator.prototype = {
     }, { force: ['id', 'label'] });
     adapter.addNode(node);
   },
-};
+});
 
 module.exports = NodeCreator;
 
-},{"../utils":33}],24:[function(require,module,exports){
+},{"../TrackedObject":8,"../utils":34}],25:[function(require,module,exports){
 function GraphElement(options) {
   if (options) {
     this.id = options.id;
@@ -1428,7 +1462,7 @@ module.exports = {
   NONE: new None(),
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 var GreulerAdapter = require('./GreulerAdapter');
 var ColorChanger = require('./ColorChanger');
@@ -1480,7 +1514,7 @@ module.exports = {
       edgeDistance: opts.edgeDistance,
       initialNodes: opts.initialNodes,
       initialEdges: opts.initialEdges,
-      labelSet: this._getLabelSet(opts),
+      labelSet: opts.labelSet || this._getLabelSet(opts),
       nodeAreaFuzzFactor: opts.nodeAreaFuzzFactor,
       nodeCreator: this._getNodeCreator(opts),
       nodeSize: opts.nodeSize,
@@ -1693,18 +1727,20 @@ module.exports = {
   },
 };
 
-},{"../Animator":3,"../ComponentManager":5,"../Logger":6,"../components/GraphComponent":10,"../labels/EmptyLabelSet":27,"../labels/NodeLabelSet":28,"../modes/DisallowedEditMode":29,"../modes/EditMode":30,"../modes/NonAnimatingEditMode":31,"../utils":33,"./ColorChanger":16,"./EdgeCreator":17,"./Graph":18,"./GreulerAdapter":19,"./NoOpColorChanger":20,"./NoOpEdgeCreator":21,"./NoOpNodeCreator":22,"./NodeCreator":23}],26:[function(require,module,exports){
+},{"../Animator":3,"../ComponentManager":5,"../Logger":6,"../components/GraphComponent":11,"../labels/EmptyLabelSet":28,"../labels/NodeLabelSet":29,"../modes/DisallowedEditMode":30,"../modes/EditMode":31,"../modes/NonAnimatingEditMode":32,"../utils":34,"./ColorChanger":17,"./EdgeCreator":18,"./Graph":19,"./GreulerAdapter":20,"./NoOpColorChanger":21,"./NoOpEdgeCreator":22,"./NoOpNodeCreator":23,"./NodeCreator":24}],27:[function(require,module,exports){
 var ModeSwitch = require('../ModeSwitch');
 var BlockText = require('../components/BlockText');
 var Link = require('../components/Link');
 var TextBox = require('../components/TextBox');
 var utils = require('../utils');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('EditableLabel');
 
 
 function EditableLabel(opts) {
+  TrackedObject.apply(this);
   if (opts) {
     this.componentManager = opts.componentManager;
     this.text = opts.text;
@@ -1717,7 +1753,7 @@ function EditableLabel(opts) {
   }
 }
 
-EditableLabel.prototype = {
+EditableLabel.prototype = Object.assign(new TrackedObject(), {
   className: 'EditableLabel',
 
   getConstructorArgs: function() {
@@ -1828,7 +1864,7 @@ EditableLabel.prototype = {
       return this.text;
     }
   },
-};
+});
 
 EditableLabel.Factory = {
   create: function(opts) { return new EditableLabel(opts); },
@@ -1836,12 +1872,14 @@ EditableLabel.Factory = {
 };
 module.exports = EditableLabel;
 
-},{"../Logger":6,"../ModeSwitch":7,"../components/BlockText":9,"../components/Link":11,"../components/TextBox":13,"../utils":33}],27:[function(require,module,exports){
-function EmptyLabelSet() {
+},{"../Logger":6,"../ModeSwitch":7,"../TrackedObject":8,"../components/BlockText":10,"../components/Link":12,"../components/TextBox":14,"../utils":34}],28:[function(require,module,exports){
+var TrackedObject = require('../TrackedObject');
 
+function EmptyLabelSet() {
+  TrackedObject.apply(this);
 }
 
-EmptyLabelSet.prototype = {
+EmptyLabelSet.prototype = Object.assign(new TrackedObject(), {
   className: 'EmptyLabelSet',
   getConstructorArgs: function() { return {}; },
 
@@ -1849,26 +1887,30 @@ EmptyLabelSet.prototype = {
   edit: function() {},
   display: function() {},
   closeAll: function() {},
-};
+});
 
 module.exports = EmptyLabelSet;
 
-},{}],28:[function(require,module,exports){
+},{"../TrackedObject":8}],29:[function(require,module,exports){
 var Position = require('../geometry/Position');
 var EditableLabel = require('./EditableLabel');
 var utils = require('../utils');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('NodeLabelSet');
+var id = 0;
 
 function NodeLabelSet(opts) {
+  TrackedObject.apply(this);
   this.componentManager = opts && opts.componentManager;
   this.state = opts && opts.state;
   this.editableLabelFactory = (opts && opts.editableLabelFactory) || EditableLabel.Factory;
   this.labels = {};
+  this.id = (id++);
 }
 
-NodeLabelSet.prototype = {
+NodeLabelSet.prototype = Object.assign(new TrackedObject(), {
   className: 'NodeLabelSet',
   getConstructorArgs: function() {
     return {
@@ -1949,11 +1991,11 @@ NodeLabelSet.prototype = {
       throw new Error('state is required');
     }
   },
-};
+});
 
 module.exports = NodeLabelSet;
 
-},{"../Logger":6,"../geometry/Position":15,"../utils":33,"./EditableLabel":26}],29:[function(require,module,exports){
+},{"../Logger":6,"../TrackedObject":8,"../geometry/Position":16,"../utils":34,"./EditableLabel":27}],30:[function(require,module,exports){
 var EditMode = require('./EditMode');
 
 function DisallowedEditMode() {
@@ -1969,15 +2011,17 @@ DisallowedEditMode.prototype = Object.assign(new EditMode(), {
 
 module.exports = DisallowedEditMode;
 
-},{"./EditMode":30}],30:[function(require,module,exports){
+},{"./EditMode":31}],31:[function(require,module,exports){
 var ModeSwitch = require('../ModeSwitch');
 var colors = require('../colors');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('EditMode');
 
 
 function EditMode(opts) {
+  TrackedObject.apply(this);
   this.adapter = opts && opts.adapter;
   this.animator = opts && opts.animator;
   this.alternateInterval = (opts && opts.alternateInterval) || 250;
@@ -1989,7 +2033,7 @@ function EditMode(opts) {
 }
 
 
-EditMode.prototype = {
+EditMode.prototype = Object.assign(new TrackedObject(), {
   className: 'EditMode',
 
   getConstructorArgs: function() {
@@ -2096,11 +2140,11 @@ EditMode.prototype = {
     }
   }
 
-};
+});
 
 module.exports = EditMode;
 
-},{"../Logger":6,"../ModeSwitch":7,"../colors":8}],31:[function(require,module,exports){
+},{"../Logger":6,"../ModeSwitch":7,"../TrackedObject":8,"../colors":9}],32:[function(require,module,exports){
 var EditMode = require('./EditMode');
 var Logger = require('../Logger');
 
@@ -2132,10 +2176,11 @@ NonAnimatingEditMode.prototype = Object.assign(new EditMode(), {
 
 module.exports = NonAnimatingEditMode;
 
-},{"../Logger":6,"./EditMode":30}],32:[function(require,module,exports){
+},{"../Logger":6,"./EditMode":31}],33:[function(require,module,exports){
 var utils = require('../utils');
 var Literal = require('../utils/Literal');
 var Logger = require('../Logger');
+var TrackedObject = require('../TrackedObject');
 
 var LOG = new Logger('UrlState');
 
@@ -2146,12 +2191,13 @@ LABEL_PARAM_PREFIX = 'l_';
 LINK_PARAM_PREFIX = 'li_';
 
 function UrlState(options) {
+  TrackedObject.apply(this);
   this.baseUrl = (options && options.baseUrl);
   this.setUrl = (options && options.setUrl);
   this.urlSearchParams = (options && options.urlSearchParams);
 }
 
-UrlState.prototype = {
+UrlState.prototype = Object.assign(new TrackedObject(), {
   className: 'UrlState',
   getConstructorArgs: function() {
     return {
@@ -2397,11 +2443,11 @@ UrlState.prototype = {
   _persistState: function() {
     this.setUrl(this.getUrl());
   },
-};
+});
 
 module.exports = UrlState;
 
-},{"../Logger":6,"../utils":33,"../utils/Literal":34}],33:[function(require,module,exports){
+},{"../Logger":6,"../TrackedObject":8,"../utils":34,"../utils/Literal":35}],34:[function(require,module,exports){
 var Literal = require('./utils/Literal');
 
 /**
@@ -2544,7 +2590,7 @@ module.exports = {
   requireNonNull: requireNonNull,
 };
 
-},{"./utils/Literal":34}],34:[function(require,module,exports){
+},{"./utils/Literal":35}],35:[function(require,module,exports){
 function Literal(value) {
   this.value = value;
 }
