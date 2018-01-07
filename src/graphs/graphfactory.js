@@ -98,7 +98,7 @@ module.exports = {
     var labelSet = this._getLabelSet(opts);
 
     return new GraphComponent(Object.assign({
-        graph: this.newGraph(Object.assign({
+        graph: opts.graph || this.newGraph(Object.assign({
           labelSet: labelSet,
           nodeSize: sizing.nodeSize,
           edgeDistance: sizing.edgeDistance,

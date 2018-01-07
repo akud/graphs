@@ -1,4 +1,5 @@
 var Literal = require('./utils/Literal');
+var FunctionCall = require('../src/utils/FunctionCall');
 
 /**
  * Compute the cartesian distance between two vectors
@@ -83,6 +84,7 @@ function requireNonNull(container, property) {
 }
 
 function toJs(value, indentLevel) {
+  debugger;
   indentLevel = indentLevel || 0;
   function indentOutro(line) {
     return ' '.repeat(indentLevel) + line;
@@ -92,6 +94,17 @@ function toJs(value, indentLevel) {
   }
   if (value instanceof Literal) {
     return value.value;
+  } else if (value instanceof FunctionCall) {
+    debugger;
+    return value.name + '(\n' +
+      value.arguments.map(function(a, index) {
+        var isLastArg = index === value.arguments.length - 1;
+        return toJs(a, indentLevel + 2) + (isLastArg ? '' : ',');
+      })
+      .map(indentNestedLine)
+      .join('\n')
+      + '\n'
+      + indentOutro(')');
   } else if (Array.isArray(value)) {
     return '[\n' +
       value.map(function(a) { return toJs(a, indentLevel + 2) + ','; })

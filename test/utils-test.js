@@ -1,4 +1,5 @@
 var Literal = require('../src/utils/Literal');
+var FunctionCall = require('../src/utils/FunctionCall');
 var utils = require('../src/utils');
 
 describe('utils', function() {
@@ -228,6 +229,39 @@ describe('utils', function() {
       );
     });
 
+    it('handles function calls', function() {
+      expect(utils.toJs(new FunctionCall('console.log', ['a']))).toEqual(
+        'console.log(\n' +
+          '  \'a\'\n' +
+        ')'
+      );
+      var foo = new FunctionCall('console.log', [
+        'a',
+        { b: 'c' }
+      ]);
+      expect(utils.toJs(foo)).toEqual(
+        'console.log(\n' +
+        '  \'a\',\n' +
+        '  {\n' +
+        '    b: \'c\',\n' +
+        '  }\n' +
+        ')'
+      );
+    });
+
+    it('handles nested function calls', function() {
+      var foo = {
+        a: new FunctionCall('console.log', [ 'a' ])
+      };
+     expect(utils.toJs(foo)).toEqual(
+        '{\n' +
+        '  a: console.log(\n' +
+        '    \'a\'\n' +
+        '  ),\n' +
+        '}'
+      );
+    });
+
     it('handles everything recursively', function() {
       var obj = {
         className: 'TopLevelClass',
@@ -238,7 +272,11 @@ describe('utils', function() {
             d: {
               className: 'NestedClass',
               getConstructorArgs: function() {
-                return { e: [21, 34], f: { foo: 'bar' } };
+                return {
+                  e: [21, 34],
+                  f: { foo: 'bar' },
+                  g: new FunctionCall('hello', ['world', { a: 'd' }]),
+                };
               },
             },
           };
@@ -261,6 +299,12 @@ describe('utils', function() {
         '    f: {\n' +
         '      foo: \'bar\',\n' +
         '    },\n' +
+        '    g: hello(\n' +
+        '      \'world\',\n' +
+        '      {\n' +
+        '        a: \'d\',\n' +
+        '      }\n' +
+        '    ),\n' +
         '  }),\n' +
         '})'
       );
