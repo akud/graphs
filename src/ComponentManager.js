@@ -57,8 +57,9 @@ ComponentManager.prototype = Object.assign(new TrackedObject(), {
       height: element.offsetHeight,
     });
     element.style.position = 'fixed';
-    element.style.top = elementPosition.top + 'px';;
-    element.style.left = elementPosition.left + 'px';;
+    element.style.zIndex = '1';
+    element.style.top = elementPosition.top + 'px';
+    element.style.left = elementPosition.left + 'px';
   },
 });
 
